@@ -38,6 +38,9 @@
 
 ## Workflow After Every Code Change (STRICT)
 
+**Important:** Do **NOT** run local Gradle builds/tests (no `./gradlew build`, no `runClient`) on this machine.
+Validation must use editor diagnostics (Problems / `get_errors`) and then a GitHub Actions run triggered by `git push`.
+
 **After ANY code/resource/data change, you MUST follow this complete workflow:**
 
 1. **Scan all files first**
