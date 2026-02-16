@@ -6,6 +6,11 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-02-15
+
+### Fixed
+- Prevented additional client crashes in sound haptics when a sound instance is dispatched with an unresolved backing sound (guarded source/volume access during `PlaySoundEvent`).
+
 ## [0.1.4] - 2026-02-15
 
 ### Fixed

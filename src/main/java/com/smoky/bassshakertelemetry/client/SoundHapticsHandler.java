@@ -40,7 +40,12 @@ public final class SoundHapticsHandler {
         }
 
         // Ignore music/records/ambient by default.
-        SoundSource source = sound.getSource();
+        SoundSource source;
+        try {
+            source = sound.getSource();
+        } catch (NullPointerException ignored) {
+            return;
+        }
         if (source == SoundSource.MUSIC || source == SoundSource.RECORDS || source == SoundSource.AMBIENT) {
             return;
         }
@@ -63,7 +68,14 @@ public final class SoundHapticsHandler {
         }
 
         // Basic intensity from volume; clamp to be safe.
-        double base = clamp(sound.getVolume(), 0.0, 1.0) * clamp(cfg.soundHapticsGain, 0.0, 2.0);
+        double volume;
+        try {
+            volume = sound.getVolume();
+        } catch (NullPointerException ignored) {
+            return;
+        }
+
+        double base = clamp(volume, 0.0, 1.0) * clamp(cfg.soundHapticsGain, 0.0, 2.0);
         if (base <= 0.001) {
             return;
         }
