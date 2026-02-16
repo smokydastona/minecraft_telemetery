@@ -6,6 +6,11 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-02-15
+
+### Fixed
+- Improved audio output device selection on Windows by using a more unique device id (name + description) with legacy-name fallback, and added a safe fallback to default output if opening the chosen device fails.
+
 ## [0.1.6] - 2026-02-15
 
 ### Fixed

@@ -47,7 +47,7 @@ public final class TelemetryConfigScreen extends Screen {
         devices.addAll(AudioDeviceUtil.listOutputDeviceNames(AudioOutputEngine.get().format()));
 
         String current = BstConfig.get().outputDeviceName;
-        String currentDisplay = (current == null || current.isBlank()) ? "<Default>" : current;
+        String currentDisplay = AudioDeviceUtil.resolveDisplayName(current, AudioOutputEngine.get().format());
         if (!devices.contains(currentDisplay)) {
             currentDisplay = "<Default>";
         }

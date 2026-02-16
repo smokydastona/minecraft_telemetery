@@ -405,20 +405,31 @@ public final class AudioOutputEngine {
     }
 
     private SourceDataLine openLine() {
-        try {
-            DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, FORMAT);
-            Mixer.Info mixerInfo = AudioDeviceUtil.findMixerByName(BstConfig.get().outputDeviceName, FORMAT);
-            if (mixerInfo == null) {
-                SourceDataLine line = (SourceDataLine) AudioSystem.getLine(lineInfo);
-                line.open(FORMAT);
-                return line;
-            }
+        DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, FORMAT);
+        String preferred = BstConfig.get().outputDeviceName;
 
-            Mixer mixer = AudioSystem.getMixer(mixerInfo);
-            SourceDataLine line = (SourceDataLine) mixer.getLine(lineInfo);
+        // Try the preferred device first.
+        if (preferred != null && !preferred.isBlank()) {
+            try {
+                Mixer.Info mixerInfo = AudioDeviceUtil.findMixerByName(preferred, FORMAT);
+                if (mixerInfo != null) {
+                    Mixer mixer = AudioSystem.getMixer(mixerInfo);
+                    SourceDataLine line = (SourceDataLine) mixer.getLine(lineInfo);
+                    line.open(FORMAT);
+                    return line;
+                }
+            } catch (Exception e) {
+                System.err.println("[BST] Failed to open preferred audio device: " + preferred + " (" + e.getClass().getSimpleName() + ")");
+            }
+        }
+
+        // Fallback: default output device.
+        try {
+            SourceDataLine line = (SourceDataLine) AudioSystem.getLine(lineInfo);
             line.open(FORMAT);
             return line;
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            System.err.println("[BST] Failed to open default audio device (" + e.getClass().getSimpleName() + ")");
             return null;
         }
     }
