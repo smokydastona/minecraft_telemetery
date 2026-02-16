@@ -252,7 +252,10 @@ public final class AudioOutputEngine {
                     if (cfg.roadTextureEnabled) {
                         // A filtered noise rumble, speed-scaled.
                         double absSpeed = Math.abs(localSpeed);
-                        double speedRamp = clamp((absSpeed - 0.01) / 0.12, 0.0, 1.0);
+                        // Keep this from feeling like an "engine/road" at normal walking speeds:
+                        // ramp in later and with a gentler curve.
+                        double speedRamp = clamp((absSpeed - 0.09) / 0.18, 0.0, 1.0);
+                        speedRamp *= speedRamp;
 
                         double fc = clamp(cfg.roadTextureCutoffHz, 10.0, 80.0);
                         double a = 1.0 - Math.exp(-(2.0 * Math.PI * fc) / SAMPLE_RATE);

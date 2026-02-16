@@ -72,7 +72,7 @@ public final class BstConfig {
         public boolean biomeChimeEnabled = true;
 
         // Simulated road texture (low-frequency rumble layer)
-        public boolean roadTextureEnabled = true;
+        public boolean roadTextureEnabled = false;
 
         // Sound-to-haptics (treat common game sounds as rumble events)
         public boolean soundHapticsEnabled = true;
@@ -100,12 +100,12 @@ public final class BstConfig {
         public double damageBurstGain = 0.8;
 
         // Road texture tuning
-        public double roadTextureGain = 0.22;
+        public double roadTextureGain = 0.18;
         public double roadTextureCutoffHz = 30.0;
 
         // Accel bump (short one-shot thump derived from acceleration spikes)
-        public boolean accelBumpEnabled = true;
-        public double accelBumpThreshold = 0.075;
+        public boolean accelBumpEnabled = false;
+        public double accelBumpThreshold = 0.14;
         public int accelBumpMs = 60;
         public double accelBumpGain = 0.65;
 

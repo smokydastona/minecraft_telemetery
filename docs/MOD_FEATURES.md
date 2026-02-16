@@ -18,10 +18,10 @@
 
 ## Effects (current)
 
-- **Road texture**: low-frequency filtered noise scaled by speed (toggleable).
+- **Road texture**: low-frequency filtered noise scaled by speed (toggleable; default OFF).
 - **Damage burst**: short decaying white-noise burst.
 - **Biome chime**: short low sine “bump” on biome changes.
-- **Accel bump**: short low thump on large accel spikes (toggleable).
+- **Accel bump**: short low thump on large accel spikes (toggleable; default OFF).
 - **Sound haptics**: maps many in-game sounds (explosions, hurt, break/place, steps, attacks) into short impulses.
 - **Gameplay haptics (non-sexual)**: maps basic interactions (attack/use click edges, mining pulse while holding attack on a block, XP gains) into short impulses.
 

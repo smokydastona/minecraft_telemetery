@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.11] - 2026-02-16
+
+### Changed
+- Adjusted defaults to feel less like a vehicle: road texture and accel bump are now OFF by default.
+- Made the road texture rumble fade in at higher speeds with a gentler ramp (less constant vibration while walking).
+
 ## [0.1.10] - 2026-02-15
 
 ### Changed
