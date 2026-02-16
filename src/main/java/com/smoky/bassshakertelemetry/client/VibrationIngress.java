@@ -147,6 +147,54 @@ public final class VibrationIngress {
         setLastEvent(SourceType.SOUND, (bucket == null || bucket.isBlank()) ? "<sound>" : bucket, priority, encoded.frequencyHz(), encoded.gain01());
     }
 
+    /**
+     * Local (client-side) event playback that still participates in suppression/dedupe rules.
+     *
+     * Typical use: gameplay click/tap events that would otherwise double-trigger with sound inference.
+     */
+    public static void playLocalImpulse(String keyOrBucket,
+                                        boolean directional,
+                                        boolean hasSource,
+                                        double sourceX,
+                                        double sourceY,
+                                        double sourceZ,
+                                        double frequencyHz,
+                                        int durationMs,
+                                        double gain01,
+                                        double noiseMix01,
+                                        int priority) {
+        noteLocalEvent(keyOrBucket, priority, hasSource, sourceX, sourceY, sourceZ);
+
+        var store = BstVibrationProfiles.get();
+        var player = Minecraft.getInstance().player;
+        var encoded = DirectionalEncoding.apply(
+                store,
+                player,
+                directional,
+                hasSource,
+                sourceX,
+                sourceY,
+                sourceZ,
+                frequencyHz,
+                gain01
+        );
+
+        AudioOutputEngine.get().triggerImpulse(
+                encoded.frequencyHz(),
+                durationMs,
+                encoded.gain01(),
+                noiseMix01,
+                "single",
+                160,
+                60,
+                priority,
+                encoded.delayMs(),
+                (keyOrBucket == null) ? "" : keyOrBucket
+        );
+
+        setLastEvent(SourceType.LOCAL, (keyOrBucket == null || keyOrBucket.isBlank()) ? "<local>" : keyOrBucket, priority, encoded.frequencyHz(), encoded.gain01());
+    }
+
     private static void noteAuthoritativeEvent(String key, int priority, boolean hasSource, double x, double y, double z) {
         if (key == null || key.isBlank() || !hasSource) {
             return;
@@ -166,6 +214,28 @@ public final class VibrationIngress {
             // Suppress both swing/hit and hurt sounds near the target.
             addSuppression("attack", priority, now, 90, x, y, z, 6.0);
             addSuppression("hurt", priority, now, 90, x, y, z, 6.0);
+        }
+    }
+
+    private static void noteLocalEvent(String keyOrBucket, int priority, boolean hasSource, double x, double y, double z) {
+        if (keyOrBucket == null || keyOrBucket.isBlank() || !hasSource) {
+            return;
+        }
+
+        String k = keyOrBucket.trim().toLowerCase();
+        long now = System.nanoTime();
+
+        // Gameplay clicks are intentionally small and should not stack with sound inference.
+        if (k.startsWith("gameplay.attack_")) {
+            // Sound-inferred attack swings use bucket "attack".
+            addSuppression("attack", Math.max(priority, 5), now, 120, x, y, z, 5.5);
+        } else if (k.startsWith("gameplay.use_")) {
+            int supPri = Math.max(priority, 3);
+            addSuppression("button", supPri, now, 120, x, y, z, 5.0);
+            addSuppression("lever", supPri, now, 120, x, y, z, 5.0);
+            addSuppression("door", supPri, now, 140, x, y, z, 6.5);
+            addSuppression("container", supPri, now, 140, x, y, z, 6.5);
+            addSuppression("block_place", supPri, now, 120, x, y, z, 5.5);
         }
     }
 

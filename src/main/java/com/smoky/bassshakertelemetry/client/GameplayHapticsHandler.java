@@ -78,15 +78,34 @@ public final class GameplayHapticsHandler {
 
     private void onAttackClick(Minecraft mc, BstConfig.Data cfg) {
         HitResult hr = mc.hitResult;
-        String bucket = (hr != null && hr.getType() == HitResult.Type.ENTITY) ? "attack_entity" : "attack_click";
+        String bucket = (hr != null && hr.getType() == HitResult.Type.ENTITY) ? "gameplay.attack_entity" : "gameplay.attack_click";
 
-        // If player is mining, the mining pulse handles it; keep this tap smaller.
-        double gain = 0.40 * clamp(cfg.gameplayHapticsGain, 0.0, 2.0);
+        // Small "thump". Target: around block-break intensity, slightly higher.
+        // Also routes via VibrationIngress so sound-inferred attack swings can be suppressed.
+        double gain = 0.26 * clamp(cfg.gameplayHapticsGain, 0.0, 2.0);
         if (!rateLimit(bucket, cfg.gameplayHapticsCooldownMs)) {
             return;
         }
 
-        AudioOutputEngine.get().triggerImpulse(48.0, 45, clamp(gain, 0.0, 1.0), 0.10);
+        if (mc.player == null) {
+            return;
+        }
+
+        var player = mc.player;
+
+        VibrationIngress.playLocalImpulse(
+                bucket,
+                false,
+                true,
+                player.getX(),
+                player.getY(),
+                player.getZ(),
+                52.0,
+                50,
+                clamp(gain, 0.0, 1.0),
+                0.08,
+                5
+        );
     }
 
     private void onUseClick(Minecraft mc, BstConfig.Data cfg) {
@@ -97,23 +116,42 @@ public final class GameplayHapticsHandler {
         double noise;
 
         if (hr != null && hr.getType() == HitResult.Type.BLOCK) {
-            bucket = "use_block";
-            freq = 40.0;
-            dur = 55;
-            noise = 0.12;
+            bucket = "gameplay.use_block";
+            // Short, higher-frequency "click" feel.
+            freq = 76.0;
+            dur = 24;
+            noise = 0.02;
         } else {
-            bucket = "use_misc";
-            freq = 44.0;
-            dur = 35;
-            noise = 0.05;
+            bucket = "gameplay.use_misc";
+            freq = 82.0;
+            dur = 20;
+            noise = 0.01;
         }
 
-        double gain = 0.32 * clamp(cfg.gameplayHapticsGain, 0.0, 2.0);
+        double gain = 0.18 * clamp(cfg.gameplayHapticsGain, 0.0, 2.0);
         if (!rateLimit(bucket, cfg.gameplayHapticsCooldownMs)) {
             return;
         }
 
-        AudioOutputEngine.get().triggerImpulse(freq, dur, clamp(gain, 0.0, 1.0), noise);
+        if (mc.player == null) {
+            return;
+        }
+
+        var player = mc.player;
+
+        VibrationIngress.playLocalImpulse(
+                bucket,
+                false,
+                true,
+                player.getX(),
+                player.getY(),
+                player.getZ(),
+                freq,
+                dur,
+                clamp(gain, 0.0, 1.0),
+                noise,
+                3
+        );
     }
 
     private void onMiningPulse(BstConfig.Data cfg) {
