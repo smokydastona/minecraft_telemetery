@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-02-15
+
+### Added
+- Gameplay haptics layer (attack/use click edges, mining pulse, XP gain) mixed into the shaker audio.
+- In-game config toggle for gameplay haptics.
+
 ## [0.1.2] - 2026-02-15
 
 ### Added

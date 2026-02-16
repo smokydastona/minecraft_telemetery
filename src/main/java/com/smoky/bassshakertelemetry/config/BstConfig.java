@@ -80,6 +80,17 @@ public final class BstConfig {
         public double soundHapticsGain = 1.0;
         public int soundHapticsCooldownMs = 35;
 
+        // Gameplay-to-haptics (explicitly non-sexual, game-only)
+        public boolean gameplayHapticsEnabled = true;
+        public double gameplayHapticsGain = 1.0;
+        public int gameplayHapticsCooldownMs = 80;
+
+        public boolean gameplayAttackClickEnabled = true;
+        public boolean gameplayUseClickEnabled = true;
+        public boolean gameplayMiningPulseEnabled = true;
+        public int gameplayMiningPulsePeriodMs = 120;
+        public boolean gameplayXpEnabled = true;
+
         // Signal parameters
         public double speedToneBaseHz = 35.0;
         public double speedToneHzPerSpeed = 90.0; // speed is blocks/tick-ish from delta movement

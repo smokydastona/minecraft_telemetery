@@ -14,6 +14,7 @@ public final class ClientInit {
     public static void init() {
         MinecraftForge.EVENT_BUS.register(new TelemetryEventHandler());
         MinecraftForge.EVENT_BUS.register(new SoundHapticsHandler());
+        MinecraftForge.EVENT_BUS.register(new GameplayHapticsHandler());
 
         ModLoadingContext.get().registerExtensionPoint(
                 ConfigScreenHandler.ConfigScreenFactory.class,
