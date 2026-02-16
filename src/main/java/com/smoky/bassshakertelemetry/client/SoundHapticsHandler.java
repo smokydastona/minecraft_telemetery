@@ -45,7 +45,14 @@ public final class SoundHapticsHandler {
             return;
         }
 
-        ResourceLocation loc = sound.getLocation();
+        // Some SoundInstance implementations (including AbstractSoundInstance) can temporarily have an
+        // unresolved backing Sound during early dispatch / reload. In that state, getLocation() may throw.
+        ResourceLocation loc;
+        try {
+            loc = sound.getLocation();
+        } catch (NullPointerException ignored) {
+            return;
+        }
         if (loc == null) {
             return;
         }
