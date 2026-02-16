@@ -30,8 +30,6 @@ public final class AudioOutputEngine {
 
     // Live telemetry inputs (client thread updates)
     private volatile double speed;
-    private volatile double accel;
-    private volatile boolean elytra;
 
     private volatile boolean telemetryLive;
     private volatile long lastTelemetryNanos;
@@ -74,8 +72,6 @@ public final class AudioOutputEngine {
 
     public void updateTelemetry(double speed, double accel, boolean elytra) {
         this.speed = speed;
-        this.accel = accel;
-        this.elytra = elytra;
         this.telemetryLive = true;
         this.lastTelemetryNanos = System.nanoTime();
 
@@ -168,9 +164,8 @@ public final class AudioOutputEngine {
             int framesPerChunk = 1024;
             byte[] buffer = new byte[framesPerChunk * CHANNELS * BYTES_PER_SAMPLE];
 
-            double phase = 0.0;
+            double bumpPhase = 0.0;
             double chimePhase = 0.0;
-            double ampSmoothed = 0.0;
             double streamGain = 0.0;
             Random random = new Random();
 
@@ -223,25 +218,6 @@ public final class AudioOutputEngine {
                 }
 
                 double localSpeed = this.speed;
-                double localAccel = this.accel;
-                boolean localElytra = this.elytra;
-
-                double freq = cfg.speedToneBaseHz + (cfg.speedToneHzPerSpeed * localSpeed);
-                freq = clamp(freq, 10.0, 200.0);
-
-                double ampTarget = 0.0;
-                if (cfg.speedToneEnabled) {
-                    ampTarget += clamp(localSpeed * 0.8, 0.0, 1.0);
-                }
-                // Accel makes it punchier; keep sign but mostly magnitude.
-                ampTarget += clamp(Math.abs(localAccel) * cfg.accelToAmp, 0.0, 0.65);
-                if (localElytra) {
-                    ampTarget += 0.12;
-                }
-                ampTarget = clamp(ampTarget, 0.0, 1.0);
-
-                // 1-pole smoothing to avoid clicks
-                ampSmoothed += (ampTarget - ampSmoothed) * 0.05;
 
                 // Stream gating (fade in/out when telemetry appears/disappears)
                 double targetStreamGain = hasFreshTelemetry ? 1.0 : 0.0;
@@ -272,10 +248,6 @@ public final class AudioOutputEngine {
                     double sample = 0.0;
 
                     double g = startGain + ((endGain - startGain) * (i / (double) framesPerChunk));
-
-                    if (cfg.speedToneEnabled) {
-                        sample += Math.sin(phase) * ampSmoothed * duckContinuous;
-                    }
 
                     if (cfg.roadTextureEnabled) {
                         // A filtered noise rumble, speed-scaled.
@@ -339,7 +311,7 @@ public final class AudioOutputEngine {
                         double progress = 1.0 - (bumpLeft / (double) total);
                         double env = Math.sin(progress * Math.PI);
                         // Low thump around ~32Hz
-                        double bump = Math.sin(phase * 0.9) * env;
+                        double bump = Math.sin(bumpPhase) * env;
                         sample += bump * cfg.accelBumpGain;
                         bumpLeft--;
                     }
@@ -365,9 +337,10 @@ public final class AudioOutputEngine {
                     buffer[idx++] = (byte) (s16 & 0xFF);
                     buffer[idx++] = (byte) ((s16 >>> 8) & 0xFF);
 
-                    phase += (2.0 * Math.PI * freq) / SAMPLE_RATE;
-                    if (phase > (2.0 * Math.PI)) {
-                        phase -= (2.0 * Math.PI);
+                    // Fixed low thump oscillator (~32Hz) used for accel bump.
+                    bumpPhase += (2.0 * Math.PI * 32.0) / SAMPLE_RATE;
+                    if (bumpPhase > (2.0 * Math.PI)) {
+                        bumpPhase -= (2.0 * Math.PI);
                     }
 
                     // Fixed low chime oscillator (~80Hz)

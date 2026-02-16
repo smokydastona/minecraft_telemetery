@@ -68,7 +68,6 @@ public final class BstConfig {
         public double masterVolume = 0.35;
 
         // Telemetry-to-signal mapping toggles
-        public boolean speedToneEnabled = true;
         public boolean damageBurstEnabled = true;
         public boolean biomeChimeEnabled = true;
 
@@ -90,11 +89,6 @@ public final class BstConfig {
         public boolean gameplayMiningPulseEnabled = true;
         public int gameplayMiningPulsePeriodMs = 120;
         public boolean gameplayXpEnabled = true;
-
-        // Signal parameters
-        public double speedToneBaseHz = 35.0;
-        public double speedToneHzPerSpeed = 90.0; // speed is blocks/tick-ish from delta movement
-        public double accelToAmp = 3.0;
 
         // Output safety / mixing
         // Headroom scales the final output before int16 conversion to reduce clipping when effects stack.

@@ -6,6 +6,11 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-02-15
+
+### Removed
+- Removed the speed tone feature entirely (audio generation, config keys, and UI toggle).
+
 ## [0.1.8] - 2026-02-15
 
 ### Changed

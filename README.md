@@ -4,7 +4,7 @@ Client-side Forge mod that converts simple Minecraft telemetry (speed/accel, dam
 
 ## Features
 
-- Speed/accel-based continuous rumble (speed tone)
+- Telemetry-driven continuous rumble (road texture), plus one-shot events
 - One-shot events: damage burst, biome chime, accel bump
 - Simulated “road texture” rumble layer (toggle in config UI)
 - Output safety: headroom scaling + soft limiter, plus automatic mute/sleep when no live telemetry (prevents menu rumble)

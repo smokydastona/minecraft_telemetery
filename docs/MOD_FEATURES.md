@@ -18,7 +18,6 @@
 
 ## Effects (current)
 
-- **Speed tone**: sine whose frequency rises with speed; amplitude responds to speed and accel.
 - **Road texture**: low-frequency filtered noise scaled by speed (toggleable).
 - **Damage burst**: short decaying white-noise burst.
 - **Biome chime**: short low sine “bump” on biome changes.
@@ -35,7 +34,6 @@ Common keys (selected):
 - `enabled`
 - `outputDeviceName`
 - `masterVolume`
-- `speedToneEnabled`
 - `damageBurstEnabled`
 - `biomeChimeEnabled`
 - `roadTextureEnabled`

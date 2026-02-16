@@ -17,7 +17,6 @@ public final class TelemetryConfigScreen extends Screen {
     private final Screen parent;
 
     private CycleButton<String> deviceCycle;
-    private CycleButton<Boolean> speedToggle;
     private CycleButton<Boolean> damageToggle;
     private CycleButton<Boolean> biomeToggle;
     private CycleButton<Boolean> roadToggle;
@@ -78,30 +77,25 @@ public final class TelemetryConfigScreen extends Screen {
         int colLeftX = leftX;
         int colRightX = leftX + colWidth + colGap;
 
-        speedToggle = CycleButton.onOffBuilder(BstConfig.get().speedToneEnabled)
-            .create(colLeftX, y, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.speed_enabled")));
-        this.addRenderableWidget(speedToggle);
-
         damageToggle = CycleButton.onOffBuilder(BstConfig.get().damageBurstEnabled)
-            .create(colRightX, y, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.damage_enabled")));
+            .create(colLeftX, y, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.damage_enabled")));
         this.addRenderableWidget(damageToggle);
 
-        y += rowH + rowGap;
         biomeToggle = CycleButton.onOffBuilder(BstConfig.get().biomeChimeEnabled)
-            .create(colLeftX, y, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.biome_enabled")));
+            .create(colRightX, y, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.biome_enabled")));
         this.addRenderableWidget(biomeToggle);
 
         roadToggle = CycleButton.onOffBuilder(BstConfig.get().roadTextureEnabled)
-            .create(colRightX, y, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.road_enabled")));
+            .create(colLeftX, y + rowH + rowGap, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.road_enabled")));
         this.addRenderableWidget(roadToggle);
 
         y += rowH + rowGap;
         soundToggle = CycleButton.onOffBuilder(BstConfig.get().soundHapticsEnabled)
-            .create(colLeftX, y, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.sound_enabled")));
+            .create(colRightX, y, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.sound_enabled")));
         this.addRenderableWidget(soundToggle);
 
         gameplayToggle = CycleButton.onOffBuilder(BstConfig.get().gameplayHapticsEnabled)
-            .create(colRightX, y, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.gameplay_enabled")));
+            .create(leftX, y + rowH + rowGap, contentWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.gameplay_enabled")));
         this.addRenderableWidget(gameplayToggle);
 
         this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), b -> onDone())
@@ -118,7 +112,6 @@ public final class TelemetryConfigScreen extends Screen {
         String selected = deviceCycle.getValue();
         data.outputDeviceName = "<Default>".equals(selected) ? "" : selected;
         data.masterVolume = volumeSlider.getValue();
-        data.speedToneEnabled = speedToggle.getValue();
         data.damageBurstEnabled = damageToggle.getValue();
         data.biomeChimeEnabled = biomeToggle.getValue();
         data.roadTextureEnabled = roadToggle.getValue();

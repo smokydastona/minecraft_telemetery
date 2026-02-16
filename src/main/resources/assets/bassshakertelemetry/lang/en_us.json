@@ -2,7 +2,6 @@
   "bassshakertelemetry.config.title": "Bass Shaker Telemetry",
   "bassshakertelemetry.config.output_device": "Output device",
   "bassshakertelemetry.config.master_volume": "Master volume",
-  "bassshakertelemetry.config.speed_enabled": "Speed tone",
   "bassshakertelemetry.config.damage_enabled": "Damage burst",
   "bassshakertelemetry.config.biome_enabled": "Biome chime",
   "bassshakertelemetry.config.road_enabled": "Road texture",
