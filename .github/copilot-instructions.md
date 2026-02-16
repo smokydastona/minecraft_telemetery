@@ -1,42 +1,37 @@
-# Copilot Instructions — Krümblegård Mod
+# Copilot Instructions — Bass Shaker Telemetry (Forge 1.20.1)
 
-## Big picture
-- Repo is a Forge 1.20.1 + GeckoLib mod template for Krümblegård.
-- **Real sources live here:** `src/main/{java,resources}`.
-- Root Gradle project compiles the template via `sourceSets.main` (see `build.gradle`).
-- Mod id: `kruemblegard` | Base package: `com.kruemblegard`.
+## Project identity (keep these consistent)
+- Mod id: `bassshakertelemetry`
+- Mod name: `Bass Shaker Telemetry`
+- Base package / group id: `com.smoky.bassshakertelemetry`
+- Minecraft: `1.20.1` | Forge: `47.2.0` | Java: `17`
 
-## Core gameplay architecture (follow this flow)
-- **Traprock ambush pattern**:
-  - `Traprock` starts dormant (no AI / no movement).
-  - It awakens if a player interacts with it or lingers too close, then attacks.
+## Source of truth (where to edit)
+- Java sources: `src/main/java/com/smoky/bassshakertelemetry/**`
+- Resources: `src/main/resources/**`
+- Mod metadata: `src/main/resources/META-INF/mods.toml` (expanded from Gradle properties)
+- User config file on disk: `config/bassshakertelemetry.json` (written by `BstConfig`)
 
-## Advancements & triggers (project-specific)
-- Don’t grant vanilla advancements directly.
-- If you add advancements, prefer custom triggers in `init/ModCriteria` and fire them from gameplay.
-- Note: no custom criteria triggers are currently registered.
+## Core architecture (follow this flow)
+- Entry point: `BassShakerTelemetryMod`
+  - Loads config early (`BstConfig.load()`).
+  - Registers client-only init via `DistExecutor.safeRunWhenOn`.
+  - Starts audio engine on client during common setup when enabled.
+- Client bootstrap: `client/ClientInit`
+  - Registers `TelemetryEventHandler` on `MinecraftForge.EVENT_BUS`.
+  - Registers the in-game config UI (`TelemetryConfigScreen`).
+- Telemetry collection: `client/TelemetryEventHandler`
+  - Computes speed/accel/elytra state and calls `AudioOutputEngine.updateTelemetry(...)`.
+  - Triggers one-shot events (damage burst, biome chime) via `AudioOutputEngine.trigger*()`.
+- Audio rendering: `audio/AudioOutputEngine`
+  - Runs a dedicated daemon thread that writes 48kHz 16-bit stereo PCM.
+  - Uses JavaSound `SourceDataLine` and an optional selected `Mixer` from config.
+  - Must avoid clicks: smoothing/limiting should stay simple and stable.
 
-## Worldgen (config-driven + data-driven biomes)
-- Worldgen is currently minimal; `init/ModWorldgen` is intentionally empty.
-- Config is in `config/ModConfig` (COMMON): `enableWaystones`, `waystoneRarity`.
-- If you add/restore any waystone worldgen in the future, re-run the full worldgen impact-radius checklist.
-
-## Crumbling Codex (in-game guidebook)
-- Page text is data-driven: `src/main/resources/data/kruemblegard/books/crumbling_codex.json`.
-- The Codex is granted once on first join (tracked in player persistent NBT).
-
-## GeckoLib conventions
-- Model/animation/texture binding: `client/render/model/KruemblegardBossModel` (geo/texture/animation `ResourceLocation`s).
-- Renderer registration: `client/KruemblegardClient` + `client/render/KruemblegardBossRenderer`.
-- Boss animations/controllers live in `entity/KruemblegardBossEntity`.
-
-## Boss music
-- Key: `music.kruemblegard` → registered in `registry/ModSounds` and mapped in `assets/kruemblegard/sounds.json`.
-- Synced with fight using `KruemblegardBossEntity.isEngaged()` (SynchedEntityData).
-
-## Assets
-- Entity texture: `assets/kruemblegard/textures/entity/kruemblegard.png`.
-- Block texture reuse: `assets/kruemblegard/textures/block/standing_stone.png` is intentionally reused by multiple blocks.
+## Client-only safety rules (important)
+- Anything that imports `net.minecraft.client.*` must remain client-only.
+- Keep client-only wiring under `client/` and gated by `DistExecutor`.
+- Do not reference client classes from common/server execution paths.
 
 ## Dev workflows & safety features
 - Every change should follow this workflow.
@@ -76,54 +71,7 @@
 ### “Scan likely impact radius” definition (do this before committing)
 - This is a *second step* after the workspace-wide “scan all files” pass.
 - It means: identify what the change touches and proactively scan the *connected* files/registries/data that must remain consistent so we don’t ship a new jar that just crashes somewhere else.
-
-### Impact radius checklists
-- **Worldgen / datapack changes** (`src/main/resources/data/**/worldgen/**`, biome tags, biome modifiers)
-  - Verify all referenced IDs exist (features, structures, structure_sets, template_pools, processor_lists, tags)
-  - Grep for common invalid/renamed vanilla IDs (e.g., biomes like `minecraft:mountains` are invalid in 1.20.1)
-  - Verify structure_set placement schema (e.g., `minecraft:random_spread` includes required fields like `spread_type`)
-  - Check `data/forge/biome_modifier/*.json` references correct tags/ids
-- **Registries / DeferredRegister changes**
-  - Check all `RegistryObject` usages for eager `.get()` during registration
-  - Check cross-registry references (items referencing entities/blocks; block entities referencing blocks)
-  - Confirm client-only registrations stay under `client/`
-- **Assets / GeckoLib JSON changes**
-  - Confirm `assets/kruemblegard/**` file paths match code `ResourceLocation`s
-  - Ensure animation/model JSONs are well-formed and avoid known fragile patterns (e.g., keyframes)
-- **Gameplay flow changes**
-  - Re-scan Trigger → Controller → Boss flow to ensure trigger placement/removal and server/client separation still holds
-
-### CI-first default (IMPORTANT)
-- If the user reports a crash/CI failure or asks for a fix, and you make code/resource changes:
-  - **Stage + commit + push by default** to trigger GitHub Actions and produce an updated jar artifact.
-  - Only skip commit/push if the user explicitly asks you not to, or if you’re still mid-debug and expect more immediate edits.
-- **Always push after committing**
-  - If you created a commit during the session, **push it before ending your turn** (unless the user explicitly says “don’t push yet”).
-- If there are uncommitted changes when the user expects a new jar, treat that as a bug in the workflow and push.
-- **User override: “push” means push, always**
-  - If the user says “push” / “push updates” / “push it”, ALWAYS run `git push` even if there are no new local commits.
-  - If there are local changes (dirty working tree) and the user says “push”, treat that as “ship what’s currently in the working tree”:
-    - Run the required scan(s), update `README.md` and `CHANGELOG.md` as needed, then **stage + commit + push**.
-    - Only skip committing if the user explicitly says “don’t commit yet” / “don’t push yet”.
-  - Do NOT create empty commits unless the user explicitly asks for an empty commit; instead, report the current `HEAD` SHA so the user can match it to the latest GitHub Actions build.
-- Build validation:
-  - Never build locally (as Copilot/agent) — rely on GitHub Actions for validation.
-  - GitHub Actions is the authoritative “clean environment” build.
-- Keep workspace clean:
-  - Don’t commit generated outputs like `build/` or `.gradle/`.
-- Log handling:
-  - When asked to “read the log”, use the newest `latest.log` from the current run; don’t rely on stale copies.
-- Releases:
-  - Don’t auto-tag or create releases; user manages tags/releases manually.
-
-## Copilot behavior rules (repo-specific)
-- Always respect: mod id `kruemblegard`, base package `com.kruemblegard`, and asset paths under `assets/kruemblegard`.
-- Always follow the Trigger → Controller → Boss flow when changing gameplay.
-- Client-only features (renderer, music, GeckoLib model wiring) go under `client/`.
-- Persistent logic (arena controller, boss state, arena build) goes under `blockentity/`, `entity/`, `world/arena/`.
-- Don’t suggest code outside: `src/main/java/com/kruemblegard`.
-
-## Build / run
-- CI build command: `./gradlew --no-daemon clean build`
-- CI: `.github/workflows/build.yml` uses the Gradle wrapper; keep CI on `./gradlew`.
+## Repo hygiene
+- Don’t commit generated outputs (`build/`, `.gradle/`, local tooling caches, logs).
+- Prefer small focused commits with clear messages.
 
