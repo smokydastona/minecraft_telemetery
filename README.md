@@ -10,6 +10,8 @@ Client-side Forge mod that converts simple Minecraft telemetry (speed/accel, dam
 - Output safety: headroom scaling + soft limiter, plus automatic mute/sleep when no live telemetry (prevents menu rumble)
 - Sound-to-haptics: translates many game sounds (steps, hits, explosions, block break/place, etc.) into short tactile impulses
 - Gameplay haptics: translates basic gameplay interactions (attack/use clicks, mining pulse, XP gain) into tactile impulses
+- Grounded footsteps: short "pitter-patter" pulses when walking on blocks
+- Mining swing haptics: block breaking pulses synced to the on-screen arm swing
 - In-game per-effect volume sliders (Advanced settings), each with a Test button to preview the effect
 
 ## Build

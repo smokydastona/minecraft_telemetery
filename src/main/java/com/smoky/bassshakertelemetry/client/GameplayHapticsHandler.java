@@ -54,15 +54,16 @@ public final class GameplayHapticsHandler {
         boolean useDown = mc.options.keyUse.isDown();
 
         // Rising edges: treat as discrete "click" events.
-        if (cfg.gameplayAttackClickEnabled && attackDown && !lastAttackDown) {
+        if (cfg.gameplayAttackClickEnabled && attackDown && !lastAttackDown && !isCrosshairOnBlock(mc)) {
             onAttackClick(mc, cfg);
         }
         if (cfg.gameplayUseClickEnabled && useDown && !lastUseDown) {
             onUseClick(mc, cfg);
         }
 
-        // While holding attack on a block, emit a periodic low pulse (mining texture).
-        if (cfg.gameplayMiningPulseEnabled && attackDown && isCrosshairOnBlock(mc)) {
+        // While holding attack on a block, emit a periodic low pulse (legacy mining texture).
+        // If swing-synced mining is enabled, prefer that (it matches the on-screen animation).
+        if (!cfg.miningSwingHapticsEnabled && cfg.gameplayMiningPulseEnabled && attackDown && isCrosshairOnBlock(mc)) {
             onMiningPulse(cfg);
         }
 

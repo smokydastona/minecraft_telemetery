@@ -127,6 +127,10 @@ public final class SoundHapticsHandler {
 
         // Footsteps / movement texture.
         if (p.contains(".step") || p.contains("step")) {
+            // Prefer explicit on-foot movement haptics (grounded pitter-patter).
+            if (BstConfig.get().footstepHapticsEnabled) {
+                return null;
+            }
             // Let the continuous road texture cover most of this; steps are light taps.
             return new HapticImpulse("step", 55.0, 30, clamp(base * 0.35, 0.0, 0.6), 0.05);
         }

@@ -19,6 +19,8 @@
   "bassshakertelemetry.config.accel_gain": "Accel bump volume",
   "bassshakertelemetry.config.sound_gain": "Sound haptics volume",
   "bassshakertelemetry.config.gameplay_gain": "Gameplay haptics volume",
+  "bassshakertelemetry.config.footstep_gain": "Footsteps volume",
+  "bassshakertelemetry.config.mining_swing_gain": "Mining swing volume",
   "bassshakertelemetry.config.damage_ms": "Damage burst duration",
   "bassshakertelemetry.config.accel_ms": "Accel bump duration",
   "bassshakertelemetry.config.sound_cooldown_ms": "Sound haptics cooldown",

@@ -24,6 +24,8 @@
 - **Accel bump**: short low thump on large accel spikes (toggleable; default OFF).
 - **Sound haptics**: maps many in-game sounds (explosions, hurt, break/place, steps, attacks) into short impulses.
 - **Gameplay haptics (non-sexual)**: maps basic interactions (attack/use click edges, mining pulse while holding attack on a block, XP gains) into short impulses.
+- **Footsteps**: grounded walking emits short step pulses (no continuous "engine" rumble).
+- **Mining swing**: emits a pulse at the start of each arm swing while mining a block (visual-sync).
 
 ## In-game config UI
 
@@ -53,3 +55,5 @@ Common keys (selected):
 - `soundHapticsEnabled`, `soundHapticsGain`, `soundHapticsCooldownMs`
 - `gameplayHapticsEnabled`, `gameplayHapticsGain`, `gameplayHapticsCooldownMs`
 - `gameplayAttackClickEnabled`, `gameplayUseClickEnabled`, `gameplayMiningPulseEnabled`, `gameplayMiningPulsePeriodMs`, `gameplayXpEnabled`
+- `footstepHapticsEnabled`, `footstepHapticsGain`
+- `miningSwingHapticsEnabled`, `miningSwingHapticsGain`

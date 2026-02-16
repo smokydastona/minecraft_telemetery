@@ -84,9 +84,18 @@ public final class BstConfig {
         public double gameplayHapticsGain = 1.0;
         public int gameplayHapticsCooldownMs = 80;
 
+        // On-foot movement haptics (not car-like)
+        public boolean footstepHapticsEnabled = true;
+        public double footstepHapticsGain = 0.55;
+
+        // Swing-synced mining haptics (matches the on-screen arm swing timing)
+        public boolean miningSwingHapticsEnabled = true;
+        public double miningSwingHapticsGain = 0.55;
+
         public boolean gameplayAttackClickEnabled = true;
         public boolean gameplayUseClickEnabled = true;
-        public boolean gameplayMiningPulseEnabled = true;
+        // Legacy periodic mining pulse (kept, but swing-synced mining is preferred)
+        public boolean gameplayMiningPulseEnabled = false;
         public int gameplayMiningPulsePeriodMs = 120;
         public boolean gameplayXpEnabled = true;
 

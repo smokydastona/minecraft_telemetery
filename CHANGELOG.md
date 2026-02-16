@@ -6,6 +6,14 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.16] - 2026-02-16
+
+### Added
+- Grounded footstep haptics that emit short pitter-patter pulses while walking on blocks (no continuous engine-like rumble).
+
+### Changed
+- Block mining haptics now sync to the on-screen arm swing timing (and disables the legacy periodic mining pulse by default).
+
 ## [0.1.15] - 2026-02-16
 
 ### Changed

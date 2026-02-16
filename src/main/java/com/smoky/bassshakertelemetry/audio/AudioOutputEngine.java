@@ -165,6 +165,18 @@ public final class AudioOutputEngine {
         triggerImpulse(44.0, 120, gain01, 0.25);
     }
 
+    public void testFootsteps() {
+        BstConfig.Data cfg = BstConfig.get();
+        double gain01 = clamp(cfg.footstepHapticsGain, 0.0, 1.0);
+        triggerImpulse(62.0, 22, gain01, 0.02);
+    }
+
+    public void testMiningSwing() {
+        BstConfig.Data cfg = BstConfig.get();
+        double gain01 = clamp(cfg.miningSwingHapticsGain, 0.0, 1.0);
+        triggerImpulse(46.0, 26, gain01, 0.08);
+    }
+
     private void triggerAccelBump(double intensity01) {
         int bumpMs = Math.max(10, BstConfig.get().accelBumpMs);
         int samples = (int) ((bumpMs / 1000.0) * SAMPLE_RATE);
