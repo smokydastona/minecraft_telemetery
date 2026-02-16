@@ -166,7 +166,7 @@ public final class BstVibrationProfiles {
             Map<String, Profile> map = new HashMap<>();
 
             // Damage
-            map.put("damage.generic", new Profile(55.0, 0.40, 120, 0.25, "single", "none", 160, 60, true, 8, true, false));
+            map.put("damage.generic", new Profile(62.0, 0.48, 95, 0.18, "shockwave", "none", 160, 60, true, 9, true, false));
             map.put("damage.fall", new Profile(45.0, 0.30, 180, 0.30, "single", "none", 160, 60, true, 7, false, true));
             map.put("damage.death", new Profile(30.0, 0.80, 1200, 0.55, "fade_out", "none", 160, 60, false, 10, false, false));
 
@@ -197,8 +197,8 @@ public final class BstVibrationProfiles {
             map.put("mining.swing", new Profile(60.0, 0.28, 90, 0.18, "single", "none", 160, 60, false, 4, false, false));
 
             // Movement
-            map.put("movement.land", new Profile(50.0, 0.30, 140, 0.28, "single", "none", 160, 60, true, 4, false, true));
-            map.put("movement.footstep", new Profile(55.0, 0.22, 70, 0.42, "single", "none", 160, 60, false, 2, false, false));
+            map.put("movement.land", new Profile(46.0, 0.22, 85, 0.18, "shockwave", "none", 160, 60, true, 4, false, true));
+            map.put("movement.footstep", new Profile(58.0, 0.24, 45, 0.12, "shockwave", "none", 160, 60, false, 2, false, false));
 
             // Boss
             map.put("boss.dragon_wing", new Profile(32.0, 0.70, 400, 0.50, "pulse_loop", "log_distance", 170, 70, true, 9, false, false));
@@ -223,14 +223,14 @@ public final class BstVibrationProfiles {
                     "  },\n\n" +
                     "  \"damage\": {\n" +
                     "    \"generic\": {\n" +
-                    "      \"frequency\": 55,\n" +
-                    "      \"intensity\": 0.4,\n" +
-                    "      \"duration\": 120,\n" +
-                    "      \"pattern\": \"single\",\n" +
+                    "      \"frequency\": 62,\n" +
+                    "      \"intensity\": 0.48,\n" +
+                    "      \"duration\": 95,\n" +
+                    "      \"pattern\": \"shockwave\",\n" +
                     "      \"falloff\": \"none\",\n" +
-                    "      \"noiseMix\": 0.25,\n" +
+                    "      \"noiseMix\": 0.18,\n" +
                     "      \"directional\": true,\n" +
-                    "      \"priority\": 8,\n" +
+                    "      \"priority\": 9,\n" +
                     "      \"scaleByDamage\": true\n" +
                     "    },\n" +
                     "    \"fall\": {\n" +
@@ -292,23 +292,23 @@ public final class BstVibrationProfiles {
                     "  },\n\n" +
                     "  \"movement\": {\n" +
                     "    \"land\": {\n" +
-                    "      \"frequency\": 50,\n" +
-                    "      \"intensity\": 0.3,\n" +
-                    "      \"duration\": 140,\n" +
-                    "      \"pattern\": \"single\",\n" +
+                    "      \"frequency\": 46,\n" +
+                    "      \"intensity\": 0.22,\n" +
+                    "      \"duration\": 85,\n" +
+                    "      \"pattern\": \"shockwave\",\n" +
                     "      \"falloff\": \"none\",\n" +
-                    "      \"noiseMix\": 0.28,\n" +
+                    "      \"noiseMix\": 0.18,\n" +
                     "      \"directional\": true,\n" +
                     "      \"priority\": 4,\n" +
                     "      \"scaleByFallDistance\": true\n" +
                     "    },\n" +
                     "    \"footstep\": {\n" +
-                    "      \"frequency\": 55,\n" +
-                    "      \"intensity\": 0.22,\n" +
-                    "      \"duration\": 70,\n" +
-                    "      \"pattern\": \"single\",\n" +
+                    "      \"frequency\": 58,\n" +
+                    "      \"intensity\": 0.24,\n" +
+                    "      \"duration\": 45,\n" +
+                    "      \"pattern\": \"shockwave\",\n" +
                     "      \"falloff\": \"none\",\n" +
-                    "      \"noiseMix\": 0.42,\n" +
+                    "      \"noiseMix\": 0.12,\n" +
                     "      \"priority\": 2\n" +
                     "    }\n" +
                     "  },\n\n" +

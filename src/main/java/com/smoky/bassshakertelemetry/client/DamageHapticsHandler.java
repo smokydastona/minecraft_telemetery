@@ -58,10 +58,11 @@ public final class DamageHapticsHandler {
         double scale01 = clamp(amount / 8.0, 0.15, 1.0);
         var resolved = BstVibrationProfiles.get().resolve("damage.generic", scale01, 1.0);
         if (resolved != null) {
+            double gain01 = clamp(resolved.intensity01() * clamp(cfg.damageBurstGain, 0.0, 1.0), 0.0, 1.0);
             AudioOutputEngine.get().triggerImpulse(
                     resolved.frequencyHz(),
                     resolved.durationMs(),
-                    resolved.intensity01(),
+                    gain01,
                     resolved.noiseMix01(),
                     resolved.pattern(),
                     resolved.pulsePeriodMs(),
@@ -104,10 +105,11 @@ public final class DamageHapticsHandler {
         if (deadNow && !lastDead) {
             var resolved = BstVibrationProfiles.get().resolve("damage.death", 1.0, 1.0);
             if (resolved != null) {
+                double gain01 = clamp(resolved.intensity01() * clamp(cfg.damageBurstGain, 0.0, 1.0), 0.0, 1.0);
                 AudioOutputEngine.get().triggerImpulse(
                         resolved.frequencyHz(),
                         resolved.durationMs(),
-                        resolved.intensity01(),
+                        gain01,
                         resolved.noiseMix01(),
                         resolved.pattern(),
                         resolved.pulsePeriodMs(),
@@ -137,10 +139,11 @@ public final class DamageHapticsHandler {
                 double scale01 = clamp(delta / 8.0, 0.15, 1.0);
                 var resolved = BstVibrationProfiles.get().resolve("damage.generic", scale01, 1.0);
                 if (resolved != null) {
+                    double gain01 = clamp(resolved.intensity01() * clamp(cfg.damageBurstGain, 0.0, 1.0), 0.0, 1.0);
                     AudioOutputEngine.get().triggerImpulse(
                             resolved.frequencyHz(),
                             resolved.durationMs(),
-                            resolved.intensity01(),
+                            gain01,
                             resolved.noiseMix01(),
                             resolved.pattern(),
                             resolved.pulsePeriodMs(),
@@ -163,10 +166,11 @@ public final class DamageHapticsHandler {
                 lastFireTickNanos = now;
                 var resolved = BstVibrationProfiles.get().resolve("damage.fire", 1.0, 1.0);
                 if (resolved != null) {
+                    double gain01 = clamp(resolved.intensity01() * clamp(cfg.damageBurstGain, 0.0, 1.0), 0.0, 1.0);
                     AudioOutputEngine.get().triggerImpulse(
                             resolved.frequencyHz(),
                             resolved.durationMs(),
-                            resolved.intensity01(),
+                            gain01,
                             resolved.noiseMix01(),
                             resolved.pattern(),
                             resolved.pulsePeriodMs(),
@@ -185,10 +189,11 @@ public final class DamageHapticsHandler {
                 lastDrownTickNanos = now;
                 var resolved = BstVibrationProfiles.get().resolve("damage.drowning", 1.0, 1.0);
                 if (resolved != null) {
+                    double gain01 = clamp(resolved.intensity01() * clamp(cfg.damageBurstGain, 0.0, 1.0), 0.0, 1.0);
                     AudioOutputEngine.get().triggerImpulse(
                             resolved.frequencyHz(),
                             resolved.durationMs(),
-                            resolved.intensity01(),
+                            gain01,
                             resolved.noiseMix01(),
                             resolved.pattern(),
                             resolved.pulsePeriodMs(),
@@ -205,10 +210,11 @@ public final class DamageHapticsHandler {
                 lastPoisonTickNanos = now;
                 var resolved = BstVibrationProfiles.get().resolve("damage.poison", 1.0, 1.0);
                 if (resolved != null) {
+                    double gain01 = clamp(resolved.intensity01() * clamp(cfg.damageBurstGain, 0.0, 1.0), 0.0, 1.0);
                     AudioOutputEngine.get().triggerImpulse(
                             resolved.frequencyHz(),
                             resolved.durationMs(),
-                            resolved.intensity01(),
+                            gain01,
                             resolved.noiseMix01(),
                             resolved.pattern(),
                             resolved.pulsePeriodMs(),
@@ -222,10 +228,11 @@ public final class DamageHapticsHandler {
                 lastWitherTickNanos = now;
                 var resolved = BstVibrationProfiles.get().resolve("damage.wither", 1.0, 1.0);
                 if (resolved != null) {
+                    double gain01 = clamp(resolved.intensity01() * clamp(cfg.damageBurstGain, 0.0, 1.0), 0.0, 1.0);
                     AudioOutputEngine.get().triggerImpulse(
                             resolved.frequencyHz(),
                             resolved.durationMs(),
-                            resolved.intensity01(),
+                            gain01,
                             resolved.noiseMix01(),
                             resolved.pattern(),
                             resolved.pulsePeriodMs(),
