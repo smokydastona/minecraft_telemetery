@@ -23,6 +23,7 @@
 - **Damage burst**: short decaying white-noise burst.
 - **Biome chime**: short low sine “bump” on biome changes.
 - **Accel bump**: short low thump on large accel spikes (toggleable).
+- **Sound haptics**: maps many in-game sounds (explosions, hurt, break/place, steps, attacks) into short impulses.
 
 ## Config file
 
@@ -41,3 +42,4 @@ Common keys (selected):
 - `limiterDrive`
 - `roadTextureGain`, `roadTextureCutoffHz`
 - `accelBumpEnabled`, `accelBumpThreshold`, `accelBumpMs`, `accelBumpGain`
+- `soundHapticsEnabled`, `soundHapticsGain`, `soundHapticsCooldownMs`

@@ -6,6 +6,13 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-02-15
+
+### Added
+- Sound-to-haptics translation (client-side sound events mapped into tactile impulses).
+- Generic impulse effect in the audio engine to support non-movement events.
+- In-game config toggle for sound haptics.
+
 ## [0.1.1] - 2026-02-15
 
 ### Added

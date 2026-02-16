@@ -75,6 +75,11 @@ public final class BstConfig {
         // Simulated road texture (low-frequency rumble layer)
         public boolean roadTextureEnabled = true;
 
+        // Sound-to-haptics (treat common game sounds as rumble events)
+        public boolean soundHapticsEnabled = true;
+        public double soundHapticsGain = 1.0;
+        public int soundHapticsCooldownMs = 35;
+
         // Signal parameters
         public double speedToneBaseHz = 35.0;
         public double speedToneHzPerSpeed = 90.0; // speed is blocks/tick-ish from delta movement

@@ -21,6 +21,7 @@ public final class TelemetryConfigScreen extends Screen {
     private CycleButton<Boolean> damageToggle;
     private CycleButton<Boolean> biomeToggle;
     private CycleButton<Boolean> roadToggle;
+    private CycleButton<Boolean> soundToggle;
     private VolumeSlider volumeSlider;
 
     public TelemetryConfigScreen(Screen parent) {
@@ -78,6 +79,10 @@ public final class TelemetryConfigScreen extends Screen {
             .create(centerX - 155, 200, 310, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.road_enabled")));
         this.addRenderableWidget(roadToggle);
 
+        soundToggle = CycleButton.onOffBuilder(BstConfig.get().soundHapticsEnabled)
+            .create(centerX - 155, 230, 310, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.sound_enabled")));
+        this.addRenderableWidget(soundToggle);
+
         this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), b -> onDone())
                 .bounds(centerX - 155, this.height - 28, 150, 20)
                 .build());
@@ -96,6 +101,7 @@ public final class TelemetryConfigScreen extends Screen {
         data.damageBurstEnabled = damageToggle.getValue();
         data.biomeChimeEnabled = biomeToggle.getValue();
         data.roadTextureEnabled = roadToggle.getValue();
+        data.soundHapticsEnabled = soundToggle.getValue();
         BstConfig.set(data);
 
         AudioOutputEngine.get().startOrRestart();

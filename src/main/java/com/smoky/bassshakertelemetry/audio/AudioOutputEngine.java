@@ -46,6 +46,14 @@ public final class AudioOutputEngine {
     private final AtomicInteger accelBumpTotalSamples = new AtomicInteger(1);
     private volatile long lastAccelBumpNanos;
 
+    // Generic impulse (used by sound-to-haptics)
+    private final AtomicInteger impulseSamplesLeft = new AtomicInteger(0);
+    private final AtomicInteger impulseTotalSamples = new AtomicInteger(1);
+    private volatile double impulseFreqHz = 36.0;
+    private volatile double impulseGain = 0.0;
+    private volatile double impulseNoiseMix = 0.25;
+    private volatile double impulsePhase;
+
     // Road texture state
     private volatile double roadNoiseState;
 
@@ -93,6 +101,22 @@ public final class AudioOutputEngine {
         int samples = (int) ((burstMs / 1000.0) * SAMPLE_RATE);
         damageBurstTotalSamples.set(Math.max(1, samples));
         damageBurstSamplesLeft.set(samples);
+    }
+
+    /**
+     * Generic one-shot impulse. Intended for translating arbitrary events (e.g. game sounds) into tactile audio.
+     */
+    public void triggerImpulse(double freqHz, int durationMs, double gain01, double noiseMix01) {
+        int ms = Math.max(10, durationMs);
+        int samples = (int) ((ms / 1000.0) * SAMPLE_RATE);
+        impulseTotalSamples.set(Math.max(1, samples));
+        // Extend if already active.
+        int current = impulseSamplesLeft.get();
+        impulseSamplesLeft.set(Math.max(current, samples));
+
+        impulseFreqHz = clamp(freqHz, 10.0, 120.0);
+        impulseGain = Math.max(impulseGain, clamp(gain01, 0.0, 1.0));
+        impulseNoiseMix = clamp(noiseMix01, 0.0, 1.0);
     }
 
     public void triggerBiomeChime() {
@@ -229,6 +253,7 @@ public final class AudioOutputEngine {
                 int damageLeft = damageBurstSamplesLeft.get();
                 int biomeLeft = biomeChimeSamplesLeft.get();
                 int bumpLeft = accelBumpSamplesLeft.get();
+                int impulseLeft = impulseSamplesLeft.get();
 
                 // Effect priority / ducking: let short impacts read clearly.
                 double duckContinuous = 1.0;
@@ -268,6 +293,25 @@ public final class AudioOutputEngine {
                         double env = Math.exp(-progress * 6.0);
                         sample += ((random.nextDouble() * 2.0) - 1.0) * cfg.damageBurstGain * env;
                         damageLeft--;
+                    }
+
+                    if (impulseLeft > 0) {
+                        int total = Math.max(1, impulseTotalSamples.get());
+                        double progress = 1.0 - (impulseLeft / (double) total);
+                        double env = Math.sin(progress * Math.PI);
+
+                        double step = (2.0 * Math.PI * impulseFreqHz) / SAMPLE_RATE;
+                        double sine = Math.sin(impulsePhase);
+                        double noise = (random.nextDouble() * 2.0) - 1.0;
+                        double w = (sine * (1.0 - impulseNoiseMix)) + (noise * impulseNoiseMix);
+                        sample += w * impulseGain * env;
+
+                        impulsePhase += step;
+                        if (impulsePhase > (2.0 * Math.PI)) {
+                            impulsePhase -= (2.0 * Math.PI);
+                        }
+
+                        impulseLeft--;
                     }
 
                     if (cfg.accelBumpEnabled && bumpLeft > 0) {
@@ -329,6 +373,14 @@ public final class AudioOutputEngine {
                     biomeChimeSamplesLeft.set(Math.max(0, biomeLeft));
                 } else {
                     biomeChimeSamplesLeft.set(0);
+                }
+
+                impulseSamplesLeft.set(Math.max(0, impulseLeft));
+                if (impulseLeft <= 0) {
+                    impulseGain *= 0.65;
+                    if (impulseGain < 0.001) {
+                        impulseGain = 0.0;
+                    }
                 }
 
                 line.write(buffer, 0, buffer.length);

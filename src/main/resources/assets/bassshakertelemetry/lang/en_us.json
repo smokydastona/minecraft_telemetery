@@ -6,6 +6,7 @@
   "bassshakertelemetry.config.damage_enabled": "Damage burst",
   "bassshakertelemetry.config.biome_enabled": "Biome chime",
   "bassshakertelemetry.config.road_enabled": "Road texture",
+  "bassshakertelemetry.config.sound_enabled": "Sound haptics",
   "bassshakertelemetry.config.done": "Done",
   "bassshakertelemetry.config.cancel": "Cancel"
 }
