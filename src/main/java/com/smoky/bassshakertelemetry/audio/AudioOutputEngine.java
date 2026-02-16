@@ -33,11 +33,21 @@ public final class AudioOutputEngine {
     private volatile double accel;
     private volatile boolean elytra;
 
+    private volatile boolean telemetryLive;
+    private volatile long lastTelemetryNanos;
+
     // Event triggers
     private final AtomicInteger damageBurstSamplesLeft = new AtomicInteger(0);
     private final AtomicInteger damageBurstTotalSamples = new AtomicInteger(1);
     private final AtomicInteger biomeChimeSamplesLeft = new AtomicInteger(0);
     private final AtomicInteger biomeChimeTotalSamples = new AtomicInteger(1);
+
+    private final AtomicInteger accelBumpSamplesLeft = new AtomicInteger(0);
+    private final AtomicInteger accelBumpTotalSamples = new AtomicInteger(1);
+    private volatile long lastAccelBumpNanos;
+
+    // Road texture state
+    private volatile double roadNoiseState;
 
     private AudioOutputEngine() {
     }
@@ -54,6 +64,28 @@ public final class AudioOutputEngine {
         this.speed = speed;
         this.accel = accel;
         this.elytra = elytra;
+        this.telemetryLive = true;
+        this.lastTelemetryNanos = System.nanoTime();
+
+        // Optional accel-driven thump, with a small cooldown to avoid machine-gun pulses.
+        BstConfig.Data cfg = BstConfig.get();
+        if (cfg.accelBumpEnabled) {
+            double a = Math.abs(accel);
+            if (a >= cfg.accelBumpThreshold) {
+                long now = this.lastTelemetryNanos;
+                if ((now - lastAccelBumpNanos) > 120_000_000L) { // 120ms
+                    triggerAccelBump(clamp(a / (cfg.accelBumpThreshold * 2.0), 0.0, 1.0));
+                    lastAccelBumpNanos = now;
+                }
+            }
+        }
+    }
+
+    public void setTelemetryLive(boolean live) {
+        this.telemetryLive = live;
+        if (live) {
+            this.lastTelemetryNanos = System.nanoTime();
+        }
     }
 
     public void triggerDamageBurst() {
@@ -68,6 +100,15 @@ public final class AudioOutputEngine {
         int samples = (int) ((50 / 1000.0) * SAMPLE_RATE);
         biomeChimeTotalSamples.set(Math.max(1, samples));
         biomeChimeSamplesLeft.set(Math.max(1, samples));
+    }
+
+    private void triggerAccelBump(double intensity01) {
+        int bumpMs = Math.max(10, BstConfig.get().accelBumpMs);
+        int samples = (int) ((bumpMs / 1000.0) * SAMPLE_RATE);
+        accelBumpTotalSamples.set(Math.max(1, samples));
+        accelBumpSamplesLeft.set(Math.max(1, samples));
+        // Encode intensity by scaling total samples left a bit.
+        // Actual gain is applied in the render loop.
     }
 
     public synchronized void startOrRestart() {
@@ -96,23 +137,62 @@ public final class AudioOutputEngine {
     private void runLoop() {
         SourceDataLine line = null;
         try {
-            line = openLine();
-            if (line == null) {
-                running.set(false);
-                return;
-            }
-            line.start();
-
             int framesPerChunk = 1024;
             byte[] buffer = new byte[framesPerChunk * CHANNELS * BYTES_PER_SAMPLE];
 
             double phase = 0.0;
             double chimePhase = 0.0;
             double ampSmoothed = 0.0;
+            double streamGain = 0.0;
             Random random = new Random();
+
+            final long staleNs = 1_000_000_000L; // 1s without telemetry => fade out
+            final long sleepNs = 10_000_000_000L; // 10s without telemetry => close the audio line
 
             while (running.get()) {
                 BstConfig.Data cfg = BstConfig.get();
+
+                long nowNs = System.nanoTime();
+                boolean hasFreshTelemetry = telemetryLive && ((nowNs - lastTelemetryNanos) <= staleNs);
+
+                // If we've been stale for a long time, close the device to avoid rumble in menus.
+                if (!hasFreshTelemetry && line != null && (nowNs - lastTelemetryNanos) > sleepNs) {
+                    try {
+                        line.stop();
+                    } catch (Exception ignored) {
+                    }
+                    try {
+                        line.flush();
+                    } catch (Exception ignored) {
+                    }
+                    try {
+                        line.close();
+                    } catch (Exception ignored) {
+                    }
+                    line = null;
+                }
+
+                if (line == null) {
+                    if (!hasFreshTelemetry) {
+                        try {
+                            Thread.sleep(50);
+                        } catch (InterruptedException ignored) {
+                        }
+                        continue;
+                    }
+
+                    line = openLine();
+                    if (line == null) {
+                        running.set(false);
+                        return;
+                    }
+                    try {
+                        line.start();
+                    } catch (Exception ignored) {
+                        running.set(false);
+                        return;
+                    }
+                }
 
                 double localSpeed = this.speed;
                 double localAccel = this.accel;
@@ -135,17 +215,50 @@ public final class AudioOutputEngine {
                 // 1-pole smoothing to avoid clicks
                 ampSmoothed += (ampTarget - ampSmoothed) * 0.05;
 
-                double master = clamp(cfg.masterVolume, 0.0, 1.0);
+                // Stream gating (fade in/out when telemetry appears/disappears)
+                double targetStreamGain = hasFreshTelemetry ? 1.0 : 0.0;
+                double startGain = streamGain;
+                streamGain += (targetStreamGain - streamGain) * 0.08;
+                double endGain = streamGain;
+
+                // Output headroom + master
+                double headroom = clamp(cfg.outputHeadroom, 0.10, 1.0);
+                double master = clamp(cfg.masterVolume, 0.0, 1.0) * headroom;
+                double limiterDrive = clamp(cfg.limiterDrive, 1.0, 8.0);
 
                 int damageLeft = damageBurstSamplesLeft.get();
                 int biomeLeft = biomeChimeSamplesLeft.get();
+                int bumpLeft = accelBumpSamplesLeft.get();
+
+                // Effect priority / ducking: let short impacts read clearly.
+                double duckContinuous = 1.0;
+                if (cfg.damageBurstEnabled && damageLeft > 0) {
+                    duckContinuous = 0.35;
+                } else if (cfg.accelBumpEnabled && bumpLeft > 0) {
+                    duckContinuous = 0.55;
+                }
 
                 int idx = 0;
                 for (int i = 0; i < framesPerChunk; i++) {
                     double sample = 0.0;
 
+                    double g = startGain + ((endGain - startGain) * (i / (double) framesPerChunk));
+
                     if (cfg.speedToneEnabled) {
-                        sample += Math.sin(phase) * ampSmoothed;
+                        sample += Math.sin(phase) * ampSmoothed * duckContinuous;
+                    }
+
+                    if (cfg.roadTextureEnabled) {
+                        // A filtered noise rumble, speed-scaled.
+                        double absSpeed = Math.abs(localSpeed);
+                        double speedRamp = clamp((absSpeed - 0.01) / 0.12, 0.0, 1.0);
+
+                        double fc = clamp(cfg.roadTextureCutoffHz, 10.0, 80.0);
+                        double a = 1.0 - Math.exp(-(2.0 * Math.PI * fc) / SAMPLE_RATE);
+                        double white = (random.nextDouble() * 2.0) - 1.0;
+                        roadNoiseState += (white - roadNoiseState) * a;
+
+                        sample += roadNoiseState * cfg.roadTextureGain * speedRamp * duckContinuous;
                     }
 
                     if (cfg.damageBurstEnabled && damageLeft > 0) {
@@ -157,6 +270,16 @@ public final class AudioOutputEngine {
                         damageLeft--;
                     }
 
+                    if (cfg.accelBumpEnabled && bumpLeft > 0) {
+                        int total = Math.max(1, accelBumpTotalSamples.get());
+                        double progress = 1.0 - (bumpLeft / (double) total);
+                        double env = Math.sin(progress * Math.PI);
+                        // Low thump around ~32Hz
+                        double bump = Math.sin(phase * 0.9) * env;
+                        sample += bump * cfg.accelBumpGain;
+                        bumpLeft--;
+                    }
+
                     if (cfg.biomeChimeEnabled && biomeLeft > 0) {
                         // A short low sine "bump".
                         int total = Math.max(1, biomeChimeTotalSamples.get());
@@ -166,10 +289,11 @@ public final class AudioOutputEngine {
                         biomeLeft--;
                     }
 
-                    // very soft limiter
+                    // Soft limiter (tanh saturation) + hard clamp as final safety.
+                    sample = softClipTanh(sample, limiterDrive);
                     sample = clamp(sample, -1.0, 1.0);
 
-                    short s16 = (short) (sample * master * 32767);
+                    short s16 = (short) (sample * master * g * 32767);
 
                     // stereo duplicate
                     buffer[idx++] = (byte) (s16 & 0xFF);
@@ -193,6 +317,12 @@ public final class AudioOutputEngine {
                     damageBurstSamplesLeft.set(Math.max(0, damageLeft));
                 } else {
                     damageBurstSamplesLeft.set(0);
+                }
+
+                if (cfg.accelBumpEnabled) {
+                    accelBumpSamplesLeft.set(Math.max(0, bumpLeft));
+                } else {
+                    accelBumpSamplesLeft.set(0);
                 }
 
                 if (cfg.biomeChimeEnabled) {
@@ -245,5 +375,14 @@ public final class AudioOutputEngine {
         if (v < min) return min;
         if (v > max) return max;
         return v;
+    }
+
+    private static double softClipTanh(double x, double drive) {
+        double d = clamp(drive, 1.0, 12.0);
+        double denom = Math.tanh(d);
+        if (denom == 0.0) {
+            return clamp(x, -1.0, 1.0);
+        }
+        return Math.tanh(x * d) / denom;
     }
 }

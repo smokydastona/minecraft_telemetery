@@ -5,13 +5,13 @@ import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
-import net.minecraft.client.gui.components.OptionsList;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public final class TelemetryConfigScreen extends Screen {
     private final Screen parent;
@@ -20,6 +20,7 @@ public final class TelemetryConfigScreen extends Screen {
     private CycleButton<Boolean> speedToggle;
     private CycleButton<Boolean> damageToggle;
     private CycleButton<Boolean> biomeToggle;
+    private CycleButton<Boolean> roadToggle;
     private VolumeSlider volumeSlider;
 
     public TelemetryConfigScreen(Screen parent) {
@@ -28,8 +29,10 @@ public final class TelemetryConfigScreen extends Screen {
     }
 
     @Override
+    @SuppressWarnings("null")
     protected void init() {
         int centerX = this.width / 2;
+        var font = Objects.requireNonNull(this.font, "font");
 
         List<String> devices = new ArrayList<>();
         devices.add("<Default>");
@@ -41,34 +44,45 @@ public final class TelemetryConfigScreen extends Screen {
             currentDisplay = "<Default>";
         }
 
-        this.addRenderableWidget(new StringWidget(centerX, 20, 200, 20, Component.translatable("bassshakertelemetry.config.title"), this.font));
+        this.addRenderableWidget(new StringWidget(
+            centerX,
+            20,
+            200,
+            20,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.title")),
+            font
+        ));
 
-        deviceCycle = CycleButton.<String>builder(s -> Component.literal(s))
+        deviceCycle = CycleButton.<String>builder(s -> Component.literal(Objects.requireNonNullElse(s, "")))
                 .withValues(devices)
                 .withInitialValue(currentDisplay)
-                .create(centerX - 155, 50, 310, 20, Component.translatable("bassshakertelemetry.config.output_device"));
+            .create(centerX - 155, 50, 310, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.output_device")));
         this.addRenderableWidget(deviceCycle);
 
         volumeSlider = new VolumeSlider(centerX - 155, 80, 310, 20, BstConfig.get().masterVolume);
         this.addRenderableWidget(volumeSlider);
 
         speedToggle = CycleButton.onOffBuilder(BstConfig.get().speedToneEnabled)
-                .create(centerX - 155, 110, 310, 20, Component.translatable("bassshakertelemetry.config.speed_enabled"));
+            .create(centerX - 155, 110, 310, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.speed_enabled")));
         this.addRenderableWidget(speedToggle);
 
         damageToggle = CycleButton.onOffBuilder(BstConfig.get().damageBurstEnabled)
-                .create(centerX - 155, 140, 310, 20, Component.translatable("bassshakertelemetry.config.damage_enabled"));
+            .create(centerX - 155, 140, 310, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.damage_enabled")));
         this.addRenderableWidget(damageToggle);
 
         biomeToggle = CycleButton.onOffBuilder(BstConfig.get().biomeChimeEnabled)
-                .create(centerX - 155, 170, 310, 20, Component.translatable("bassshakertelemetry.config.biome_enabled"));
+            .create(centerX - 155, 170, 310, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.biome_enabled")));
         this.addRenderableWidget(biomeToggle);
 
-        this.addRenderableWidget(Button.builder(Component.translatable("bassshakertelemetry.config.done"), b -> onDone())
+        roadToggle = CycleButton.onOffBuilder(BstConfig.get().roadTextureEnabled)
+            .create(centerX - 155, 200, 310, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.road_enabled")));
+        this.addRenderableWidget(roadToggle);
+
+        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), b -> onDone())
                 .bounds(centerX - 155, this.height - 28, 150, 20)
                 .build());
 
-        this.addRenderableWidget(Button.builder(Component.translatable("bassshakertelemetry.config.cancel"), b -> onCancel())
+        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), b -> onCancel())
                 .bounds(centerX + 5, this.height - 28, 150, 20)
                 .build());
     }
@@ -81,14 +95,19 @@ public final class TelemetryConfigScreen extends Screen {
         data.speedToneEnabled = speedToggle.getValue();
         data.damageBurstEnabled = damageToggle.getValue();
         data.biomeChimeEnabled = biomeToggle.getValue();
+        data.roadTextureEnabled = roadToggle.getValue();
         BstConfig.set(data);
 
         AudioOutputEngine.get().startOrRestart();
-        this.minecraft.setScreen(parent);
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(parent);
+        }
     }
 
     private void onCancel() {
-        this.minecraft.setScreen(parent);
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(parent);
+        }
     }
 
     @Override
@@ -103,9 +122,14 @@ public final class TelemetryConfigScreen extends Screen {
         }
 
         @Override
+        @SuppressWarnings("null")
         protected void updateMessage() {
             int pct = (int) Math.round(value * 100.0);
-            this.setMessage(Component.translatable("bassshakertelemetry.config.master_volume").append(": ").append(Component.literal(pct + "%")));
+            this.setMessage(
+                    Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.master_volume"))
+                            .append(": ")
+                            .append(Objects.requireNonNull(Component.literal(pct + "%")))
+            );
         }
 
         @Override

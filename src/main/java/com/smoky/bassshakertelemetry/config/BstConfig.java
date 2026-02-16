@@ -72,13 +72,32 @@ public final class BstConfig {
         public boolean damageBurstEnabled = true;
         public boolean biomeChimeEnabled = true;
 
+        // Simulated road texture (low-frequency rumble layer)
+        public boolean roadTextureEnabled = true;
+
         // Signal parameters
         public double speedToneBaseHz = 35.0;
         public double speedToneHzPerSpeed = 90.0; // speed is blocks/tick-ish from delta movement
         public double accelToAmp = 3.0;
 
+        // Output safety / mixing
+        // Headroom scales the final output before int16 conversion to reduce clipping when effects stack.
+        public double outputHeadroom = 0.85;
+        // Soft-limiter drive. Higher = more saturation and less peak clipping.
+        public double limiterDrive = 2.5;
+
         public int damageBurstMs = 90;
         public double damageBurstGain = 0.8;
+
+        // Road texture tuning
+        public double roadTextureGain = 0.22;
+        public double roadTextureCutoffHz = 30.0;
+
+        // Accel bump (short one-shot thump derived from acceleration spikes)
+        public boolean accelBumpEnabled = true;
+        public double accelBumpThreshold = 0.075;
+        public int accelBumpMs = 60;
+        public double accelBumpGain = 0.65;
 
         public boolean enabled() {
             return enabled;

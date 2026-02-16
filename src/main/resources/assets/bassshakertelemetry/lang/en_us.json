@@ -5,6 +5,7 @@
   "bassshakertelemetry.config.speed_enabled": "Speed tone",
   "bassshakertelemetry.config.damage_enabled": "Damage burst",
   "bassshakertelemetry.config.biome_enabled": "Biome chime",
+  "bassshakertelemetry.config.road_enabled": "Road texture",
   "bassshakertelemetry.config.done": "Done",
   "bassshakertelemetry.config.cancel": "Cancel"
 }
