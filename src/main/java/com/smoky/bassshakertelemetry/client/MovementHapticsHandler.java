@@ -88,11 +88,15 @@ public final class MovementHapticsHandler {
 
                 // Intensity ramps with movement speed.
                 double intensity = clamp((horizSpeed - 0.02) / 0.18, 0.0, 1.0);
-                double gain01 = clamp(cfg.footstepHapticsGain * (0.35 + (0.65 * intensity)), 0.0, 1.0);
+                // Keep steps softer than other impacts; ramp gently with speed.
+                double gain01 = clamp(cfg.footstepHapticsGain * (0.22 + (0.48 * intensity)), 0.0, 1.0);
 
-                while (stepAccum >= stepDistance) {
+                // Avoid "bursting" multiple steps in a single tick (can happen with lag / high speed),
+                // which feels punchy and unnatural.
+                if (stepAccum >= stepDistance) {
                     stepAccum -= stepDistance;
-                    AudioOutputEngine.get().triggerImpulse(62.0, 22, gain01, 0.02);
+                    // Crunchier, less clicky step: more filtered noise, lower fundamental, longer envelope.
+                    AudioOutputEngine.get().triggerImpulse(44.0, 55, gain01, 0.42);
                 }
             }
         }

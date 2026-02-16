@@ -6,6 +6,11 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.18] - 2026-02-16
+
+### Changed
+- Softened footstep haptics to feel less punchy/abrupt (crunchier, longer, and avoids multi-step bursts in one tick).
+
 ## [0.1.17] - 2026-02-16
 
 ### Fixed

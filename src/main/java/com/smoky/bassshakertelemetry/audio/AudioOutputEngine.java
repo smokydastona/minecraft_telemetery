@@ -168,7 +168,7 @@ public final class AudioOutputEngine {
     public void testFootsteps() {
         BstConfig.Data cfg = BstConfig.get();
         double gain01 = clamp(cfg.footstepHapticsGain, 0.0, 1.0);
-        triggerImpulse(62.0, 22, gain01, 0.02);
+        triggerImpulse(44.0, 55, gain01, 0.42);
     }
 
     public void testMiningSwing() {
