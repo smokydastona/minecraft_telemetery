@@ -6,6 +6,11 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.17] - 2026-02-16
+
+### Fixed
+- Adjusted grounded footstep haptics cadence to avoid a double-step feel while walking.
+
 ## [0.1.16] - 2026-02-16
 
 ### Added

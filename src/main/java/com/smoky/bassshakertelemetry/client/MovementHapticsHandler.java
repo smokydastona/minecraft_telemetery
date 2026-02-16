@@ -81,8 +81,10 @@ public final class MovementHapticsHandler {
                 Vec3 dv = player.getDeltaMovement();
                 double horizSpeed = Math.sqrt((dv.x * dv.x) + (dv.z * dv.z));
 
-                // Step spacing in blocks: smaller when moving faster.
-                double stepDistance = clamp(0.60 - (horizSpeed * 0.55), 0.38, 0.65);
+                // Step spacing in blocks.
+                // The previous spacing was too small and produced a "double step" feel.
+                // Aim for ~1 pulse per visible step while still tightening slightly at higher speed.
+                double stepDistance = clamp(1.05 - (horizSpeed * 0.35), 0.70, 1.15);
 
                 // Intensity ramps with movement speed.
                 double intensity = clamp((horizSpeed - 0.02) / 0.18, 0.0, 1.0);
