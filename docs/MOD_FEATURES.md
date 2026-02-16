@@ -44,6 +44,12 @@ Local Gradle builds / `runClient` are intentionally not part of the workflow on 
 
 Saved at `config/bassshakertelemetry.json`.
 
+## Vibration profiles (JSON)
+
+Tunable vibration profiles are saved at `config/bassshakertelemetry_vibration_profiles.json`.
+
+This file controls per-event frequency/intensity/duration (and optional pattern/falloff flags) so you can tune chair feel without recompiling.
+
 Common keys (selected):
 
 - `enabled`

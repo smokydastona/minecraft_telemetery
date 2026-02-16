@@ -2,6 +2,7 @@ package com.smoky.bassshakertelemetry.client;
 
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.config.BstConfig;
+import com.smoky.bassshakertelemetry.config.BstVibrationProfiles;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
@@ -62,8 +63,12 @@ public final class MovementHapticsHandler {
         if (!lastOnGround && onGround) {
             float fall = player.fallDistance;
             if (fall > 0.4f) {
-                double gain01 = clamp(cfg.footstepHapticsGain * 0.85, 0.0, 1.0);
-                AudioOutputEngine.get().triggerImpulse(30.0, 70, gain01, 0.10);
+                double fallScale01 = clamp((fall - 0.4f) / 6.0, 0.15, 1.0);
+                var resolved = BstVibrationProfiles.get().resolve("movement.land", fallScale01, 1.0);
+                if (resolved != null) {
+                    double gain01 = clamp(resolved.intensity01() * clamp(cfg.footstepHapticsGain, 0.0, 1.0), 0.0, 1.0);
+                    AudioOutputEngine.get().triggerImpulse(resolved.frequencyHz(), resolved.durationMs(), gain01, resolved.noiseMix01());
+                }
             }
             stepAccum = 0.0;
         }
@@ -95,8 +100,14 @@ public final class MovementHapticsHandler {
                 // which feels punchy and unnatural.
                 if (stepAccum >= stepDistance) {
                     stepAccum -= stepDistance;
-                    // Crunchier, less clicky step: more filtered noise, lower fundamental, longer envelope.
-                    AudioOutputEngine.get().triggerImpulse(44.0, 55, gain01, 0.42);
+                    var resolved = BstVibrationProfiles.get().resolve("movement.footstep", 1.0, 1.0);
+                    if (resolved != null) {
+                        double outGain01 = clamp(resolved.intensity01() * gain01, 0.0, 1.0);
+                        AudioOutputEngine.get().triggerImpulse(resolved.frequencyHz(), resolved.durationMs(), outGain01, resolved.noiseMix01());
+                    } else {
+                        // Crunchier, less clicky step: more filtered noise, lower fundamental, longer envelope.
+                        AudioOutputEngine.get().triggerImpulse(44.0, 55, gain01, 0.42);
+                    }
                 }
             }
         }

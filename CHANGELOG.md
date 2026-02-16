@@ -6,6 +6,14 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.22] - 2026-02-16
+
+### Added
+- JSON vibration profile system: `config/bassshakertelemetry_vibration_profiles.json` (data-driven frequency/intensity/duration per event).
+
+### Changed
+- Damage/footsteps/landing/mining-swing haptics now use the vibration profile file for their core tuning.
+
 ## [0.1.21] - 2026-02-16
 
 ### Added

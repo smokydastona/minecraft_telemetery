@@ -2,6 +2,7 @@ package com.smoky.bassshakertelemetry.client;
 
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.config.BstConfig;
+import com.smoky.bassshakertelemetry.config.BstVibrationProfiles;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraftforge.event.TickEvent;
@@ -54,8 +55,13 @@ public final class DamageHapticsHandler {
         lastFireNanos = now;
 
         // Scale intensity a bit with damage amount; keep it stable and bounded.
-        double intensity01 = clamp(amount / 6.0, 0.25, 1.0);
-        AudioOutputEngine.get().triggerDamageBurst(intensity01);
+        double scale01 = clamp(amount / 8.0, 0.15, 1.0);
+        var resolved = BstVibrationProfiles.get().resolve("damage.generic", scale01, 1.0);
+        if (resolved != null) {
+            AudioOutputEngine.get().triggerImpulse(resolved.frequencyHz(), resolved.durationMs(), resolved.intensity01(), resolved.noiseMix01());
+        } else {
+            AudioOutputEngine.get().triggerDamageBurst(scale01);
+        }
     }
 
     @SubscribeEvent
@@ -88,9 +94,13 @@ public final class DamageHapticsHandler {
         // Death rumble (one-shot).
         boolean deadNow = player.isDeadOrDying() || player.getHealth() <= 0.0f;
         if (deadNow && !lastDead) {
-            // Longer, lower rumble than a normal hit.
-            double gain01 = clamp(cfg.damageBurstGain * 0.95, 0.0, 1.0);
-            AudioOutputEngine.get().triggerImpulse(24.0, 520, gain01, 0.65);
+            var resolved = BstVibrationProfiles.get().resolve("damage.death", 1.0, 1.0);
+            if (resolved != null) {
+                AudioOutputEngine.get().triggerImpulse(resolved.frequencyHz(), resolved.durationMs(), resolved.intensity01(), resolved.noiseMix01());
+            } else {
+                double gain01 = clamp(cfg.damageBurstGain * 0.95, 0.0, 1.0);
+                AudioOutputEngine.get().triggerImpulse(24.0, 520, gain01, 0.65);
+            }
         }
         lastDead = deadNow;
 
@@ -108,8 +118,13 @@ public final class DamageHapticsHandler {
 
             if ((hurtStarted || healthDropped) && canFireNow(80_000_000L)) {
                 // Approx intensity from observed health delta. Keep stable/minimum so small hits still register.
-                double intensity01 = clamp(delta / 6.0, 0.25, 1.0);
-                AudioOutputEngine.get().triggerDamageBurst(intensity01);
+                double scale01 = clamp(delta / 8.0, 0.15, 1.0);
+                var resolved = BstVibrationProfiles.get().resolve("damage.generic", scale01, 1.0);
+                if (resolved != null) {
+                    AudioOutputEngine.get().triggerImpulse(resolved.frequencyHz(), resolved.durationMs(), resolved.intensity01(), resolved.noiseMix01());
+                } else {
+                    AudioOutputEngine.get().triggerDamageBurst(scale01);
+                }
             }
 
             lastHealth = health;
@@ -122,8 +137,10 @@ public final class DamageHapticsHandler {
         if (player.isOnFire()) {
             if ((now - lastFireTickNanos) > 260_000_000L) {
                 lastFireTickNanos = now;
-                double gain01 = clamp(cfg.damageBurstGain * 0.30, 0.0, 0.75);
-                AudioOutputEngine.get().triggerImpulse(34.0, 70, gain01, 0.45);
+                var resolved = BstVibrationProfiles.get().resolve("damage.fire", 1.0, 1.0);
+                if (resolved != null) {
+                    AudioOutputEngine.get().triggerImpulse(resolved.frequencyHz(), resolved.durationMs(), resolved.intensity01(), resolved.noiseMix01());
+                }
             }
         }
 
@@ -134,8 +151,10 @@ public final class DamageHapticsHandler {
             boolean lowAir = air <= 60; // ~3 seconds
             if (airDropping && lowAir && (now - lastDrownTickNanos) > 520_000_000L) {
                 lastDrownTickNanos = now;
-                double gain01 = clamp(cfg.damageBurstGain * 0.28, 0.0, 0.70);
-                AudioOutputEngine.get().triggerImpulse(30.0, 90, gain01, 0.55);
+                var resolved = BstVibrationProfiles.get().resolve("damage.drowning", 1.0, 1.0);
+                if (resolved != null) {
+                    AudioOutputEngine.get().triggerImpulse(resolved.frequencyHz(), resolved.durationMs(), resolved.intensity01(), resolved.noiseMix01());
+                }
             }
         }
         lastAir = air;
@@ -144,15 +163,19 @@ public final class DamageHapticsHandler {
         if (player.hasEffect(MobEffects.POISON)) {
             if ((now - lastPoisonTickNanos) > 650_000_000L) {
                 lastPoisonTickNanos = now;
-                double gain01 = clamp(cfg.damageBurstGain * 0.22, 0.0, 0.60);
-                AudioOutputEngine.get().triggerImpulse(40.0, 55, gain01, 0.30);
+                var resolved = BstVibrationProfiles.get().resolve("damage.poison", 1.0, 1.0);
+                if (resolved != null) {
+                    AudioOutputEngine.get().triggerImpulse(resolved.frequencyHz(), resolved.durationMs(), resolved.intensity01(), resolved.noiseMix01());
+                }
             }
         }
         if (player.hasEffect(MobEffects.WITHER)) {
             if ((now - lastWitherTickNanos) > 560_000_000L) {
                 lastWitherTickNanos = now;
-                double gain01 = clamp(cfg.damageBurstGain * 0.26, 0.0, 0.70);
-                AudioOutputEngine.get().triggerImpulse(32.0, 80, gain01, 0.40);
+                var resolved = BstVibrationProfiles.get().resolve("damage.wither", 1.0, 1.0);
+                if (resolved != null) {
+                    AudioOutputEngine.get().triggerImpulse(resolved.frequencyHz(), resolved.durationMs(), resolved.intensity01(), resolved.noiseMix01());
+                }
             }
         }
     }

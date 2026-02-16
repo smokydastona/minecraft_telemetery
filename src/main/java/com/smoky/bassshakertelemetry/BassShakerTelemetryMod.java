@@ -3,6 +3,7 @@ package com.smoky.bassshakertelemetry;
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.client.ClientInit;
 import com.smoky.bassshakertelemetry.config.BstConfig;
+import com.smoky.bassshakertelemetry.config.BstVibrationProfiles;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
@@ -16,6 +17,7 @@ public final class BassShakerTelemetryMod {
     public BassShakerTelemetryMod() {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::commonSetup);
         BstConfig.load();
+        BstVibrationProfiles.load();
 
         DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> ClientInit::init);
     }

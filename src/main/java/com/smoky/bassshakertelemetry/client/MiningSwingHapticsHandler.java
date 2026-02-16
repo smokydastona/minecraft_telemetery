@@ -2,6 +2,7 @@ package com.smoky.bassshakertelemetry.client;
 
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.config.BstConfig;
+import com.smoky.bassshakertelemetry.config.BstVibrationProfiles;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.HitResult;
 import net.minecraftforge.event.TickEvent;
@@ -61,8 +62,14 @@ public final class MiningSwingHapticsHandler {
         double master = clamp(cfg.gameplayHapticsGain, 0.0, 2.0);
         double gain01 = clamp(base * (0.55 + (0.45 * (master / 2.0))), 0.0, 1.0);
 
-        // Short tactile "tap" that matches the swing.
-        AudioOutputEngine.get().triggerImpulse(46.0, 26, gain01, 0.08);
+        var resolved = BstVibrationProfiles.get().resolve("mining.swing", 1.0, 1.0);
+        if (resolved != null) {
+            double outGain01 = clamp(resolved.intensity01() * gain01, 0.0, 1.0);
+            AudioOutputEngine.get().triggerImpulse(resolved.frequencyHz(), resolved.durationMs(), outGain01, resolved.noiseMix01());
+        } else {
+            // Short tactile "tap" that matches the swing.
+            AudioOutputEngine.get().triggerImpulse(46.0, 26, gain01, 0.08);
+        }
     }
 
     private static double clamp(double v, double lo, double hi) {
