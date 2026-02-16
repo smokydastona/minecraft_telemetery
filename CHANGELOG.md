@@ -6,6 +6,15 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.21] - 2026-02-16
+
+### Added
+- Console-style danger feedback: subtle periodic pulses for fire, drowning (low air), poison, and wither.
+- One-shot death rumble.
+
+### Fixed
+- Damage burst timing now has a client-tick fallback (hurtTime/health) to stay responsive even when event hooks are unreliable.
+
 ## [0.1.20] - 2026-02-16
 
 ### Changed

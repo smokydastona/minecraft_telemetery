@@ -19,7 +19,7 @@
 ## Effects (current)
 
 - **Road texture**: low-frequency filtered noise scaled by speed (toggleable; default OFF).
-- **Damage burst**: short decaying white-noise burst.
+- **Damage burst**: short decaying burst triggered on hurt (with client-tick fallback for timing), plus subtle periodic danger ticks (fire/drowning/poison/wither) and a one-shot death rumble.
 - **Biome chime**: short low sine “bump” on biome changes.
 - **Accel bump**: short low thump on large accel spikes (toggleable; default OFF).
 - **Sound haptics**: maps many in-game sounds (explosions, thunder, hurt, break/place, steps, attacks, doors/containers/buttons/levers, etc.) into short impulses.
