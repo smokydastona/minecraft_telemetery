@@ -33,8 +33,14 @@ public final class TelemetryConfigScreen extends Screen {
     @Override
     @SuppressWarnings("null")
     protected void init() {
+        super.init();
         int centerX = this.width / 2;
         var font = Objects.requireNonNull(this.font, "font");
+
+        int contentWidth = Math.min(310, this.width - 40);
+        int leftX = centerX - (contentWidth / 2);
+        int rowH = 20;
+        int rowGap = 6;
 
         List<String> devices = new ArrayList<>();
         devices.add("<Default>");
@@ -47,7 +53,7 @@ public final class TelemetryConfigScreen extends Screen {
         }
 
         this.addRenderableWidget(new StringWidget(
-            centerX,
+            centerX - 100,
             20,
             200,
             20,
@@ -58,42 +64,52 @@ public final class TelemetryConfigScreen extends Screen {
         deviceCycle = CycleButton.<String>builder(s -> Component.literal(Objects.requireNonNullElse(s, "")))
                 .withValues(devices)
                 .withInitialValue(currentDisplay)
-            .create(centerX - 155, 50, 310, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.output_device")));
+            .create(leftX, 50, contentWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.output_device")));
         this.addRenderableWidget(deviceCycle);
 
-        volumeSlider = new VolumeSlider(centerX - 155, 80, 310, 20, BstConfig.get().masterVolume);
+        int y = 50 + rowH + rowGap;
+
+        volumeSlider = new VolumeSlider(leftX, y, contentWidth, rowH, BstConfig.get().masterVolume);
         this.addRenderableWidget(volumeSlider);
 
+        y += rowH + rowGap;
+        int colGap = 10;
+        int colWidth = Math.max(60, (contentWidth - colGap) / 2);
+        int colLeftX = leftX;
+        int colRightX = leftX + colWidth + colGap;
+
         speedToggle = CycleButton.onOffBuilder(BstConfig.get().speedToneEnabled)
-            .create(centerX - 155, 110, 310, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.speed_enabled")));
+            .create(colLeftX, y, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.speed_enabled")));
         this.addRenderableWidget(speedToggle);
 
         damageToggle = CycleButton.onOffBuilder(BstConfig.get().damageBurstEnabled)
-            .create(centerX - 155, 140, 310, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.damage_enabled")));
+            .create(colRightX, y, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.damage_enabled")));
         this.addRenderableWidget(damageToggle);
 
+        y += rowH + rowGap;
         biomeToggle = CycleButton.onOffBuilder(BstConfig.get().biomeChimeEnabled)
-            .create(centerX - 155, 170, 310, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.biome_enabled")));
+            .create(colLeftX, y, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.biome_enabled")));
         this.addRenderableWidget(biomeToggle);
 
         roadToggle = CycleButton.onOffBuilder(BstConfig.get().roadTextureEnabled)
-            .create(centerX - 155, 200, 310, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.road_enabled")));
+            .create(colRightX, y, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.road_enabled")));
         this.addRenderableWidget(roadToggle);
 
+        y += rowH + rowGap;
         soundToggle = CycleButton.onOffBuilder(BstConfig.get().soundHapticsEnabled)
-            .create(centerX - 155, 230, 310, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.sound_enabled")));
+            .create(colLeftX, y, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.sound_enabled")));
         this.addRenderableWidget(soundToggle);
 
         gameplayToggle = CycleButton.onOffBuilder(BstConfig.get().gameplayHapticsEnabled)
-            .create(centerX - 155, 260, 310, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.gameplay_enabled")));
+            .create(colRightX, y, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.gameplay_enabled")));
         this.addRenderableWidget(gameplayToggle);
 
         this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), b -> onDone())
-                .bounds(centerX - 155, this.height - 28, 150, 20)
+                .bounds(leftX, this.height - 28, (contentWidth - 10) / 2, 20)
                 .build());
 
         this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), b -> onCancel())
-                .bounds(centerX + 5, this.height - 28, 150, 20)
+                .bounds(leftX + ((contentWidth - 10) / 2) + 10, this.height - 28, (contentWidth - 10) / 2, 20)
                 .build());
     }
 

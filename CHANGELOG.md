@@ -6,6 +6,11 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-02-15
+
+### Fixed
+- Reworked the in-game config screen layout to prevent overlapping controls on smaller UI scales (toggles arranged in a two-column grid).
+
 ## [0.1.5] - 2026-02-15
 
 ### Fixed
