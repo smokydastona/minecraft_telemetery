@@ -154,15 +154,35 @@ public final class TelemetryConfigScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // If the dropdown is open and the click is outside it (and outside the button), close it.
+        // If the dropdown is open, it must receive input first.
+        // Otherwise overlapped widgets (e.g., sliders/buttons underneath) can consume the click,
+        // making the dropdown feel unselectable.
         if (deviceDropdownList != null) {
             boolean insideList = deviceDropdownList.isMouseOver(mouseX, mouseY);
             boolean insideButton = deviceDropdownButton != null && deviceDropdownButton.isMouseOver(mouseX, mouseY);
-            if (!insideList && !insideButton) {
+
+            if (insideList) {
+                if (deviceDropdownList.mouseClicked(mouseX, mouseY, button)) {
+                    return true;
+                }
+                return true;
+            }
+
+            // Clicking outside closes the dropdown (but still allow the button itself to toggle).
+            if (!insideButton) {
                 closeDeviceDropdown();
             }
         }
+
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (deviceDropdownList != null && deviceDropdownList.isMouseOver(mouseX, mouseY)) {
+            return deviceDropdownList.mouseScrolled(mouseX, mouseY, delta);
+        }
+        return super.mouseScrolled(mouseX, mouseY, delta);
     }
 
     @SuppressWarnings("null")

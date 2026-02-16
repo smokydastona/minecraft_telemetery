@@ -6,6 +6,11 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.14] - 2026-02-16
+
+### Fixed
+- Fixed output device dropdown selection when the list overlaps other controls (dropdown now gets mouse input priority while open).
+
 ## [0.1.13] - 2026-02-16
 
 ### Changed
