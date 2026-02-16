@@ -3,8 +3,10 @@ package com.smoky.bassshakertelemetry.client.ui;
 import com.smoky.bassshakertelemetry.audio.AudioDeviceUtil;
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.config.BstConfig;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
+import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -16,7 +18,11 @@ import java.util.Objects;
 public final class TelemetryConfigScreen extends Screen {
     private final Screen parent;
 
-    private CycleButton<String> deviceCycle;
+    private Button deviceDropdownButton;
+    private DeviceDropdownList deviceDropdownList;
+    private List<String> devices = List.of("<Default>");
+    private String selectedDevice = "<Default>";
+
     private CycleButton<Boolean> damageToggle;
     private CycleButton<Boolean> biomeToggle;
     private CycleButton<Boolean> roadToggle;
@@ -41,15 +47,15 @@ public final class TelemetryConfigScreen extends Screen {
         int rowH = 20;
         int rowGap = 6;
 
-        List<String> devices = new ArrayList<>();
-        devices.add("<Default>");
-        devices.addAll(AudioDeviceUtil.listOutputDeviceNames(AudioOutputEngine.get().format()));
+        List<String> deviceList = new ArrayList<>();
+        deviceList.add("<Default>");
+        deviceList.addAll(AudioDeviceUtil.listOutputDeviceNames(AudioOutputEngine.get().format()));
+        this.devices = deviceList;
 
         String current = BstConfig.get().outputDeviceName;
         String currentDisplay = AudioDeviceUtil.resolveDisplayName(current, AudioOutputEngine.get().format());
-        if (!devices.contains(currentDisplay)) {
-            currentDisplay = "<Default>";
-        }
+        if (!this.devices.contains(currentDisplay)) currentDisplay = "<Default>";
+        this.selectedDevice = currentDisplay;
 
         this.addRenderableWidget(new StringWidget(
             centerX - 100,
@@ -60,11 +66,10 @@ public final class TelemetryConfigScreen extends Screen {
             font
         ));
 
-        deviceCycle = CycleButton.<String>builder(s -> Component.literal(Objects.requireNonNullElse(s, "")))
-                .withValues(devices)
-                .withInitialValue(currentDisplay)
-            .create(leftX, 50, contentWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.output_device")));
-        this.addRenderableWidget(deviceCycle);
+        deviceDropdownButton = Button.builder(deviceDropdownLabel(), b -> toggleDeviceDropdown(leftX, 50 + rowH + 2, contentWidth))
+            .bounds(leftX, 50, contentWidth, rowH)
+            .build();
+        this.addRenderableWidget(deviceDropdownButton);
 
         int y = 50 + rowH + rowGap;
 
@@ -109,8 +114,7 @@ public final class TelemetryConfigScreen extends Screen {
 
     private void onDone() {
         BstConfig.Data data = BstConfig.get();
-        String selected = deviceCycle.getValue();
-        data.outputDeviceName = "<Default>".equals(selected) ? "" : selected;
+        data.outputDeviceName = "<Default>".equals(selectedDevice) ? "" : selectedDevice;
         data.masterVolume = volumeSlider.getValue();
         data.damageBurstEnabled = damageToggle.getValue();
         data.biomeChimeEnabled = biomeToggle.getValue();
@@ -134,6 +138,112 @@ public final class TelemetryConfigScreen extends Screen {
     @Override
     public void onClose() {
         onCancel();
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // If the dropdown is open and the click is outside it (and outside the button), close it.
+        if (deviceDropdownList != null) {
+            boolean insideList = deviceDropdownList.isMouseOver(mouseX, mouseY);
+            boolean insideButton = deviceDropdownButton != null && deviceDropdownButton.isMouseOver(mouseX, mouseY);
+            if (!insideList && !insideButton) {
+                closeDeviceDropdown();
+            }
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @SuppressWarnings("null")
+    private Component deviceDropdownLabel() {
+        return Component.translatable("bassshakertelemetry.config.output_device")
+                .append(": ")
+                .append(Component.literal(Objects.requireNonNull(selectedDevice)));
+    }
+
+    private void toggleDeviceDropdown(int x, int y, int width) {
+        if (deviceDropdownList != null) {
+            closeDeviceDropdown();
+            return;
+        }
+
+        Minecraft mc = this.minecraft;
+        if (mc == null) {
+            return;
+        }
+
+        int maxHeight = Math.min(140, this.height - y - 40);
+        int height = Math.max(48, maxHeight);
+
+        DeviceDropdownList list = new DeviceDropdownList(mc, width, height, y, 18, x, devices, selectedDevice);
+        this.deviceDropdownList = list;
+        this.addRenderableWidget(list);
+    }
+
+    private void closeDeviceDropdown() {
+        if (deviceDropdownList != null) {
+            this.removeWidget(deviceDropdownList);
+            this.deviceDropdownList = null;
+        }
+    }
+
+    private final class DeviceDropdownList extends ObjectSelectionList<DeviceDropdownEntry> {
+        private final int left;
+
+        DeviceDropdownList(Minecraft minecraft, int width, int height, int y, int itemHeight, int left, List<String> devices, String selected) {
+            super(minecraft, width, height, y, y + height, itemHeight);
+            this.left = left;
+            this.setLeftPos(left);
+            this.setRenderHeader(false, 0);
+
+            for (String d : devices) {
+                DeviceDropdownEntry entry = new DeviceDropdownEntry(d);
+                this.addEntry(entry);
+                if (Objects.equals(entry.deviceId, selected)) {
+                    this.setSelected(entry);
+                }
+            }
+        }
+
+        @Override
+        public int getRowWidth() {
+            return this.width;
+        }
+
+        @Override
+        protected int getScrollbarPosition() {
+            return this.left + this.width - 6;
+        }
+    }
+
+    private final class DeviceDropdownEntry extends ObjectSelectionList.Entry<DeviceDropdownEntry> {
+        private final String deviceId;
+
+        DeviceDropdownEntry(String deviceId) {
+            this.deviceId = Objects.requireNonNull(Objects.requireNonNullElse(deviceId, "<Default>"));
+        }
+
+        @Override
+        public Component getNarration() {
+            return Component.literal(Objects.requireNonNull(deviceId));
+        }
+
+        @Override
+        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            selectedDevice = deviceId;
+            if (deviceDropdownButton != null) {
+                deviceDropdownButton.setMessage(Objects.requireNonNull(deviceDropdownLabel()));
+            }
+            closeDeviceDropdown();
+            return true;
+        }
+
+        @Override
+        @SuppressWarnings("null")
+        public void render(net.minecraft.client.gui.GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
+                           int mouseX, int mouseY, boolean hovered, float partialTick) {
+            int color = (Objects.equals(deviceId, selectedDevice)) ? 0xFFFFFF : 0xE0E0E0;
+            guiGraphics.drawString(Objects.requireNonNull(TelemetryConfigScreen.this.font), Objects.requireNonNull(deviceId), x + 4, y + 5, color);
+        }
     }
 
     private static final class VolumeSlider extends net.minecraft.client.gui.components.AbstractSliderButton {

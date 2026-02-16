@@ -6,6 +6,11 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.10] - 2026-02-15
+
+### Changed
+- Output device selection is now a dropdown list (click-to-expand) instead of a cycle button.
+
 ## [0.1.9] - 2026-02-15
 
 ### Removed
