@@ -31,4 +31,4 @@ Desktop.ini
 .DS_Store
 
 # Local examples / reference content (not committed)
-examples/
+.examples/
