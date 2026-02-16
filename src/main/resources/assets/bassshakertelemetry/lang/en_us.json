@@ -7,6 +7,14 @@
   "bassshakertelemetry.config.road_enabled": "Road texture",
   "bassshakertelemetry.config.sound_enabled": "Sound haptics",
   "bassshakertelemetry.config.gameplay_enabled": "Gameplay haptics",
+  "bassshakertelemetry.config.effect_volumes": "Effect volumes",
+  "bassshakertelemetry.config.test": "Test",
+  "bassshakertelemetry.config.road_gain": "Road texture volume",
+  "bassshakertelemetry.config.damage_gain": "Damage burst volume",
+  "bassshakertelemetry.config.biome_gain": "Biome chime volume",
+  "bassshakertelemetry.config.accel_gain": "Accel bump volume",
+  "bassshakertelemetry.config.sound_gain": "Sound haptics volume",
+  "bassshakertelemetry.config.gameplay_gain": "Gameplay haptics volume",
   "bassshakertelemetry.config.done": "Done",
   "bassshakertelemetry.config.cancel": "Cancel"
 }

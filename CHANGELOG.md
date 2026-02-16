@@ -6,6 +6,11 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.12] - 2026-02-16
+
+### Added
+- Per-effect volume sliders in the config screen, each with a Test button directly underneath to preview the effect.
+
 ## [0.1.11] - 2026-02-16
 
 ### Changed

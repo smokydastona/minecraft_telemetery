@@ -25,6 +25,11 @@
 - **Sound haptics**: maps many in-game sounds (explosions, hurt, break/place, steps, attacks) into short impulses.
 - **Gameplay haptics (non-sexual)**: maps basic interactions (attack/use click edges, mining pulse while holding attack on a block, XP gains) into short impulses.
 
+## In-game config UI
+
+- Per-effect volume sliders are available under **Effect volumes**.
+- Each effect slider has a **Test** button directly underneath to preview that effect without needing to trigger it in gameplay.
+
 ## Config file
 
 Saved at `config/bassshakertelemetry.json`.
@@ -35,7 +40,9 @@ Common keys (selected):
 - `outputDeviceName`
 - `masterVolume`
 - `damageBurstEnabled`
+- `damageBurstGain`
 - `biomeChimeEnabled`
+- `biomeChimeGain`
 - `roadTextureEnabled`
 - `outputHeadroom`
 - `limiterDrive`

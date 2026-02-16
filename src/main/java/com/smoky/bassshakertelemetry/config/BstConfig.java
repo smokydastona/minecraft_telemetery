@@ -99,6 +99,9 @@ public final class BstConfig {
         public int damageBurstMs = 90;
         public double damageBurstGain = 0.8;
 
+        // Biome chime tuning
+        public double biomeChimeGain = 0.35;
+
         // Road texture tuning
         public double roadTextureGain = 0.18;
         public double roadTextureCutoffHz = 30.0;

@@ -126,6 +126,45 @@ public final class AudioOutputEngine {
         biomeChimeSamplesLeft.set(Math.max(1, samples));
     }
 
+    // --- UI test triggers (always audible even if the effect toggle is currently off) ---
+
+    public void testRoadTexture() {
+        // Short filtered-noise-ish burst via the impulse path.
+        BstConfig.Data cfg = BstConfig.get();
+        double gain01 = clamp(cfg.roadTextureGain / 0.30, 0.0, 1.0);
+        triggerImpulse(34.0, 260, gain01, 1.0);
+    }
+
+    public void testDamageBurst() {
+        BstConfig.Data cfg = BstConfig.get();
+        double gain01 = clamp(cfg.damageBurstGain, 0.0, 1.0);
+        triggerImpulse(42.0, Math.max(40, cfg.damageBurstMs), gain01, 0.90);
+    }
+
+    public void testBiomeChime() {
+        BstConfig.Data cfg = BstConfig.get();
+        double gain01 = clamp(cfg.biomeChimeGain, 0.0, 1.0);
+        triggerImpulse(80.0, 90, gain01, 0.0);
+    }
+
+    public void testAccelBump() {
+        BstConfig.Data cfg = BstConfig.get();
+        double gain01 = clamp(cfg.accelBumpGain, 0.0, 1.0);
+        triggerImpulse(32.0, Math.max(40, cfg.accelBumpMs), gain01, 0.0);
+    }
+
+    public void testSoundHaptics() {
+        BstConfig.Data cfg = BstConfig.get();
+        double gain01 = clamp(cfg.soundHapticsGain * 0.60, 0.0, 1.0);
+        triggerImpulse(36.0, 120, gain01, 0.35);
+    }
+
+    public void testGameplayHaptics() {
+        BstConfig.Data cfg = BstConfig.get();
+        double gain01 = clamp(cfg.gameplayHapticsGain * 0.60, 0.0, 1.0);
+        triggerImpulse(44.0, 120, gain01, 0.25);
+    }
+
     private void triggerAccelBump(double intensity01) {
         int bumpMs = Math.max(10, BstConfig.get().accelBumpMs);
         int samples = (int) ((bumpMs / 1000.0) * SAMPLE_RATE);
@@ -324,7 +363,7 @@ public final class AudioOutputEngine {
                         int total = Math.max(1, biomeChimeTotalSamples.get());
                         double progress = 1.0 - (biomeLeft / (double) total);
                         double env = Math.sin(progress * Math.PI); // bell-ish half-sine envelope
-                        sample += Math.sin(chimePhase) * 0.35 * env;
+                        sample += Math.sin(chimePhase) * clamp(cfg.biomeChimeGain, 0.0, 1.0) * env;
                         biomeLeft--;
                     }
 
