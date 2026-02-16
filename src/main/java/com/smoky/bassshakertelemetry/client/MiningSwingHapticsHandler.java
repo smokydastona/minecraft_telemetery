@@ -64,8 +64,16 @@ public final class MiningSwingHapticsHandler {
 
         var resolved = BstVibrationProfiles.get().resolve("mining.swing", 1.0, 1.0);
         if (resolved != null) {
-            double outGain01 = clamp(resolved.intensity01() * gain01, 0.0, 1.0);
-            AudioOutputEngine.get().triggerImpulse(resolved.frequencyHz(), resolved.durationMs(), outGain01, resolved.noiseMix01());
+            double outGain01 = clamp(resolved.intensity01() * clamp(cfg.miningSwingHapticsGain, 0.0, 1.0), 0.0, 1.0);
+            AudioOutputEngine.get().triggerImpulse(
+                    resolved.frequencyHz(),
+                    resolved.durationMs(),
+                outGain01,
+                    resolved.noiseMix01(),
+                    resolved.pattern(),
+                    resolved.pulsePeriodMs(),
+                    resolved.pulseWidthMs()
+            );
         } else {
             // Short tactile "tap" that matches the swing.
             AudioOutputEngine.get().triggerImpulse(46.0, 26, gain01, 0.08);

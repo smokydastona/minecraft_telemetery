@@ -34,6 +34,23 @@ public final class AdvancedSettingsScreen extends Screen {
     private IntSlider gameplayCooldownMsSlider;
     private IntSlider miningPeriodMsSlider;
 
+    private Button bufferButton;
+    private int bufferChoiceIndex;
+
+    private Button latencyTestButton;
+    private boolean latencyTestActive;
+    private int latencyTestTicks;
+
+    private Button debugOverlayButton;
+    private boolean debugOverlayEnabled;
+
+    private Button demoButton;
+    private boolean demoActive;
+    private int demoStep;
+    private long demoNextNanos;
+
+    private static final int[] BUFFER_CHOICES_MS = new int[]{0, 10, 20, 30, 40, 60, 80, 100, 150, 200};
+
     public AdvancedSettingsScreen(Screen parent) {
         super(Component.translatable("bassshakertelemetry.config.advanced_title"));
         this.parent = parent;
@@ -104,6 +121,36 @@ public final class AdvancedSettingsScreen extends Screen {
         settingsList.addSettingEntry(new SliderOnlyEntry(gameplayCooldownMsSlider));
         settingsList.addSettingEntry(new SliderOnlyEntry(miningPeriodMsSlider));
 
+        // --- Audio ---
+        settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.config.audio"));
+
+        bufferChoiceIndex = findBufferChoiceIndex(BstConfig.get().javaSoundBufferMs);
+        bufferButton = Button.builder(Objects.requireNonNull(bufferButtonLabel()), b -> cycleBufferChoice())
+            .bounds(0, 0, contentWidth - 12, rowH)
+            .build();
+        settingsList.addSettingEntry(new ButtonOnlyEntry(bufferButton));
+
+        latencyTestActive = false;
+        latencyTestTicks = 0;
+        latencyTestButton = Button.builder(Objects.requireNonNull(latencyButtonLabel(false)), b -> toggleLatencyTest())
+            .bounds(0, 0, contentWidth - 12, rowH)
+            .build();
+        settingsList.addSettingEntry(new ButtonOnlyEntry(latencyTestButton));
+
+        debugOverlayEnabled = BstConfig.get().debugOverlayEnabled;
+        debugOverlayButton = Button.builder(Objects.requireNonNull(debugOverlayLabel()), b -> toggleDebugOverlay())
+            .bounds(0, 0, contentWidth - 12, rowH)
+            .build();
+        settingsList.addSettingEntry(new ButtonOnlyEntry(debugOverlayButton));
+
+        demoActive = false;
+        demoStep = 0;
+        demoNextNanos = 0L;
+        demoButton = Button.builder(Objects.requireNonNull(demoLabel()), b -> toggleDemo())
+            .bounds(0, 0, contentWidth - 12, rowH)
+            .build();
+        settingsList.addSettingEntry(new ButtonOnlyEntry(demoButton));
+
         this.addRenderableWidget(settingsList);
 
         int buttonW = (contentWidth - 10) / 2;
@@ -117,6 +164,8 @@ public final class AdvancedSettingsScreen extends Screen {
     }
 
     private void onDone() {
+        stopLatencyTest();
+        stopDemo();
         BstConfig.Data data = BstConfig.get();
 
         if (roadGainSlider != null) data.roadTextureGain = roadGainSlider.getRealValue();
@@ -134,6 +183,12 @@ public final class AdvancedSettingsScreen extends Screen {
         if (gameplayCooldownMsSlider != null) data.gameplayHapticsCooldownMs = gameplayCooldownMsSlider.getIntValue();
         if (miningPeriodMsSlider != null) data.gameplayMiningPulsePeriodMs = miningPeriodMsSlider.getIntValue();
 
+        if (bufferButton != null) {
+            data.javaSoundBufferMs = BUFFER_CHOICES_MS[clampIndex(bufferChoiceIndex)];
+        }
+
+        data.debugOverlayEnabled = debugOverlayEnabled;
+
         BstConfig.set(data);
         AudioOutputEngine.get().startOrRestart();
 
@@ -143,6 +198,8 @@ public final class AdvancedSettingsScreen extends Screen {
     }
 
     private void onCancel() {
+        stopLatencyTest();
+        stopDemo();
         if (this.minecraft != null) {
             this.minecraft.setScreen(parent);
         }
@@ -151,6 +208,178 @@ public final class AdvancedSettingsScreen extends Screen {
     @Override
     public void onClose() {
         onCancel();
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (!latencyTestActive) {
+            return;
+        }
+
+        latencyTestTicks++;
+        boolean pulseNow = (latencyTestTicks % 10) == 0; // 2 Hz at 20 tps
+        if (pulseNow) {
+            AudioOutputEngine.get().testLatencyPulse();
+        }
+        if (latencyTestButton != null) {
+            latencyTestButton.setMessage(Objects.requireNonNull(latencyButtonLabel(pulseNow)));
+        }
+
+        tickDemo();
+    }
+
+    private void toggleDebugOverlay() {
+        debugOverlayEnabled = !debugOverlayEnabled;
+        if (debugOverlayButton != null) {
+            debugOverlayButton.setMessage(Objects.requireNonNull(debugOverlayLabel()));
+        }
+    }
+
+    private Component debugOverlayLabel() {
+        return debugOverlayEnabled
+                ? Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.debug_overlay_on"))
+                : Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.debug_overlay_off"));
+    }
+
+    private void toggleDemo() {
+        demoActive = !demoActive;
+        demoStep = 0;
+        demoNextNanos = System.nanoTime();
+        if (demoButton != null) {
+            demoButton.setMessage(Objects.requireNonNull(demoLabel()));
+        }
+    }
+
+    private void stopDemo() {
+        demoActive = false;
+        demoStep = 0;
+        demoNextNanos = 0L;
+        if (demoButton != null) {
+            demoButton.setMessage(Objects.requireNonNull(demoLabel()));
+        }
+    }
+
+    private void tickDemo() {
+        if (!demoActive) {
+            return;
+        }
+        long now = System.nanoTime();
+        if (now < demoNextNanos) {
+            return;
+        }
+
+        // Simple repeatable sequence for tuning: explosion -> damage -> mining -> footsteps.
+        // Uses explicit impulses so it works even outside of normal gameplay triggers.
+        switch (demoStep) {
+            case 0 -> {
+                AudioOutputEngine.get().testLatencyPulse();
+                demoNextNanos = now + 600_000_000L;
+            }
+            case 1 -> {
+                AudioOutputEngine.get().testDamageBurst();
+                demoNextNanos = now + 600_000_000L;
+            }
+            case 2 -> {
+                AudioOutputEngine.get().testRoadTexture();
+                demoNextNanos = now + 600_000_000L;
+            }
+            case 3 -> {
+                AudioOutputEngine.get().testFootsteps();
+                demoNextNanos = now + 350_000_000L;
+            }
+            case 4 -> {
+                AudioOutputEngine.get().testMiningSwing();
+                demoNextNanos = now + 450_000_000L;
+            }
+            default -> {
+                demoStep = -1;
+                demoNextNanos = now + 900_000_000L;
+            }
+        }
+        demoStep++;
+
+        if (demoButton != null) {
+            demoButton.setMessage(Objects.requireNonNull(demoLabel()));
+        }
+    }
+
+    private Component demoLabel() {
+        return demoActive
+                ? Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.demo_stop"))
+                : Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.demo_run"));
+    }
+
+    private void toggleLatencyTest() {
+        latencyTestActive = !latencyTestActive;
+        latencyTestTicks = 0;
+        if (latencyTestButton != null) {
+            latencyTestButton.setMessage(Objects.requireNonNull(latencyButtonLabel(false)));
+        }
+    }
+
+    private void stopLatencyTest() {
+        latencyTestActive = false;
+        latencyTestTicks = 0;
+        if (latencyTestButton != null) {
+            latencyTestButton.setMessage(Objects.requireNonNull(latencyButtonLabel(false)));
+        }
+    }
+
+    private void cycleBufferChoice() {
+        bufferChoiceIndex = (clampIndex(bufferChoiceIndex) + 1) % BUFFER_CHOICES_MS.length;
+        if (bufferButton != null) {
+            bufferButton.setMessage(Objects.requireNonNull(bufferButtonLabel()));
+        }
+    }
+
+    private net.minecraft.network.chat.MutableComponent bufferButtonLabel() {
+        int ms = BUFFER_CHOICES_MS[clampIndex(bufferChoiceIndex)];
+        Component v = (ms <= 0)
+                ? Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.buffer_auto"))
+                : Objects.requireNonNull(Component.literal(ms + "ms"));
+        return Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.output_buffer"))
+                .append(": ")
+                .append(v);
+    }
+
+    private net.minecraft.network.chat.MutableComponent latencyButtonLabel(boolean pulseNow) {
+        net.minecraft.network.chat.MutableComponent base = latencyTestActive
+                ? Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.latency_test_on"))
+                : Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.latency_test_off"));
+        if (latencyTestActive && pulseNow) {
+            return Objects.requireNonNull(Component.translatable(
+                latencyTestActive
+                    ? "bassshakertelemetry.config.latency_test_on"
+                    : "bassshakertelemetry.config.latency_test_off"
+            )).append(" ").append(Objects.requireNonNull(Component.literal("*")));
+        }
+        return base;
+    }
+
+    private static int findBufferChoiceIndex(int currentMs) {
+        for (int i = 0; i < BUFFER_CHOICES_MS.length; i++) {
+            if (BUFFER_CHOICES_MS[i] == currentMs) {
+                return i;
+            }
+        }
+        // If config had an arbitrary value, pick the nearest.
+        int bestI = 0;
+        int bestD = Integer.MAX_VALUE;
+        for (int i = 0; i < BUFFER_CHOICES_MS.length; i++) {
+            int d = Math.abs(BUFFER_CHOICES_MS[i] - currentMs);
+            if (d < bestD) {
+                bestD = d;
+                bestI = i;
+            }
+        }
+        return bestI;
+    }
+
+    private static int clampIndex(int idx) {
+        if (idx < 0) return 0;
+        if (idx >= BUFFER_CHOICES_MS.length) return BUFFER_CHOICES_MS.length - 1;
+        return idx;
     }
 
     private static final class SettingsList extends ContainerObjectSelectionList<SettingsEntry> {
@@ -275,6 +504,34 @@ public final class AdvancedSettingsScreen extends Screen {
             slider.setX(innerX);
             slider.setY(y + 12);
             slider.render(guiGraphics, mouseX, mouseY, partialTick);
+        }
+    }
+
+    private static final class ButtonOnlyEntry extends SettingsEntry {
+        private final Button button;
+
+        ButtonOnlyEntry(Button button) {
+            this.button = Objects.requireNonNull(button);
+        }
+
+        @Override
+        public List<? extends GuiEventListener> children() {
+            return List.of(button);
+        }
+
+        @Override
+        public List<? extends NarratableEntry> narratables() {
+            return List.of(button);
+        }
+
+        @Override
+        @SuppressWarnings("null")
+        public void render(net.minecraft.client.gui.GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
+                           int mouseX, int mouseY, boolean hovered, float partialTick) {
+            int innerX = x + 2;
+            button.setX(innerX);
+            button.setY(y + 12);
+            button.render(guiGraphics, mouseX, mouseY, partialTick);
         }
     }
 

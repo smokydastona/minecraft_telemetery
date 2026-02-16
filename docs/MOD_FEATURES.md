@@ -15,6 +15,11 @@
 - Smoothing: 1-pole smoothing on continuous amplitude to avoid clicks
 - Safety: output headroom + soft limiter (tanh) to reduce clipping
 - Gating: automatically fades out and eventually closes the audio line when no live telemetry (e.g., menus / pause)
+- Priority & ducking (mono): when multiple effects overlap, one dominant vibration wins; others are ducked so impacts stay readable
+- Latency tuning: optional JavaSound output buffer size selection (larger buffers are often more stable but add latency)
+- Latency test: an in-game latency test pulse toggle is available in Advanced settings → Audio
+- Debug overlay: optional developer overlay showing the last vibration source/key, priority, frequency, gain, and recent suppression.
+- Demo sequence: a simple built-in demo runner is available in Advanced settings → Audio for repeatable tuning.
 
 ## Effects (current)
 
@@ -23,6 +28,7 @@
 - **Biome chime**: short low sine “bump” on biome changes.
 - **Accel bump**: short low thump on large accel spikes (toggleable; default OFF).
 - **Sound haptics**: maps many in-game sounds (explosions, thunder, hurt, break/place, steps, attacks, doors/containers/buttons/levers, etc.) into short impulses.
+- **Deduplication**: when an authoritative server-relayed event fires (e.g., explosion/block break/combat hit), nearby matching sound-inferred impulses are briefly suppressed to avoid double-triggering.
 - **Gameplay haptics (non-sexual)**: maps basic interactions (attack/use click edges, mining pulse while holding attack on a block, XP gains) into short impulses.
 - **Footsteps**: grounded walking emits short step pulses (no continuous "engine" rumble).
 - **Mining swing**: emits a pulse at the start of each arm swing while mining a block (visual-sync).
@@ -49,6 +55,58 @@ Saved at `config/bassshakertelemetry.json`.
 Tunable vibration profiles are saved at `config/bassshakertelemetry_vibration_profiles.json`.
 
 This file controls per-event frequency/intensity/duration (and optional pattern/falloff flags) so you can tune chair feel without recompiling.
+
+### Encoded-mono directional encoding
+
+Some profiles can be marked `directional: true`. When a source position is known (e.g., server-relayed explosions/block breaks/hits), the mod encodes direction into the *mono* waveform using a root-level `encoding` object in the profiles JSON:
+
+- `encoding.center/front/rear/left/right.frequencyBiasHz`: small Hz offset applied to the profile’s base frequency
+- `encoding.*.timeOffsetMs`: small micro-delay (ms) applied at trigger time
+- `encoding.*.intensityMul`: optional gain multiplier per direction band
+
+Directional encoding is applied for both server-relayed event haptics (packet includes a source position) and client-only sound haptics (derived from `PlaySoundEvent` using the sound instance world position).
+
+Profiles also support:
+
+- `priority` (0..100): higher wins; only one effect is dominant at a time
+- `directional` (boolean): whether to apply the above encoding when source position is available
+
+### Patterns
+
+Profiles can specify a `pattern`:
+
+- `single`: one envelope-shaped impulse (default)
+- `shockwave`: strong onset with rapid decay (good for explosions)
+- `fade_out`: sustained onset fading to 0 by the end (good for death/long events)
+- `pulse_loop`: repeats short pulses for the profile duration
+
+For `pulse_loop`, you can optionally add:
+
+- `pulsePeriodMs`: time between pulse starts (default `160`)
+- `pulseWidthMs`: pulse width within the period (default `60`)
+
+### Server-relayed event haptics
+
+Some events are now hooked server-side and relayed to the client via a small packet so timing is reliable in multiplayer (instead of relying only on sound inference).
+
+Note: these require the mod to be present on the server and the client.
+
+Default keys used:
+
+- `explosion.generic` (distance-scaled)
+- `world.block_break`
+- `combat.hit` (attacker feedback)
+- `damage.fall` (scaled by fall distance)
+
+Authoritative event ownership (current intent):
+
+- **Explosion**: server-relayed (`explosion.*`) is authoritative; sound-inferred `explosion` bucket is suppressed briefly nearby.
+- **Block break**: server-relayed `world.block_break` is authoritative; sound-inferred `block_break` bucket is suppressed briefly nearby.
+- **Combat hit**: server-relayed `combat.hit` is authoritative; sound-inferred `attack`/`hurt` buckets are suppressed briefly nearby.
+- **Damage to player**: game event timing (hurt hooks) is authoritative; sound inference is just a fallback texture.
+- **Footsteps / ambient interactions**: client-only inference (no server relay).
+
+Suppression windows are intentionally short (tens of ms) and bucket-scoped, with a small spatial radius (in blocks) to tolerate slightly offset sound origins.
 
 Common keys (selected):
 

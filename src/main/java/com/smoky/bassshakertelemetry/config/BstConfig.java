@@ -67,6 +67,13 @@ public final class BstConfig {
         public String outputDeviceName = ""; // empty = default
         public double masterVolume = 0.35;
 
+        // JavaSound buffer size. 0 = auto/default line buffer.
+        // Larger buffers tend to be more stable but add latency.
+        public int javaSoundBufferMs = 0;
+
+        // Developer tools
+        public boolean debugOverlayEnabled = false;
+
         // Telemetry-to-signal mapping toggles
         public boolean damageBurstEnabled = true;
         public boolean biomeChimeEnabled = true;

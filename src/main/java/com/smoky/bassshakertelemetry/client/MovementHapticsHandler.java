@@ -67,7 +67,15 @@ public final class MovementHapticsHandler {
                 var resolved = BstVibrationProfiles.get().resolve("movement.land", fallScale01, 1.0);
                 if (resolved != null) {
                     double gain01 = clamp(resolved.intensity01() * clamp(cfg.footstepHapticsGain, 0.0, 1.0), 0.0, 1.0);
-                    AudioOutputEngine.get().triggerImpulse(resolved.frequencyHz(), resolved.durationMs(), gain01, resolved.noiseMix01());
+                    AudioOutputEngine.get().triggerImpulse(
+                            resolved.frequencyHz(),
+                            resolved.durationMs(),
+                            gain01,
+                            resolved.noiseMix01(),
+                            resolved.pattern(),
+                            resolved.pulsePeriodMs(),
+                            resolved.pulseWidthMs()
+                    );
                 }
             }
             stepAccum = 0.0;
@@ -103,7 +111,15 @@ public final class MovementHapticsHandler {
                     var resolved = BstVibrationProfiles.get().resolve("movement.footstep", 1.0, 1.0);
                     if (resolved != null) {
                         double outGain01 = clamp(resolved.intensity01() * gain01, 0.0, 1.0);
-                        AudioOutputEngine.get().triggerImpulse(resolved.frequencyHz(), resolved.durationMs(), outGain01, resolved.noiseMix01());
+                        AudioOutputEngine.get().triggerImpulse(
+                                resolved.frequencyHz(),
+                                resolved.durationMs(),
+                                outGain01,
+                                resolved.noiseMix01(),
+                                resolved.pattern(),
+                                resolved.pulsePeriodMs(),
+                                resolved.pulseWidthMs()
+                        );
                     } else {
                         // Crunchier, less clicky step: more filtered noise, lower fundamental, longer envelope.
                         AudioOutputEngine.get().triggerImpulse(44.0, 55, gain01, 0.42);

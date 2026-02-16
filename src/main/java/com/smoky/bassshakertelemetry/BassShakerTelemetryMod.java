@@ -4,11 +4,14 @@ import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.client.ClientInit;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import com.smoky.bassshakertelemetry.config.BstVibrationProfiles;
+import com.smoky.bassshakertelemetry.net.BstNet;
+import com.smoky.bassshakertelemetry.server.ServerHapticsRelay;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.common.MinecraftForge;
 
 @Mod(BassShakerTelemetryMod.MODID)
 public final class BassShakerTelemetryMod {
@@ -19,10 +22,13 @@ public final class BassShakerTelemetryMod {
         BstConfig.load();
         BstVibrationProfiles.load();
 
+        MinecraftForge.EVENT_BUS.register(new ServerHapticsRelay());
+
         DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> ClientInit::init);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
+        BstNet.init();
         DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> () -> {
             if (BstConfig.get().enabled()) {
                 AudioOutputEngine.get().startOrRestart();

@@ -1,0 +1,103 @@
+name: Bug report
+description: Report a problem with Bass Shaker Telemetry (public alpha)
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing! This template asks for the minimum details needed to reproduce and diagnose tactile/audio issues.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the issue and what you expected.
+      placeholder: "Example: Explosions feel doubled in multiplayer; expected a single impulse."
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Keep it deterministic if possible.
+      placeholder: |
+        1) Join server
+        2) Trigger TNT at X/Y/Z
+        3) Observe shaker
+    validations:
+      required: true
+
+  - type: dropdown
+    id: demo
+    attributes:
+      label: Does the demo sequence reproduce it?
+      description: Advanced settings → Audio → Run demo sequence
+      options:
+        - "Yes"
+        - "No"
+        - "Not sure / didn't try"
+    validations:
+      required: true
+
+  - type: textarea
+    id: overlay
+    attributes:
+      label: Debug overlay (required)
+      description: Enable the debug overlay in Advanced settings → Audio and paste the overlay text or attach a screenshot.
+      placeholder: "BST: src=... key=... pri=...\nfreq=... gain=...\nsuppressed ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: buffer
+    attributes:
+      label: JavaSound buffer log (required)
+      description: Paste the log lines that show requested vs accepted buffer size.
+      placeholder: "Example: Requested buffer=20ms; accepted buffer=..."
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: "Windows 11 23H2"
+    validations:
+      required: true
+
+  - type: input
+    id: audio_device
+    attributes:
+      label: Audio device / DAC model
+      placeholder: "Example: Focusrite Scarlett Solo (USB)"
+    validations:
+      required: true
+
+  - type: input
+    id: amp
+    attributes:
+      label: Amp model (if any)
+      placeholder: "Example: Nobsound G2"
+    validations:
+      required: false
+
+  - type: input
+    id: filtering
+    attributes:
+      label: Low-pass filter settings
+      description: If you use a low-pass filter/EQ, list the cutoff and slope.
+      placeholder: "Example: LPF 80Hz, 24dB/oct"
+    validations:
+      required: false
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant config/profile changes
+      description: Mention any changes to `config/bassshakertelemetry.json` or vibration profiles.
+      placeholder: "Example: javaSoundBufferMs=20; increased explosion gain"
+    validations:
+      required: false

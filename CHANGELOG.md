@@ -6,6 +6,27 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+### Added
+- Encoded-mono direction encoding scaffolding in vibration profiles (`encoding` root object + per-profile `directional` + `priority`).
+- Priority-aware impulse mixing with ducking so only one vibration is dominant at a time.
+- Server-relayed haptics packet now includes source position (enables directional encoding in multiplayer).
+- Advanced settings: JavaSound output buffer size selector (helps tune latency/stability).
+- Advanced settings: latency test pulse toggle.
+
+### Changed
+- Network protocol version bumped (client/server must match mod version).
+
+## [0.1.23] - 2026-02-16
+
+### Added
+- Engine-side vibration patterns: `single`, `pulse_loop`, `shockwave`, `fade_out`.
+- Optional `pulsePeriodMs` / `pulseWidthMs` fields in vibration profiles (used by `pulse_loop`).
+- Server-relayed event haptics (multiplayer-capable) via a small network packet:
+	- Explosion detonate (`explosion.generic`, distance-scaled)
+	- Block break completion (`world.block_break`)
+	- Attacker hit confirmation (`combat.hit`, scaled by damage amount)
+	- Fall impact (`damage.fall`, scaled by fall distance)
+
 ## [0.1.22] - 2026-02-16
 
 ### Added

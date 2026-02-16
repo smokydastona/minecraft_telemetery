@@ -3,6 +3,7 @@ package com.smoky.bassshakertelemetry.audio;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 
 import javax.sound.sampled.*;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -10,6 +11,12 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public final class AudioOutputEngine {
     private static final AudioOutputEngine INSTANCE = new AudioOutputEngine();
+
+    /**
+     * Non-optional: mono means only one dominant vibration at a time.
+     * Lower-priority sources get ducked.
+     */
+    private static final double DUCK_FACTOR = 0.30;
 
     // 48kHz, mono rendered then duplicated to stereo for better device compatibility.
     private static final float SAMPLE_RATE = 48_000f;
@@ -45,14 +52,23 @@ public final class AudioOutputEngine {
     private final AtomicInteger accelBumpTotalSamples = new AtomicInteger(1);
     private volatile long lastAccelBumpNanos;
 
-    // Generic impulse (used by sound-to-haptics)
-    private final AtomicInteger impulseSamplesLeft = new AtomicInteger(0);
-    private final AtomicInteger impulseTotalSamples = new AtomicInteger(1);
-    private volatile double impulseFreqHz = 36.0;
-    private volatile double impulseGain = 0.0;
-    private volatile double impulseNoiseMix = 0.25;
-    private volatile double impulsePhase;
-    private volatile double impulseNoiseState;
+    // Generic impulses (used by sound-to-haptics / gameplay one-shots)
+    private final Object impulseLock = new Object();
+    private final ArrayList<ImpulseVoice> impulses = new ArrayList<>();
+
+    // Debug-only: last computed dominant source (updated on dominance changes).
+    private volatile String debugDominantLabel = "none";
+    private volatile int debugDominantPriority = -1;
+    private volatile double debugDominantFreqHz;
+    private volatile double debugDominantGain01;
+
+    // Hysteresis for debug snapshot updates (overlay-only; does not affect audio).
+    private static final long DEBUG_DOMINANT_HYSTERESIS_NS = 15_000_000L; // 15ms
+    private String pendingDominantLabel = "none";
+    private int pendingDominantPriority = -1;
+    private double pendingDominantFreqHz;
+    private double pendingDominantGain01;
+    private long pendingDominantSinceNs;
 
     // Damage burst noise filter state
     private volatile double damageNoiseState;
@@ -114,16 +130,114 @@ public final class AudioOutputEngine {
      * Generic one-shot impulse. Intended for translating arbitrary events (e.g. game sounds) into tactile audio.
      */
     public void triggerImpulse(double freqHz, int durationMs, double gain01, double noiseMix01) {
+        triggerImpulse(freqHz, durationMs, gain01, noiseMix01, "single", 160, 60);
+    }
+
+    /**
+     * Pattern-capable impulse.
+     * <p>
+     * Supported patterns: single, pulse_loop, shockwave, fade_out.
+     */
+    public void triggerImpulse(double freqHz, int durationMs, double gain01, double noiseMix01, String pattern, int pulsePeriodMs, int pulseWidthMs) {
+        triggerImpulse(freqHz, durationMs, gain01, noiseMix01, pattern, pulsePeriodMs, pulseWidthMs, 5, 0);
+    }
+
+    /**
+     * Pattern-capable impulse with explicit priority and start delay.
+     *
+     * @param priority 0..100 (higher wins). Only one dominant voice plays full-strength at a time.
+     * @param delayMs  optional micro-delay (can be 0). Negative treated as 0.
+     */
+    public void triggerImpulse(double freqHz, int durationMs, double gain01, double noiseMix01, String pattern, int pulsePeriodMs, int pulseWidthMs, int priority, int delayMs) {
+        triggerImpulse(freqHz, durationMs, gain01, noiseMix01, pattern, pulsePeriodMs, pulseWidthMs, priority, delayMs, null);
+    }
+
+    /**
+     * Same as {@link #triggerImpulse(double, int, double, double, String, int, int, int, int)} but carries a debug label.
+     * This does not affect audio; it's used only for the debug overlay.
+     */
+    public void triggerImpulse(double freqHz, int durationMs, double gain01, double noiseMix01, String pattern, int pulsePeriodMs, int pulseWidthMs, int priority, int delayMs, String debugKey) {
         int ms = Math.max(10, durationMs);
         int samples = (int) ((ms / 1000.0) * SAMPLE_RATE);
-        impulseTotalSamples.set(Math.max(1, samples));
-        // Extend if already active.
-        int current = impulseSamplesLeft.get();
-        impulseSamplesLeft.set(Math.max(current, samples));
+        samples = Math.max(1, samples);
 
-        impulseFreqHz = clamp(freqHz, 10.0, 120.0);
-        impulseGain = Math.max(impulseGain, clamp(gain01, 0.0, 1.0));
-        impulseNoiseMix = clamp(noiseMix01, 0.0, 1.0);
+        double f = clamp(freqHz, 10.0, 120.0);
+        double g = clamp(gain01, 0.0, 1.0);
+        double n = clamp(noiseMix01, 0.0, 1.0);
+        String pat = (pattern == null || pattern.isBlank()) ? "single" : pattern;
+
+        int periodS = (int) ((Math.max(20, pulsePeriodMs) / 1000.0) * SAMPLE_RATE);
+        int widthS = (int) ((Math.max(10, pulseWidthMs) / 1000.0) * SAMPLE_RATE);
+        int pulsePeriodSamples = Math.max(1, periodS);
+        int pulseWidthSamples = Math.max(1, Math.min(Math.max(1, widthS), pulsePeriodSamples));
+
+        int pri = clampInt(priority, 0, 100);
+        int delaySamples = (int) ((Math.max(0, delayMs) / 1000.0) * SAMPLE_RATE);
+        delaySamples = Math.max(0, delaySamples);
+
+        String dk = (debugKey == null) ? "" : debugKey.trim();
+
+        synchronized (impulseLock) {
+            // Coalesce/extend a very similar active voice to avoid stacking identical pulses.
+            for (ImpulseVoice v : impulses) {
+                String vdk = (v.debugKey == null) ? "" : v.debugKey;
+                if (!dk.equalsIgnoreCase(vdk)) {
+                    continue;
+                }
+                if (v.priority != pri) {
+                    continue;
+                }
+                if (v.delaySamplesLeft != delaySamples) {
+                    continue;
+                }
+                if (!pat.equalsIgnoreCase(v.pattern)) {
+                    continue;
+                }
+                if (Math.abs(v.freqHz - f) > 0.75) {
+                    continue;
+                }
+
+                v.totalSamples = Math.max(v.totalSamples, samples);
+                v.samplesLeft = Math.max(v.samplesLeft, samples);
+                v.gain = Math.max(v.gain, g);
+                v.noiseMix = n;
+                v.pulsePeriodSamples = pulsePeriodSamples;
+                v.pulseWidthSamples = pulseWidthSamples;
+                v.createdNanos = System.nanoTime();
+                return;
+            }
+
+            ImpulseVoice voice = new ImpulseVoice();
+            voice.totalSamples = samples;
+            voice.samplesLeft = samples;
+            voice.delaySamplesLeft = delaySamples;
+            voice.freqHz = f;
+            voice.gain = g;
+            voice.noiseMix = n;
+            voice.pattern = pat;
+            voice.debugKey = dk;
+            voice.pulsePeriodSamples = pulsePeriodSamples;
+            voice.pulseWidthSamples = pulseWidthSamples;
+            voice.phase = 0.0;
+            voice.noiseState = 0.0;
+            voice.priority = pri;
+            voice.createdNanos = System.nanoTime();
+            impulses.add(voice);
+
+            // Hard cap to avoid unbounded growth in pathological cases.
+            while (impulses.size() > 24) {
+                impulses.remove(0);
+            }
+        }
+    }
+
+    public String getDominantDebugString() {
+        String label = debugDominantLabel;
+        int pri = debugDominantPriority;
+        if (label == null || label.isBlank() || "none".equalsIgnoreCase(label) || pri < 0) {
+            return "";
+        }
+        return String.format(java.util.Locale.ROOT, "dominant=%s pri=%d freq=%.1fHz gain=%.2f", label, pri, debugDominantFreqHz, debugDominantGain01);
     }
 
     public void triggerBiomeChime() {
@@ -182,6 +296,15 @@ public final class AudioOutputEngine {
         BstConfig.Data cfg = BstConfig.get();
         double gain01 = clamp(cfg.miningSwingHapticsGain, 0.0, 1.0);
         triggerImpulse(46.0, 26, gain01, 0.08);
+    }
+
+    /**
+     * Latency test pulse: steady, obvious impulse intended for judging end-to-end feel lag.
+     * Uses a high priority so it stays dominant while testing.
+     */
+    public void testLatencyPulse() {
+        double gain01 = clamp(BstConfig.get().masterVolume * 0.90, 0.0, 1.0);
+        triggerImpulse(42.0, 55, gain01, 0.12, "single", 160, 60, 95, 0);
     }
 
     private void triggerAccelBump(double intensity01) {
@@ -291,18 +414,145 @@ public final class AudioOutputEngine {
                 int damageLeft = damageBurstSamplesLeft.get();
                 int biomeLeft = biomeChimeSamplesLeft.get();
                 int bumpLeft = accelBumpSamplesLeft.get();
-                int impulseLeft = impulseSamplesLeft.get();
 
-                // Effect priority / ducking: let short impacts read clearly.
-                double duckContinuous = 1.0;
-                if (cfg.damageBurstEnabled && damageLeft > 0) {
-                    duckContinuous = 0.35;
-                } else if (cfg.accelBumpEnabled && bumpLeft > 0) {
-                    duckContinuous = 0.55;
+                // Determine the single dominant source for this chunk.
+                int dominantKind = 0; // 0 none, 1 road, 2 damage, 3 impulse, 4 bump, 5 chime
+                int dominantPriority = -1;
+                double dominantStrength = -1.0;
+                ImpulseVoice dominantImpulse = null;
+
+                // Road: low priority continuous.
+                boolean roadActiveForDominance = cfg.roadTextureEnabled && cfg.roadTextureGain > 0.0001 && Math.abs(localSpeed) > 0.09;
+                if (roadActiveForDominance) {
+                    dominantKind = 1;
+                    dominantPriority = 1;
+                    dominantStrength = cfg.roadTextureGain;
                 }
 
+                // Damage burst: very high priority.
+                if (cfg.damageBurstEnabled && damageLeft > 0) {
+                    int pri = 10;
+                    double strength = cfg.damageBurstGain * clamp(damageBurstIntensity, 0.0, 1.0);
+                    if (pri > dominantPriority || (pri == dominantPriority && strength > dominantStrength)) {
+                        dominantKind = 2;
+                        dominantPriority = pri;
+                        dominantStrength = strength;
+                    }
+                }
+
+                // Impulses: choose a single dominant voice based on profile priority.
+                synchronized (impulseLock) {
+                    for (int vi = impulses.size() - 1; vi >= 0; vi--) {
+                        ImpulseVoice v = impulses.get(vi);
+                        if (v.delaySamplesLeft > 0) {
+                            continue;
+                        }
+                        if (v.samplesLeft <= 0 || v.gain <= 0.00001) {
+                            continue;
+                        }
+                        if (dominantImpulse == null
+                                || v.priority > dominantImpulse.priority
+                                || (v.priority == dominantImpulse.priority && v.gain > dominantImpulse.gain)
+                                || (v.priority == dominantImpulse.priority && v.gain == dominantImpulse.gain && v.createdNanos > dominantImpulse.createdNanos)) {
+                            dominantImpulse = v;
+                        }
+                    }
+                }
+                if (dominantImpulse != null) {
+                    int pri = dominantImpulse.priority;
+                    double strength = dominantImpulse.gain;
+                    if (pri > dominantPriority || (pri == dominantPriority && strength > dominantStrength)) {
+                        dominantKind = 3;
+                        dominantPriority = pri;
+                        dominantStrength = strength;
+                    }
+                }
+
+                // Accel bump: medium-high priority.
+                if (cfg.accelBumpEnabled && bumpLeft > 0) {
+                    int pri = 7;
+                    double strength = cfg.accelBumpGain;
+                    if (pri > dominantPriority || (pri == dominantPriority && strength > dominantStrength)) {
+                        dominantKind = 4;
+                        dominantPriority = pri;
+                        dominantStrength = strength;
+                    }
+                }
+
+                // Biome chime: medium priority.
+                if (cfg.biomeChimeEnabled && biomeLeft > 0) {
+                    int pri = 4;
+                    double strength = cfg.biomeChimeGain;
+                    if (pri > dominantPriority || (pri == dominantPriority && strength > dominantStrength)) {
+                        dominantKind = 5;
+                        dominantPriority = pri;
+                        dominantStrength = strength;
+                    }
+                }
+
+                // Update dominant debug snapshot (only when it changes).
+                String domLabel;
+                double domFreq = 0.0;
+                double domGain = 0.0;
+                if (dominantKind == 1) {
+                    domLabel = "road";
+                    domGain = dominantStrength;
+                } else if (dominantKind == 2) {
+                    domLabel = "damage";
+                    domGain = dominantStrength;
+                } else if (dominantKind == 4) {
+                    domLabel = "accel_bump";
+                    domGain = dominantStrength;
+                } else if (dominantKind == 5) {
+                    domLabel = "biome_chime";
+                    domGain = dominantStrength;
+                } else if (dominantKind == 3 && dominantImpulse != null) {
+                    String dk = (dominantImpulse.debugKey == null) ? "" : dominantImpulse.debugKey;
+                    domLabel = dk.isBlank() ? "impulse" : dk;
+                    domFreq = dominantImpulse.freqHz;
+                    domGain = dominantImpulse.gain;
+                } else {
+                    domLabel = "none";
+                }
+
+                boolean differsFromPublished = !domLabel.equals(debugDominantLabel)
+                        || dominantPriority != debugDominantPriority
+                        || Math.abs(domFreq - debugDominantFreqHz) > 0.05
+                        || Math.abs(domGain - debugDominantGain01) > 0.01;
+
+                if (!differsFromPublished) {
+                    // Candidate matches what's already published; clear any pending transition.
+                    pendingDominantSinceNs = 0L;
+                } else {
+                    boolean matchesPending = domLabel.equals(pendingDominantLabel)
+                            && dominantPriority == pendingDominantPriority
+                            && Math.abs(domFreq - pendingDominantFreqHz) <= 0.05
+                            && Math.abs(domGain - pendingDominantGain01) <= 0.01;
+
+                    if (!matchesPending) {
+                        pendingDominantLabel = domLabel;
+                        pendingDominantPriority = dominantPriority;
+                        pendingDominantFreqHz = domFreq;
+                        pendingDominantGain01 = domGain;
+                        pendingDominantSinceNs = nowNs;
+                    } else if (pendingDominantSinceNs > 0L && (nowNs - pendingDominantSinceNs) >= DEBUG_DOMINANT_HYSTERESIS_NS) {
+                        // Only publish once the candidate has remained stable long enough.
+                        debugDominantLabel = pendingDominantLabel;
+                        debugDominantPriority = pendingDominantPriority;
+                        debugDominantFreqHz = pendingDominantFreqHz;
+                        debugDominantGain01 = pendingDominantGain01;
+                        pendingDominantSinceNs = 0L;
+                    }
+                }
+
+                double roadMul = (dominantKind == 0 || dominantKind == 1) ? 1.0 : DUCK_FACTOR;
+                double damageMul = (dominantKind == 2) ? 1.0 : DUCK_FACTOR;
+                double bumpMul = (dominantKind == 4) ? 1.0 : DUCK_FACTOR;
+                double chimeMul = (dominantKind == 5) ? 1.0 : DUCK_FACTOR;
+
                 int idx = 0;
-                for (int i = 0; i < framesPerChunk; i++) {
+                synchronized (impulseLock) {
+                    for (int i = 0; i < framesPerChunk; i++) {
                     double sample = 0.0;
 
                     double g = startGain + ((endGain - startGain) * (i / (double) framesPerChunk));
@@ -320,7 +570,7 @@ public final class AudioOutputEngine {
                         double white = (random.nextDouble() * 2.0) - 1.0;
                         roadNoiseState += (white - roadNoiseState) * a;
 
-                        sample += roadNoiseState * cfg.roadTextureGain * speedRamp * duckContinuous;
+                        sample += roadNoiseState * cfg.roadTextureGain * speedRamp * roadMul;
                     }
 
                     if (cfg.damageBurstEnabled && damageLeft > 0) {
@@ -336,35 +586,59 @@ public final class AudioOutputEngine {
                         damageNoiseState += (white - damageNoiseState) * a;
 
                         double env = Math.sin(progress * Math.PI) * Math.exp(-progress * 5.0);
-                        sample += damageNoiseState * cfg.damageBurstGain * clamp(damageBurstIntensity, 0.0, 1.0) * env;
+                        sample += damageNoiseState * cfg.damageBurstGain * clamp(damageBurstIntensity, 0.0, 1.0) * env * damageMul;
                         damageLeft--;
                     }
 
-                    if (impulseLeft > 0) {
-                        int total = Math.max(1, impulseTotalSamples.get());
-                        double progress = 1.0 - (impulseLeft / (double) total);
-                        // Raised-cosine envelope (sin^2) reduces attack punch vs a simple half-sine.
-                        double env = Math.sin(progress * Math.PI);
-                        env *= env;
+                    if (!impulses.isEmpty()) {
+                        for (int vi = impulses.size() - 1; vi >= 0; vi--) {
+                            ImpulseVoice v = impulses.get(vi);
+                            if (v.delaySamplesLeft > 0) {
+                                v.delaySamplesLeft--;
+                                continue;
+                            }
+                            if (v.samplesLeft <= 0 || v.gain <= 0.00001) {
+                                continue;
+                            }
 
-                        double step = (2.0 * Math.PI * impulseFreqHz) / SAMPLE_RATE;
-                        double sine = Math.sin(impulsePhase);
+                            int total = Math.max(1, v.totalSamples);
+                            int samplesLeft = Math.max(0, v.samplesLeft);
+                            int sampleIndex = Math.max(0, total - samplesLeft);
+                            double env = impulseEnvelope(
+                                    v.pattern,
+                                    sampleIndex,
+                                    total,
+                                    samplesLeft,
+                                    v.pulsePeriodSamples,
+                                    v.pulseWidthSamples
+                            );
 
-                        // Low-pass the noise component to keep impulses tactile and less "snappy".
-                        double fc = 65.0;
-                        double a = 1.0 - Math.exp(-(2.0 * Math.PI * fc) / SAMPLE_RATE);
-                        double white = (random.nextDouble() * 2.0) - 1.0;
-                        impulseNoiseState += (white - impulseNoiseState) * a;
+                            double voiceMul;
+                            if (dominantKind == 3 && v == dominantImpulse) {
+                                voiceMul = 1.0;
+                            } else {
+                                voiceMul = DUCK_FACTOR;
+                            }
 
-                        double w = (sine * (1.0 - impulseNoiseMix)) + (impulseNoiseState * impulseNoiseMix);
-                        sample += w * impulseGain * env;
+                            double step = (2.0 * Math.PI * v.freqHz) / SAMPLE_RATE;
+                            double sine = Math.sin(v.phase);
 
-                        impulsePhase += step;
-                        if (impulsePhase > (2.0 * Math.PI)) {
-                            impulsePhase -= (2.0 * Math.PI);
+                            // Low-pass the noise component to keep impulses tactile and less "snappy".
+                            double fc = 65.0;
+                            double a = 1.0 - Math.exp(-(2.0 * Math.PI * fc) / SAMPLE_RATE);
+                            double white = (random.nextDouble() * 2.0) - 1.0;
+                            v.noiseState += (white - v.noiseState) * a;
+
+                            double w = (sine * (1.0 - v.noiseMix)) + (v.noiseState * v.noiseMix);
+                            sample += w * v.gain * env * voiceMul;
+
+                            v.phase += step;
+                            if (v.phase > (2.0 * Math.PI)) {
+                                v.phase -= (2.0 * Math.PI);
+                            }
+
+                            v.samplesLeft--;
                         }
-
-                        impulseLeft--;
                     }
 
                     if (cfg.accelBumpEnabled && bumpLeft > 0) {
@@ -373,7 +647,7 @@ public final class AudioOutputEngine {
                         double env = Math.sin(progress * Math.PI);
                         // Low thump around ~32Hz
                         double bump = Math.sin(bumpPhase) * env;
-                        sample += bump * cfg.accelBumpGain;
+                        sample += bump * cfg.accelBumpGain * bumpMul;
                         bumpLeft--;
                     }
 
@@ -382,7 +656,7 @@ public final class AudioOutputEngine {
                         int total = Math.max(1, biomeChimeTotalSamples.get());
                         double progress = 1.0 - (biomeLeft / (double) total);
                         double env = Math.sin(progress * Math.PI); // bell-ish half-sine envelope
-                        sample += Math.sin(chimePhase) * clamp(cfg.biomeChimeGain, 0.0, 1.0) * env;
+                        sample += Math.sin(chimePhase) * clamp(cfg.biomeChimeGain, 0.0, 1.0) * env * chimeMul;
                         biomeLeft--;
                     }
 
@@ -410,6 +684,16 @@ public final class AudioOutputEngine {
                         chimePhase -= (2.0 * Math.PI);
                     }
                 }
+                }
+
+                synchronized (impulseLock) {
+                    for (int vi = impulses.size() - 1; vi >= 0; vi--) {
+                        ImpulseVoice v = impulses.get(vi);
+                        if (v.delaySamplesLeft <= 0 && v.samplesLeft <= 0) {
+                            impulses.remove(vi);
+                        }
+                    }
+                }
 
                 if (cfg.damageBurstEnabled) {
                     damageBurstSamplesLeft.set(Math.max(0, damageLeft));
@@ -431,14 +715,6 @@ public final class AudioOutputEngine {
                     biomeChimeSamplesLeft.set(Math.max(0, biomeLeft));
                 } else {
                     biomeChimeSamplesLeft.set(0);
-                }
-
-                impulseSamplesLeft.set(Math.max(0, impulseLeft));
-                if (impulseLeft <= 0) {
-                    impulseGain *= 0.65;
-                    if (impulseGain < 0.001) {
-                        impulseGain = 0.0;
-                    }
                 }
 
                 line.write(buffer, 0, buffer.length);
@@ -464,7 +740,14 @@ public final class AudioOutputEngine {
 
     private SourceDataLine openLine() {
         DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, FORMAT);
-        String preferred = BstConfig.get().outputDeviceName;
+        BstConfig.Data cfg = BstConfig.get();
+        String preferred = cfg.outputDeviceName;
+        int bufferMs = clampInt(cfg.javaSoundBufferMs, 0, 500);
+        int frameSize = FORMAT.getFrameSize();
+        int requestedFrames = (bufferMs <= 0) ? 0 : (int) Math.round((bufferMs / 1000.0) * SAMPLE_RATE);
+        // Keep the request within a reasonable range (device may clamp anyway).
+        requestedFrames = clampInt(requestedFrames, 0, ((int) SAMPLE_RATE) * 2);
+        int requestedBytes = (requestedFrames <= 0) ? 0 : Math.max(frameSize, requestedFrames * frameSize);
 
         // Try the preferred device first.
         if (preferred != null && !preferred.isBlank()) {
@@ -473,7 +756,17 @@ public final class AudioOutputEngine {
                 if (mixerInfo != null) {
                     Mixer mixer = AudioSystem.getMixer(mixerInfo);
                     SourceDataLine line = (SourceDataLine) mixer.getLine(lineInfo);
-                    line.open(FORMAT);
+                    if (requestedBytes > 0) {
+                        try {
+                            line.open(FORMAT, requestedBytes);
+                        } catch (Exception ignored) {
+                            line.open(FORMAT);
+                        }
+                    } else {
+                        line.open(FORMAT);
+                    }
+
+                    logOpenedLine(line, preferred, bufferMs);
                     return line;
                 }
             } catch (Exception e) {
@@ -484,7 +777,17 @@ public final class AudioOutputEngine {
         // Fallback: default output device.
         try {
             SourceDataLine line = (SourceDataLine) AudioSystem.getLine(lineInfo);
-            line.open(FORMAT);
+            if (requestedBytes > 0) {
+                try {
+                    line.open(FORMAT, requestedBytes);
+                } catch (Exception ignored) {
+                    line.open(FORMAT);
+                }
+            } else {
+                line.open(FORMAT);
+            }
+
+            logOpenedLine(line, "<Default>", bufferMs);
             return line;
         } catch (Exception e) {
             System.err.println("[BST] Failed to open default audio device (" + e.getClass().getSimpleName() + ")");
@@ -492,7 +795,24 @@ public final class AudioOutputEngine {
         }
     }
 
+    private static void logOpenedLine(SourceDataLine line, String deviceLabel, int requestedBufferMs) {
+        try {
+            int bytes = line.getBufferSize();
+            int frameSize = FORMAT.getFrameSize();
+            int frames = (frameSize <= 0) ? 0 : (bytes / frameSize);
+            double ms = (frames * 1000.0) / SAMPLE_RATE;
+            System.out.println("[BST] Opened audio line: device=" + deviceLabel + ", requestedBufferMs=" + requestedBufferMs + ", actualBufferMs~=" + String.format(java.util.Locale.ROOT, "%.1f", ms) + " (" + bytes + " bytes)");
+        } catch (Exception ignored) {
+        }
+    }
+
     private static double clamp(double v, double min, double max) {
+        if (v < min) return min;
+        if (v > max) return max;
+        return v;
+    }
+
+    private static int clampInt(int v, int min, int max) {
         if (v < min) return min;
         if (v > max) return max;
         return v;
@@ -505,5 +825,74 @@ public final class AudioOutputEngine {
             return clamp(x, -1.0, 1.0);
         }
         return Math.tanh(x * d) / denom;
+    }
+
+    private static double impulseEnvelope(String pattern, int sampleIndex, int totalSamples, int samplesLeft, int pulsePeriodSamples, int pulseWidthSamples) {
+        // Small attack/release to avoid clicks when starting/stopping.
+        int attackSamples = (int) (SAMPLE_RATE * 0.010); // 10ms
+        int releaseSamples = (int) (SAMPLE_RATE * 0.015); // 15ms
+        double attack = (attackSamples <= 0) ? 1.0 : clamp(sampleIndex / (double) attackSamples, 0.0, 1.0);
+        double release = (releaseSamples <= 0) ? 1.0 : clamp(samplesLeft / (double) releaseSamples, 0.0, 1.0);
+
+        double overallProgress = (totalSamples <= 1) ? 1.0 : clamp(sampleIndex / (double) (totalSamples - 1), 0.0, 1.0);
+
+        String p = (pattern == null) ? "single" : pattern.trim().toLowerCase();
+        double env;
+
+        switch (p) {
+            case "fade_out" -> {
+                // Strong at the start, fades to 0 over the duration.
+                env = Math.pow(1.0 - overallProgress, 1.15);
+            }
+            case "shockwave" -> {
+                // Punchy onset then rapid decay.
+                env = Math.exp(-overallProgress * 6.0);
+            }
+            case "pulse_loop" -> {
+                int period = Math.max(1, pulsePeriodSamples);
+                int width = Math.max(1, Math.min(pulseWidthSamples, period));
+                int inPeriod = sampleIndex % period;
+                if (inPeriod >= width) {
+                    env = 0.0;
+                } else {
+                    double pulseProgress = inPeriod / (double) width;
+                    double e = Math.sin(pulseProgress * Math.PI);
+                    env = e * e;
+                }
+                // Add a gentle overall decay so long loops don't feel too “stuck on”.
+                env *= (0.65 + (0.35 * (1.0 - overallProgress)));
+            }
+            case "single" -> {
+                // Raised-cosine envelope (sin^2) reduces attack punch vs a simple half-sine.
+                double e = Math.sin(overallProgress * Math.PI);
+                env = e * e;
+            }
+            default -> {
+                double e = Math.sin(overallProgress * Math.PI);
+                env = e * e;
+            }
+        }
+
+        return env * attack * release;
+    }
+
+    private static final class ImpulseVoice {
+        int totalSamples;
+        int samplesLeft;
+        int delaySamplesLeft;
+
+        double freqHz;
+        double gain;
+        double noiseMix;
+        String pattern;
+        String debugKey;
+        int pulsePeriodSamples;
+        int pulseWidthSamples;
+
+        double phase;
+        double noiseState;
+
+        int priority;
+        long createdNanos;
     }
 }
