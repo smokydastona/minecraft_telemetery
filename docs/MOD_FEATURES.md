@@ -27,8 +27,10 @@
 
 ## In-game config UI
 
-- Per-effect volume sliders are available under **Effect volumes**.
+- Per-effect volume sliders are available under **Advanced settings → Effect volumes**.
 - Each effect slider has a **Test** button directly underneath to preview that effect without needing to trigger it in gameplay.
+
+Timing knobs are available under **Advanced settings → Timing** (durations/cooldowns/periods).
 
 ## Config file
 

@@ -6,6 +6,14 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.13] - 2026-02-16
+
+### Changed
+- Moved per-effect volume sliders (and their Test buttons) into a new Advanced settings screen to keep the main config screen simple.
+
+### Added
+- Timing controls in Advanced settings (durations/cooldowns/periods for relevant effects).
+
 ## [0.1.12] - 2026-02-16
 
 ### Added

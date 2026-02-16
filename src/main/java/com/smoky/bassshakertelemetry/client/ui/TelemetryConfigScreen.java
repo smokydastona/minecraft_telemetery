@@ -5,13 +5,10 @@ import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.components.StringWidget;
-import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
@@ -32,14 +29,6 @@ public final class TelemetryConfigScreen extends Screen {
     private CycleButton<Boolean> soundToggle;
     private CycleButton<Boolean> gameplayToggle;
     private VolumeSlider volumeSlider;
-
-    private EffectVolumeList effectVolumeList;
-    private RangedSlider roadGainSlider;
-    private RangedSlider damageGainSlider;
-    private RangedSlider biomeGainSlider;
-    private RangedSlider accelGainSlider;
-    private RangedSlider soundGainSlider;
-    private RangedSlider gameplayGainSlider;
 
     public TelemetryConfigScreen(Screen parent) {
         super(Component.translatable("bassshakertelemetry.config.title"));
@@ -88,6 +77,18 @@ public final class TelemetryConfigScreen extends Screen {
         this.addRenderableWidget(volumeSlider);
 
         y += rowH + rowGap;
+
+        this.addRenderableWidget(Button.builder(
+                        Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.advanced")),
+                        b -> {
+                            if (this.minecraft != null) {
+                                this.minecraft.setScreen(new AdvancedSettingsScreen(this));
+                            }
+                        })
+                .bounds(leftX, y, contentWidth, rowH)
+                .build());
+
+        y += rowH + rowGap;
         int colGap = 10;
         int colWidth = Math.max(60, (contentWidth - colGap) / 2);
         int colLeftX = leftX;
@@ -114,42 +115,6 @@ public final class TelemetryConfigScreen extends Screen {
             .create(leftX, y + rowH + rowGap, contentWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.gameplay_enabled")));
         this.addRenderableWidget(gameplayToggle);
 
-        y += (rowH + rowGap) * 2;
-
-        this.addRenderableWidget(new StringWidget(
-            leftX,
-            y,
-            contentWidth,
-            rowH,
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.effect_volumes")),
-            font
-        ));
-
-        y += rowH + rowGap;
-
-        Minecraft mc = Objects.requireNonNull(this.minecraft, "minecraft");
-        int listTop = y;
-        int listBottom = this.height - 34;
-        int listHeight = Math.max(70, listBottom - listTop);
-
-        effectVolumeList = new EffectVolumeList(mc, contentWidth, listHeight, listTop, listTop + listHeight, 44, leftX);
-
-        roadGainSlider = new RangedSlider(0, 0, contentWidth - 12, rowH, "bassshakertelemetry.config.road_gain", BstConfig.get().roadTextureGain, 0.0, 0.50);
-        damageGainSlider = new RangedSlider(0, 0, contentWidth - 12, rowH, "bassshakertelemetry.config.damage_gain", BstConfig.get().damageBurstGain, 0.0, 1.00);
-        biomeGainSlider = new RangedSlider(0, 0, contentWidth - 12, rowH, "bassshakertelemetry.config.biome_gain", BstConfig.get().biomeChimeGain, 0.0, 1.00);
-        accelGainSlider = new RangedSlider(0, 0, contentWidth - 12, rowH, "bassshakertelemetry.config.accel_gain", BstConfig.get().accelBumpGain, 0.0, 1.00);
-        soundGainSlider = new RangedSlider(0, 0, contentWidth - 12, rowH, "bassshakertelemetry.config.sound_gain", BstConfig.get().soundHapticsGain, 0.0, 2.00);
-        gameplayGainSlider = new RangedSlider(0, 0, contentWidth - 12, rowH, "bassshakertelemetry.config.gameplay_gain", BstConfig.get().gameplayHapticsGain, 0.0, 2.00);
-
-        effectVolumeList.addEffectEntry(new EffectVolumeEntry(roadGainSlider, AudioOutputEngine.get()::testRoadTexture));
-        effectVolumeList.addEffectEntry(new EffectVolumeEntry(damageGainSlider, AudioOutputEngine.get()::testDamageBurst));
-        effectVolumeList.addEffectEntry(new EffectVolumeEntry(biomeGainSlider, AudioOutputEngine.get()::testBiomeChime));
-        effectVolumeList.addEffectEntry(new EffectVolumeEntry(accelGainSlider, AudioOutputEngine.get()::testAccelBump));
-        effectVolumeList.addEffectEntry(new EffectVolumeEntry(soundGainSlider, AudioOutputEngine.get()::testSoundHaptics));
-        effectVolumeList.addEffectEntry(new EffectVolumeEntry(gameplayGainSlider, AudioOutputEngine.get()::testGameplayHaptics));
-
-        this.addRenderableWidget(effectVolumeList);
-
         this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), b -> onDone())
                 .bounds(leftX, this.height - 28, (contentWidth - 10) / 2, 20)
                 .build());
@@ -168,14 +133,6 @@ public final class TelemetryConfigScreen extends Screen {
         data.roadTextureEnabled = roadToggle.getValue();
         data.soundHapticsEnabled = soundToggle.getValue();
         data.gameplayHapticsEnabled = gameplayToggle.getValue();
-
-        if (roadGainSlider != null) data.roadTextureGain = roadGainSlider.getRealValue();
-        if (damageGainSlider != null) data.damageBurstGain = damageGainSlider.getRealValue();
-        if (biomeGainSlider != null) data.biomeChimeGain = biomeGainSlider.getRealValue();
-        if (accelGainSlider != null) data.accelBumpGain = accelGainSlider.getRealValue();
-        if (soundGainSlider != null) data.soundHapticsGain = soundGainSlider.getRealValue();
-        if (gameplayGainSlider != null) data.gameplayHapticsGain = gameplayGainSlider.getRealValue();
-
         BstConfig.set(data);
 
         AudioOutputEngine.get().startOrRestart();
@@ -331,123 +288,5 @@ public final class TelemetryConfigScreen extends Screen {
             if (v > 1.0) return 1.0;
             return v;
         }
-    }
-
-    private static final class RangedSlider extends net.minecraft.client.gui.components.AbstractSliderButton {
-        private final String labelKey;
-        private final double min;
-        private final double max;
-
-        RangedSlider(int x, int y, int width, int height, String labelKey, double initial, double min, double max) {
-            super(x, y, width, height, Component.empty(), to01(initial, min, max));
-            this.labelKey = Objects.requireNonNull(labelKey);
-            this.min = min;
-            this.max = Math.max(min + 1e-9, max);
-            updateMessage();
-        }
-
-        void setPos(int x, int y) {
-            this.setX(x);
-            this.setY(y);
-        }
-
-        @Override
-        @SuppressWarnings("null")
-        protected void updateMessage() {
-            int pct = (int) Math.round(clamp01(this.value) * 100.0);
-            this.setMessage(
-                    Objects.requireNonNull(Component.translatable(labelKey))
-                            .append(": ")
-                            .append(Objects.requireNonNull(Component.literal(pct + "%")))
-            );
-        }
-
-        @Override
-        protected void applyValue() {
-        }
-
-        double getRealValue() {
-            return clamp(min + (clamp01(this.value) * (max - min)), min, max);
-        }
-
-        private static double to01(double actual, double min, double max) {
-            double denom = Math.max(1e-9, max - min);
-            return clamp01((actual - min) / denom);
-        }
-
-        private static double clamp01(double v) {
-            if (v < 0.0) return 0.0;
-            if (v > 1.0) return 1.0;
-            return v;
-        }
-
-        private static double clamp(double v, double lo, double hi) {
-            if (v < lo) return lo;
-            if (v > hi) return hi;
-            return v;
-        }
-    }
-
-    private static final class EffectVolumeList extends ContainerObjectSelectionList<EffectVolumeEntry> {
-        private final int left;
-
-        EffectVolumeList(Minecraft minecraft, int width, int height, int y0, int y1, int itemHeight, int left) {
-            super(minecraft, width, height, y0, y1, itemHeight);
-            this.left = left;
-            this.setLeftPos(left);
-            this.setRenderHeader(false, 0);
-        }
-
-        @Override
-        public int getRowWidth() {
-            return this.width;
-        }
-
-        @Override
-        protected int getScrollbarPosition() {
-            return this.left + this.width - 6;
-        }
-
-        void addEffectEntry(EffectVolumeEntry entry) {
-            this.addEntry(Objects.requireNonNull(entry));
-        }
-    }
-
-    private static final class EffectVolumeEntry extends ContainerObjectSelectionList.Entry<EffectVolumeEntry> {
-        private final RangedSlider slider;
-        private final Button testButton;
-
-        EffectVolumeEntry(RangedSlider slider, Runnable testAction) {
-            this.slider = Objects.requireNonNull(slider);
-            Runnable action = Objects.requireNonNull(testAction);
-            this.testButton = Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.test")), b -> action.run())
-                    .bounds(0, 0, 90, 20)
-                    .build();
-        }
-
-        @Override
-        public List<? extends GuiEventListener> children() {
-            return List.of(slider, testButton);
-        }
-
-        @Override
-        public List<? extends NarratableEntry> narratables() {
-            return List.of(slider, testButton);
-        }
-
-        @Override
-        @SuppressWarnings("null")
-        public void render(net.minecraft.client.gui.GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
-                           int mouseX, int mouseY, boolean hovered, float partialTick) {
-            int innerX = x + 2;
-            slider.setPos(innerX, y);
-
-            testButton.setX(innerX);
-            testButton.setY(y + 22);
-
-            slider.render(guiGraphics, mouseX, mouseY, partialTick);
-            testButton.render(guiGraphics, mouseX, mouseY, partialTick);
-        }
-
     }
 }
