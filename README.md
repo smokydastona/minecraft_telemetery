@@ -14,17 +14,9 @@ Client-side Forge mod that converts simple Minecraft telemetry (speed/accel, dam
 - Mining swing haptics: block breaking pulses synced to the on-screen arm swing
 - In-game per-effect volume sliders (Advanced settings), each with a Test button to preview the effect
 
-## Build
+## Builds / artifacts
 
-```powershell
-./gradlew.bat build
-```
-
-## Run in dev
-
-```powershell
-./gradlew.bat runClient
-```
+This project is validated via editor diagnostics and built by GitHub Actions on `git push`.
 
 ## Configure in-game
 

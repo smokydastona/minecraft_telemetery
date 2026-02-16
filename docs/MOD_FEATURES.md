@@ -5,7 +5,7 @@
 - Player speed: `player.getDeltaMovement().length()`
 - Player accel: per-tick delta of speed
 - Elytra state: `player.isFallFlying()`
-- Damage event: client-side health drop detection
+- Damage event: client-side hurt event (LivingHurtEvent) for accurate timing
 - Biome transitions: biome key change at player position
 
 ## Audio engine behavior
@@ -22,7 +22,7 @@
 - **Damage burst**: short decaying white-noise burst.
 - **Biome chime**: short low sine “bump” on biome changes.
 - **Accel bump**: short low thump on large accel spikes (toggleable; default OFF).
-- **Sound haptics**: maps many in-game sounds (explosions, hurt, break/place, steps, attacks) into short impulses.
+- **Sound haptics**: maps many in-game sounds (explosions, thunder, hurt, break/place, steps, attacks, doors/containers/buttons/levers, etc.) into short impulses.
 - **Gameplay haptics (non-sexual)**: maps basic interactions (attack/use click edges, mining pulse while holding attack on a block, XP gains) into short impulses.
 - **Footsteps**: grounded walking emits short step pulses (no continuous "engine" rumble).
 - **Mining swing**: emits a pulse at the start of each arm swing while mining a block (visual-sync).
@@ -33,6 +33,12 @@
 - Each effect slider has a **Test** button directly underneath to preview that effect without needing to trigger it in gameplay.
 
 Timing knobs are available under **Advanced settings → Timing** (durations/cooldowns/periods).
+
+## Build / artifacts
+
+This repo is intended to produce test JARs via GitHub Actions on `git push`.
+
+Local Gradle builds / `runClient` are intentionally not part of the workflow on this machine.
 
 ## Config file
 

@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.20] - 2026-02-16
+
+### Changed
+- Expanded sound-to-haptics mapping to cover more world interactions (doors/containers/buttons/levers), thunder, totem, and boss cues.
+- Large sound events (explosions/thunder) now scale intensity by distance to reduce unrealistic full-strength rumbles from far away.
+
 ## [0.1.19] - 2026-02-16
 
 ### Fixed

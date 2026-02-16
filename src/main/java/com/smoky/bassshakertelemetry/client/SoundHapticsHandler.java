@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
@@ -86,11 +87,32 @@ public final class SoundHapticsHandler {
             return;
         }
 
+        double gain = impulse.gain;
+        if (impulse.distanceRefBlocks > 0.0) {
+            gain *= distanceScale01(mc.player.position(), sound, impulse.distanceRefBlocks);
+        }
+        gain = clamp(gain, 0.0, 1.0);
+
         if (!rateLimit(impulse.bucketKey, cfg.soundHapticsCooldownMs)) {
             return;
         }
 
-        AudioOutputEngine.get().triggerImpulse(impulse.freqHz, impulse.durationMs, impulse.gain, impulse.noiseMix);
+        AudioOutputEngine.get().triggerImpulse(impulse.freqHz, impulse.durationMs, gain, impulse.noiseMix);
+    }
+
+    private static double distanceScale01(Vec3 playerPos, SoundInstance sound, double refBlocks) {
+        try {
+            double dx = sound.getX() - playerPos.x;
+            double dy = sound.getY() - playerPos.y;
+            double dz = sound.getZ() - playerPos.z;
+            double dist = Math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
+            double r = Math.max(0.01, refBlocks);
+            // Smooth falloff: 1.0 near the source, ~0.5 around ref distance, then fades.
+            double d = dist / r;
+            return 1.0 / (1.0 + (d * d));
+        } catch (Exception ignored) {
+            return 1.0;
+        }
     }
 
     private boolean rateLimit(String bucket, int cooldownMs) {
@@ -109,20 +131,57 @@ public final class SoundHapticsHandler {
 
         // Explosions and big impacts.
         if (p.contains("explode") || p.contains("explosion")) {
-            return new HapticImpulse("explosion", 28.0, 180, clamp(base * 1.4, 0.0, 1.0), 0.65);
+            return new HapticImpulse("explosion", 26.0, 240, clamp(base * 1.4, 0.0, 1.0), 0.75, 10.0);
+        }
+
+        // Thunder / lightning.
+        if (p.contains("thunder") || p.contains("lightning")) {
+            return new HapticImpulse("thunder", 22.0, 260, clamp(base * 0.9, 0.0, 1.0), 0.80, 18.0);
         }
 
         // Player/Entity damage.
         if (p.contains("hurt") || p.contains("damage")) {
-            return new HapticImpulse("hurt", 34.0, 110, clamp(base * 1.1, 0.0, 1.0), 0.35);
+            return new HapticImpulse("hurt", 34.0, 110, clamp(base * 1.1, 0.0, 1.0), 0.35, 0.0);
+        }
+
+        // Totem of undying.
+        if (p.contains("totem") && p.contains("use")) {
+            return new HapticImpulse("totem", 30.0, 280, clamp(base * 1.0, 0.0, 1.0), 0.55, 0.0);
         }
 
         // Block break / place.
         if (p.contains(".break") || p.contains("break")) {
-            return new HapticImpulse("block_break", 42.0, 70, clamp(base * 0.9, 0.0, 1.0), 0.25);
+            return new HapticImpulse("block_break", 42.0, 70, clamp(base * 0.9, 0.0, 1.0), 0.25, 0.0);
         }
         if (p.contains(".place") || p.contains("place")) {
-            return new HapticImpulse("block_place", 40.0, 55, clamp(base * 0.7, 0.0, 1.0), 0.15);
+            return new HapticImpulse("block_place", 40.0, 55, clamp(base * 0.7, 0.0, 1.0), 0.15, 0.0);
+        }
+
+        // World interactions: doors, trapdoors, gates, chests, buttons, levers.
+        if ((p.contains("door") || p.contains("trapdoor") || p.contains("fence_gate") || p.contains("gate"))
+                && (p.contains("open") || p.contains("close"))) {
+            return new HapticImpulse("door", 38.0, 55, clamp(base * 0.45, 0.0, 0.8), 0.18, 0.0);
+        }
+        if ((p.contains("chest") || p.contains("barrel") || p.contains("shulker"))
+                && (p.contains("open") || p.contains("close"))) {
+            return new HapticImpulse("container", 36.0, 65, clamp(base * 0.50, 0.0, 0.85), 0.22, 0.0);
+        }
+        if (p.contains("button") && (p.contains("click") || p.contains("press"))) {
+            return new HapticImpulse("button", 46.0, 32, clamp(base * 0.35, 0.0, 0.6), 0.06, 0.0);
+        }
+        if (p.contains("lever") && (p.contains("click") || p.contains("switch") || p.contains("toggle"))) {
+            return new HapticImpulse("lever", 44.0, 38, clamp(base * 0.35, 0.0, 0.65), 0.10, 0.0);
+        }
+
+        // Utility blocks / crafting stations.
+        if (p.contains("anvil") && (p.contains("use") || p.contains("land") || p.contains("place") || p.contains("hit"))) {
+            return new HapticImpulse("anvil", 30.0, 110, clamp(base * 0.75, 0.0, 1.0), 0.25, 0.0);
+        }
+        if (p.contains("grindstone") && p.contains("use")) {
+            return new HapticImpulse("grindstone", 40.0, 95, clamp(base * 0.55, 0.0, 0.95), 0.28, 0.0);
+        }
+        if ((p.contains("smithing") || p.contains("stonecutter") || p.contains("loom")) && (p.contains("use") || p.contains("take") || p.contains("result"))) {
+            return new HapticImpulse("station", 42.0, 70, clamp(base * 0.45, 0.0, 0.8), 0.20, 0.0);
         }
 
         // Footsteps / movement texture.
@@ -132,27 +191,30 @@ public final class SoundHapticsHandler {
                 return null;
             }
             // Let the continuous road texture cover most of this; steps are light taps.
-            return new HapticImpulse("step", 55.0, 30, clamp(base * 0.35, 0.0, 0.6), 0.05);
+            return new HapticImpulse("step", 55.0, 30, clamp(base * 0.35, 0.0, 0.6), 0.05, 0.0);
         }
 
         // Attacks / swings.
         if (p.contains("attack") || p.contains("sweep") || p.contains("crit")) {
-            return new HapticImpulse("attack", 48.0, 45, clamp(base * 0.55, 0.0, 0.8), 0.10);
+            return new HapticImpulse("attack", 48.0, 45, clamp(base * 0.55, 0.0, 0.8), 0.10, 0.0);
         }
 
         // Projectiles.
         if (p.contains("arrow") || p.contains("bow") || p.contains("crossbow")) {
-            return new HapticImpulse("proj", 46.0, 40, clamp(base * 0.45, 0.0, 0.7), 0.10);
+            return new HapticImpulse("proj", 46.0, 40, clamp(base * 0.45, 0.0, 0.7), 0.10, 0.0);
         }
 
-        // Lightning / thunder.
-        if (p.contains("thunder") || p.contains("lightning")) {
-            return new HapticImpulse("thunder", 20.0, 220, clamp(base * 0.8, 0.0, 1.0), 0.70);
+        // Boss / major events (sound-driven): warden / dragon cues.
+        if (p.contains("warden") && (p.contains("sonic") || p.contains("boom") || p.contains("roar"))) {
+            return new HapticImpulse("warden", 26.0, 240, clamp(base * 0.95, 0.0, 1.0), 0.65, 14.0);
+        }
+        if ((p.contains("ender_dragon") || p.contains("dragon")) && (p.contains("growl") || p.contains("flap") || p.contains("death") || p.contains("fireball"))) {
+            return new HapticImpulse("dragon", 24.0, 320, clamp(base * 0.9, 0.0, 1.0), 0.60, 16.0);
         }
 
         // Default for other player/block/hostile sounds: tiny nudge, but only from "active" sources.
         if (source == SoundSource.PLAYERS || source == SoundSource.BLOCKS || source == SoundSource.HOSTILE) {
-            return new HapticImpulse("misc", 44.0, 25, clamp(base * 0.18, 0.0, 0.35), 0.05);
+            return new HapticImpulse("misc", 44.0, 25, clamp(base * 0.18, 0.0, 0.35), 0.05, 0.0);
         }
 
         return null;
@@ -164,6 +226,6 @@ public final class SoundHapticsHandler {
         return v;
     }
 
-    private record HapticImpulse(String bucketKey, double freqHz, int durationMs, double gain, double noiseMix) {
+    private record HapticImpulse(String bucketKey, double freqHz, int durationMs, double gain, double noiseMix, double distanceRefBlocks) {
     }
 }
