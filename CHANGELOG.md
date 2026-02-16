@@ -6,6 +6,11 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.19] - 2026-02-16
+
+### Fixed
+- Damage burst haptics now triggers at the moment the player is hurt (event-timed), rather than waiting for tick-based health polling.
+
 ## [0.1.18] - 2026-02-16
 
 ### Changed

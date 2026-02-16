@@ -13,6 +13,7 @@ public final class ClientInit {
 
     public static void init() {
         MinecraftForge.EVENT_BUS.register(new TelemetryEventHandler());
+        MinecraftForge.EVENT_BUS.register(new DamageHapticsHandler());
         MinecraftForge.EVENT_BUS.register(new SoundHapticsHandler());
         MinecraftForge.EVENT_BUS.register(new GameplayHapticsHandler());
         MinecraftForge.EVENT_BUS.register(new MovementHapticsHandler());

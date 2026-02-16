@@ -11,7 +11,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 public final class TelemetryEventHandler {
     private double lastSpeed = 0.0;
-    private float lastHealth = -1.0f;
     private ResourceKey<Biome> lastBiome = null;
 
     @SubscribeEvent
@@ -46,13 +45,6 @@ public final class TelemetryEventHandler {
         lastSpeed = speed;
 
         boolean elytra = player.isFallFlying();
-
-        // Damage detection (client-safe): detect health dropping.
-        float health = player.getHealth();
-        if (lastHealth >= 0.0f && health < lastHealth) {
-            AudioOutputEngine.get().triggerDamageBurst();
-        }
-        lastHealth = health;
 
         // Biome transitions (kept for later use; currently UI exposes toggle)
         if (BstConfig.get().biomeChimeEnabled) {

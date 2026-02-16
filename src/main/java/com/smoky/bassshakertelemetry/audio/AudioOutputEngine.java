@@ -37,6 +37,7 @@ public final class AudioOutputEngine {
     // Event triggers
     private final AtomicInteger damageBurstSamplesLeft = new AtomicInteger(0);
     private final AtomicInteger damageBurstTotalSamples = new AtomicInteger(1);
+    private volatile double damageBurstIntensity = 1.0;
     private final AtomicInteger biomeChimeSamplesLeft = new AtomicInteger(0);
     private final AtomicInteger biomeChimeTotalSamples = new AtomicInteger(1);
 
@@ -97,10 +98,16 @@ public final class AudioOutputEngine {
     }
 
     public void triggerDamageBurst() {
+        triggerDamageBurst(1.0);
+    }
+
+    public void triggerDamageBurst(double intensity01) {
         int burstMs = Math.max(10, BstConfig.get().damageBurstMs);
         int samples = (int) ((burstMs / 1000.0) * SAMPLE_RATE);
         damageBurstTotalSamples.set(Math.max(1, samples));
         damageBurstSamplesLeft.set(samples);
+        // Let the most intense recent hit win.
+        damageBurstIntensity = Math.max(damageBurstIntensity, clamp(intensity01, 0.0, 1.0));
     }
 
     /**
@@ -329,7 +336,7 @@ public final class AudioOutputEngine {
                         damageNoiseState += (white - damageNoiseState) * a;
 
                         double env = Math.sin(progress * Math.PI) * Math.exp(-progress * 5.0);
-                        sample += damageNoiseState * cfg.damageBurstGain * env;
+                        sample += damageNoiseState * cfg.damageBurstGain * clamp(damageBurstIntensity, 0.0, 1.0) * env;
                         damageLeft--;
                     }
 
@@ -406,8 +413,12 @@ public final class AudioOutputEngine {
 
                 if (cfg.damageBurstEnabled) {
                     damageBurstSamplesLeft.set(Math.max(0, damageLeft));
+                    if (damageLeft <= 0) {
+                        damageBurstIntensity = 1.0;
+                    }
                 } else {
                     damageBurstSamplesLeft.set(0);
+                    damageBurstIntensity = 1.0;
                 }
 
                 if (cfg.accelBumpEnabled) {
