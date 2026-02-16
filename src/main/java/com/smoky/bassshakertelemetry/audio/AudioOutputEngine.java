@@ -53,6 +53,10 @@ public final class AudioOutputEngine {
     private volatile double impulseGain = 0.0;
     private volatile double impulseNoiseMix = 0.25;
     private volatile double impulsePhase;
+    private volatile double impulseNoiseState;
+
+    // Damage burst noise filter state
+    private volatile double damageNoiseState;
 
     // Road texture state
     private volatile double roadNoiseState;
@@ -290,20 +294,36 @@ public final class AudioOutputEngine {
                         // White noise with quick decay.
                         int total = Math.max(1, damageBurstTotalSamples.get());
                         double progress = 1.0 - (damageLeft / (double) total);
-                        double env = Math.exp(-progress * 6.0);
-                        sample += ((random.nextDouble() * 2.0) - 1.0) * cfg.damageBurstGain * env;
+
+                        // Softer, less "clicky" transient: apply a smooth attack envelope and low-pass the noise.
+                        // This keeps the effect tactile (low-frequency) without harsh high-frequency punch.
+                        double fc = 55.0;
+                        double a = 1.0 - Math.exp(-(2.0 * Math.PI * fc) / SAMPLE_RATE);
+                        double white = (random.nextDouble() * 2.0) - 1.0;
+                        damageNoiseState += (white - damageNoiseState) * a;
+
+                        double env = Math.sin(progress * Math.PI) * Math.exp(-progress * 5.0);
+                        sample += damageNoiseState * cfg.damageBurstGain * env;
                         damageLeft--;
                     }
 
                     if (impulseLeft > 0) {
                         int total = Math.max(1, impulseTotalSamples.get());
                         double progress = 1.0 - (impulseLeft / (double) total);
+                        // Raised-cosine envelope (sin^2) reduces attack punch vs a simple half-sine.
                         double env = Math.sin(progress * Math.PI);
+                        env *= env;
 
                         double step = (2.0 * Math.PI * impulseFreqHz) / SAMPLE_RATE;
                         double sine = Math.sin(impulsePhase);
-                        double noise = (random.nextDouble() * 2.0) - 1.0;
-                        double w = (sine * (1.0 - impulseNoiseMix)) + (noise * impulseNoiseMix);
+
+                        // Low-pass the noise component to keep impulses tactile and less "snappy".
+                        double fc = 65.0;
+                        double a = 1.0 - Math.exp(-(2.0 * Math.PI * fc) / SAMPLE_RATE);
+                        double white = (random.nextDouble() * 2.0) - 1.0;
+                        impulseNoiseState += (white - impulseNoiseState) * a;
+
+                        double w = (sine * (1.0 - impulseNoiseMix)) + (impulseNoiseState * impulseNoiseMix);
                         sample += w * impulseGain * env;
 
                         impulsePhase += step;

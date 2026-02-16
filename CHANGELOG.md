@@ -6,6 +6,11 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-02-15
+
+### Changed
+- Softened transient effects to be less punchy by smoothing impulse envelopes and low-passing noise components (damage burst + impulse noise).
+
 ## [0.1.7] - 2026-02-15
 
 ### Fixed
