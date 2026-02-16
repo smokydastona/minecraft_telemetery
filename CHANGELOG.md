@@ -6,6 +6,11 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ## [Unreleased]
 
+## [0.1.15] - 2026-02-16
+
+### Changed
+- Output device selection now opens in its own screen (no overlapping dropdown in the main config screen).
+
 ## [0.1.14] - 2026-02-16
 
 ### Fixed

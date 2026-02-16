@@ -1,6 +1,7 @@
 {
   "bassshakertelemetry.config.title": "Bass Shaker Telemetry",
   "bassshakertelemetry.config.output_device": "Output device",
+  "bassshakertelemetry.config.output_device_title": "Select output device",
   "bassshakertelemetry.config.master_volume": "Master volume",
   "bassshakertelemetry.config.advanced": "Advanced settings",
   "bassshakertelemetry.config.advanced_title": "Advanced settings",

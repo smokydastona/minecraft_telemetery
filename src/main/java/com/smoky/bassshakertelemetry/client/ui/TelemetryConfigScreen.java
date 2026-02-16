@@ -3,10 +3,8 @@ package com.smoky.bassshakertelemetry.client.ui;
 import com.smoky.bassshakertelemetry.audio.AudioDeviceUtil;
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.config.BstConfig;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
-import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -18,8 +16,7 @@ import java.util.Objects;
 public final class TelemetryConfigScreen extends Screen {
     private final Screen parent;
 
-    private Button deviceDropdownButton;
-    private DeviceDropdownList deviceDropdownList;
+    private Button outputDeviceButton;
     private List<String> devices = List.of("<Default>");
     private String selectedDevice = "<Default>";
 
@@ -66,10 +63,15 @@ public final class TelemetryConfigScreen extends Screen {
             font
         ));
 
-        deviceDropdownButton = Button.builder(deviceDropdownLabel(), b -> toggleDeviceDropdown(leftX, 50 + rowH + 2, contentWidth))
+        outputDeviceButton = Button.builder(deviceButtonLabel(), b -> {
+                    if (this.minecraft != null) {
+                        this.minecraft.setScreen(new OutputDeviceScreen(this));
+                    }
+                })
             .bounds(leftX, 50, contentWidth, rowH)
             .build();
-        this.addRenderableWidget(deviceDropdownButton);
+
+        this.addRenderableWidget(outputDeviceButton);
 
         int y = 50 + rowH + rowGap;
 
@@ -152,129 +154,22 @@ public final class TelemetryConfigScreen extends Screen {
         onCancel();
     }
 
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // If the dropdown is open, it must receive input first.
-        // Otherwise overlapped widgets (e.g., sliders/buttons underneath) can consume the click,
-        // making the dropdown feel unselectable.
-        if (deviceDropdownList != null) {
-            boolean insideList = deviceDropdownList.isMouseOver(mouseX, mouseY);
-            boolean insideButton = deviceDropdownButton != null && deviceDropdownButton.isMouseOver(mouseX, mouseY);
-
-            if (insideList) {
-                if (deviceDropdownList.mouseClicked(mouseX, mouseY, button)) {
-                    return true;
-                }
-                return true;
-            }
-
-            // Clicking outside closes the dropdown (but still allow the button itself to toggle).
-            if (!insideButton) {
-                closeDeviceDropdown();
-            }
-        }
-
-        return super.mouseClicked(mouseX, mouseY, button);
-    }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        if (deviceDropdownList != null && deviceDropdownList.isMouseOver(mouseX, mouseY)) {
-            return deviceDropdownList.mouseScrolled(mouseX, mouseY, delta);
-        }
-        return super.mouseScrolled(mouseX, mouseY, delta);
-    }
-
     @SuppressWarnings("null")
-    private Component deviceDropdownLabel() {
+    private Component deviceButtonLabel() {
         return Component.translatable("bassshakertelemetry.config.output_device")
                 .append(": ")
                 .append(Component.literal(Objects.requireNonNull(selectedDevice)));
     }
 
-    private void toggleDeviceDropdown(int x, int y, int width) {
-        if (deviceDropdownList != null) {
-            closeDeviceDropdown();
-            return;
+    void setSelectedDevice(String displayDeviceId) {
+        String v = Objects.requireNonNullElse(displayDeviceId, "<Default>");
+        if (!devices.contains(v)) {
+            v = "<Default>";
         }
+        this.selectedDevice = v;
 
-        Minecraft mc = this.minecraft;
-        if (mc == null) {
-            return;
-        }
-
-        int maxHeight = Math.min(140, this.height - y - 40);
-        int height = Math.max(48, maxHeight);
-
-        DeviceDropdownList list = new DeviceDropdownList(mc, width, height, y, 18, x, devices, selectedDevice);
-        this.deviceDropdownList = list;
-        this.addRenderableWidget(list);
-    }
-
-    private void closeDeviceDropdown() {
-        if (deviceDropdownList != null) {
-            this.removeWidget(deviceDropdownList);
-            this.deviceDropdownList = null;
-        }
-    }
-
-    private final class DeviceDropdownList extends ObjectSelectionList<DeviceDropdownEntry> {
-        private final int left;
-
-        DeviceDropdownList(Minecraft minecraft, int width, int height, int y, int itemHeight, int left, List<String> devices, String selected) {
-            super(minecraft, width, height, y, y + height, itemHeight);
-            this.left = left;
-            this.setLeftPos(left);
-            this.setRenderHeader(false, 0);
-
-            for (String d : devices) {
-                DeviceDropdownEntry entry = new DeviceDropdownEntry(d);
-                this.addEntry(entry);
-                if (Objects.equals(entry.deviceId, selected)) {
-                    this.setSelected(entry);
-                }
-            }
-        }
-
-        @Override
-        public int getRowWidth() {
-            return this.width;
-        }
-
-        @Override
-        protected int getScrollbarPosition() {
-            return this.left + this.width - 6;
-        }
-    }
-
-    private final class DeviceDropdownEntry extends ObjectSelectionList.Entry<DeviceDropdownEntry> {
-        private final String deviceId;
-
-        DeviceDropdownEntry(String deviceId) {
-            this.deviceId = Objects.requireNonNull(Objects.requireNonNullElse(deviceId, "<Default>"));
-        }
-
-        @Override
-        public Component getNarration() {
-            return Component.literal(Objects.requireNonNull(deviceId));
-        }
-
-        @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            selectedDevice = deviceId;
-            if (deviceDropdownButton != null) {
-                deviceDropdownButton.setMessage(Objects.requireNonNull(deviceDropdownLabel()));
-            }
-            closeDeviceDropdown();
-            return true;
-        }
-
-        @Override
-        @SuppressWarnings("null")
-        public void render(net.minecraft.client.gui.GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
-                           int mouseX, int mouseY, boolean hovered, float partialTick) {
-            int color = (Objects.equals(deviceId, selectedDevice)) ? 0xFFFFFF : 0xE0E0E0;
-            guiGraphics.drawString(Objects.requireNonNull(TelemetryConfigScreen.this.font), Objects.requireNonNull(deviceId), x + 4, y + 5, color);
+        if (outputDeviceButton != null) {
+            outputDeviceButton.setMessage(Objects.requireNonNull(deviceButtonLabel()));
         }
     }
 
