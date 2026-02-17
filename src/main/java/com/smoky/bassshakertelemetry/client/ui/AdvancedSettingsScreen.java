@@ -11,6 +11,8 @@ import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -419,12 +421,12 @@ public final class AdvancedSettingsScreen extends Screen {
 
         @Override
         public List<? extends GuiEventListener> children() {
-            return List.of();
+            return Collections.emptyList();
         }
 
         @Override
         public List<? extends NarratableEntry> narratables() {
-            return List.of();
+            return Collections.emptyList();
         }
 
         @Override
@@ -455,12 +457,12 @@ public final class AdvancedSettingsScreen extends Screen {
 
         @Override
         public List<? extends GuiEventListener> children() {
-            return List.of(slider, testButton);
+            return Arrays.asList(slider, testButton);
         }
 
         @Override
         public List<? extends NarratableEntry> narratables() {
-            return List.of(slider, testButton);
+            return Arrays.asList(slider, testButton);
         }
 
         @Override
@@ -488,12 +490,12 @@ public final class AdvancedSettingsScreen extends Screen {
 
         @Override
         public List<? extends GuiEventListener> children() {
-            return List.of(slider);
+            return Collections.singletonList(slider);
         }
 
         @Override
         public List<? extends NarratableEntry> narratables() {
-            return List.of(slider);
+            return Collections.singletonList(slider);
         }
 
         @Override
@@ -516,12 +518,12 @@ public final class AdvancedSettingsScreen extends Screen {
 
         @Override
         public List<? extends GuiEventListener> children() {
-            return List.of(button);
+            return Collections.singletonList(button);
         }
 
         @Override
         public List<? extends NarratableEntry> narratables() {
-            return List.of(button);
+            return Collections.singletonList(button);
         }
 
         @Override

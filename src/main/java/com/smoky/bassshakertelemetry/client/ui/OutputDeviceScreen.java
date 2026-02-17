@@ -13,6 +13,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -131,12 +132,12 @@ public final class OutputDeviceScreen extends Screen {
 
         @Override
         public List<? extends GuiEventListener> children() {
-            return List.of();
+            return Collections.emptyList();
         }
 
         @Override
         public List<? extends NarratableEntry> narratables() {
-            return List.of();
+            return Collections.emptyList();
         }
 
         @Override
