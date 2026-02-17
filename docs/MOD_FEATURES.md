@@ -28,6 +28,7 @@
 - **Periodic danger ticks**: subtle repeating pulses for fire/drowning/poison/wither.
 - **Death rumble**: one-shot death effect (boom + “womp” tail).
 - **Flight wind (Elytra)**: low rumble impulses while gliding that shift left/right as you turn (profile key: `flight.wind`).
+- **Mounted haptics**: while riding, ground mounts emit hoof “clump” pulses (`mount.hoof`). Mounts that can fly swap to `flight.wind` while airborne.
 - **Biome chime**: short low sine “bump” on biome changes.
 - **Accel bump**: short low thump on large accel spikes (toggleable; default OFF).
 - **Sound haptics**: maps many in-game sounds (explosions, thunder, hurt, break/place, steps, attacks, doors/containers/buttons/levers, etc.) into short impulses.
@@ -134,4 +135,5 @@ Common keys (selected):
 - `gameplayHapticsEnabled`, `gameplayHapticsGain`, `gameplayHapticsCooldownMs`
 - `gameplayAttackClickEnabled`, `gameplayUseClickEnabled`, `gameplayMiningPulseEnabled`, `gameplayMiningPulsePeriodMs`, `gameplayXpEnabled`
 - `footstepHapticsEnabled`, `footstepHapticsGain`
+- `mountedHapticsEnabled`, `mountedHapticsGain`
 - `miningSwingHapticsEnabled`, `miningSwingHapticsGain`

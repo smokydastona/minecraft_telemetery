@@ -95,6 +95,10 @@ public final class BstConfig {
         public boolean footstepHapticsEnabled = true;
         public double footstepHapticsGain = 0.55;
 
+        // Mounted haptics (hooves / flying mount wind)
+        public boolean mountedHapticsEnabled = true;
+        public double mountedHapticsGain = 0.55;
+
         // Swing-synced mining haptics (matches the on-screen arm swing timing)
         public boolean miningSwingHapticsEnabled = true;
         public double miningSwingHapticsGain = 0.55;

@@ -17,6 +17,7 @@ public final class ClientInit {
         MinecraftForge.EVENT_BUS.register(new SoundHapticsHandler());
         MinecraftForge.EVENT_BUS.register(new GameplayHapticsHandler());
         MinecraftForge.EVENT_BUS.register(new MovementHapticsHandler());
+        MinecraftForge.EVENT_BUS.register(new MountedHapticsHandler());
         MinecraftForge.EVENT_BUS.register(new MiningSwingHapticsHandler());
         MinecraftForge.EVENT_BUS.register(new DebugOverlayHandler());
 

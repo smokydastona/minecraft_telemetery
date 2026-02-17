@@ -28,6 +28,7 @@ public final class AdvancedSettingsScreen extends Screen {
     private GainSlider soundGainSlider;
     private GainSlider gameplayGainSlider;
     private GainSlider footstepGainSlider;
+    private GainSlider mountedGainSlider;
     private GainSlider miningSwingGainSlider;
 
     private IntSlider damageMsSlider;
@@ -97,6 +98,7 @@ public final class AdvancedSettingsScreen extends Screen {
         soundGainSlider = new GainSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.sound_gain", BstConfig.get().soundHapticsGain, 0.0, 2.00);
         gameplayGainSlider = new GainSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.gameplay_gain", BstConfig.get().gameplayHapticsGain, 0.0, 2.00);
         footstepGainSlider = new GainSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.footstep_gain", BstConfig.get().footstepHapticsGain, 0.0, 1.00);
+        mountedGainSlider = new GainSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.mounted_gain", BstConfig.get().mountedHapticsGain, 0.0, 1.00);
         miningSwingGainSlider = new GainSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.mining_swing_gain", BstConfig.get().miningSwingHapticsGain, 0.0, 1.00);
 
         settingsList.addSettingEntry(new SliderWithTestEntry(roadGainSlider, AudioOutputEngine.get()::testRoadTexture));
@@ -106,6 +108,7 @@ public final class AdvancedSettingsScreen extends Screen {
         settingsList.addSettingEntry(new SliderWithTestEntry(soundGainSlider, AudioOutputEngine.get()::testSoundHaptics));
         settingsList.addSettingEntry(new SliderWithTestEntry(gameplayGainSlider, AudioOutputEngine.get()::testGameplayHaptics));
         settingsList.addSettingEntry(new SliderWithTestEntry(footstepGainSlider, AudioOutputEngine.get()::testFootsteps));
+        settingsList.addSettingEntry(new SliderWithTestEntry(mountedGainSlider, AudioOutputEngine.get()::testMountedHooves));
         settingsList.addSettingEntry(new SliderWithTestEntry(miningSwingGainSlider, AudioOutputEngine.get()::testMiningSwing));
 
         // --- Timing ---
@@ -177,6 +180,7 @@ public final class AdvancedSettingsScreen extends Screen {
         if (soundGainSlider != null) data.soundHapticsGain = soundGainSlider.getRealValue();
         if (gameplayGainSlider != null) data.gameplayHapticsGain = gameplayGainSlider.getRealValue();
         if (footstepGainSlider != null) data.footstepHapticsGain = footstepGainSlider.getRealValue();
+        if (mountedGainSlider != null) data.mountedHapticsGain = mountedGainSlider.getRealValue();
         if (miningSwingGainSlider != null) data.miningSwingHapticsGain = miningSwingGainSlider.getRealValue();
 
         if (damageMsSlider != null) data.damageBurstMs = damageMsSlider.getIntValue();

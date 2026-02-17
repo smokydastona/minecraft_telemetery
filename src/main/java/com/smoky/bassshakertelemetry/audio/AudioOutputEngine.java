@@ -304,6 +304,39 @@ public final class AudioOutputEngine {
         triggerImpulse(44.0, 55, gain01, 0.42);
     }
 
+    public void testMountedHooves() {
+        wakeForTests();
+        BstConfig.Data cfg = BstConfig.get();
+        double knob = clamp(cfg.mountedHapticsGain, 0.0, 1.0);
+
+        var store = com.smoky.bassshakertelemetry.config.BstVibrationProfiles.get();
+        var resolved = store.resolve("mount.hoof", 1.0, 1.0);
+        if (resolved == null) {
+            double gain01 = clamp(knob * 0.55, 0.0, 1.0);
+            triggerImpulse(52.0, 70, gain01, 0.28, "punch", 160, 60, 2, 0, "mount.hoof");
+            triggerImpulse(48.0, 50, clamp(gain01 * 0.65, 0.0, 1.0), 0.40, "punch", 160, 60, 1, 32, "mount.hoof_tail");
+            return;
+        }
+
+        double gain01 = clamp(resolved.intensity01() * knob, 0.0, 1.0);
+        if (gain01 <= 0.0008) {
+            return;
+        }
+
+        String pat = (resolved.pattern() == null || resolved.pattern().isBlank()) ? "punch" : resolved.pattern();
+        triggerImpulse(resolved.frequencyHz(), resolved.durationMs(), gain01, resolved.noiseMix01(), pat, resolved.pulsePeriodMs(), resolved.pulseWidthMs(), resolved.priority(), 0, "mount.hoof");
+        triggerImpulse(clamp(resolved.frequencyHz() - 4.0, store.global.minFrequency, store.global.maxFrequency),
+                Math.max(25, (int) Math.round(resolved.durationMs() * 0.70)),
+                clamp(gain01 * 0.65, 0.0, 1.0),
+                clamp(resolved.noiseMix01() + 0.10, 0.0, 0.90),
+                pat,
+                resolved.pulsePeriodMs(),
+                resolved.pulseWidthMs(),
+                Math.max(0, resolved.priority() - 1),
+                32,
+                "mount.hoof_tail");
+    }
+
     public void testMiningSwing() {
         wakeForTests();
         BstConfig.Data cfg = BstConfig.get();

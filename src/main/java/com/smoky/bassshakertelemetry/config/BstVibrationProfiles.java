@@ -203,6 +203,9 @@ public final class BstVibrationProfiles {
             // Flight
             map.put("flight.wind", new Profile(38.0, 0.26, 220, 0.55, "soft_single", "none", 160, 60, true, 2, false, false));
 
+            // Mounted
+            map.put("mount.hoof", new Profile(52.0, 0.30, 70, 0.28, "punch", "none", 160, 60, false, 2, false, false));
+
             // Boss
             map.put("boss.dragon_wing", new Profile(32.0, 0.70, 400, 0.50, "pulse_loop", "log_distance", 170, 70, true, 9, false, false));
             map.put("boss.wither_spawn", new Profile(24.0, 1.00, 1500, 0.70, "fade_out", "log_distance", 160, 60, true, 10, false, false));
@@ -324,6 +327,19 @@ public final class BstVibrationProfiles {
                     "      \"falloff\": \"none\",\n" +
                     "      \"noiseMix\": 0.55,\n" +
                     "      \"directional\": true,\n" +
+                    "      \"priority\": 2\n" +
+                    "    }\n" +
+                    "  },\n\n" +
+
+                    "  \"mount\": {\n" +
+                    "    \"hoof\": {\n" +
+                    "      \"frequency\": 52,\n" +
+                    "      \"intensity\": 0.30,\n" +
+                    "      \"duration\": 70,\n" +
+                    "      \"pattern\": \"punch\",\n" +
+                    "      \"falloff\": \"none\",\n" +
+                    "      \"noiseMix\": 0.28,\n" +
+                    "      \"directional\": false,\n" +
                     "      \"priority\": 2\n" +
                     "    }\n" +
                     "  },\n\n" +
