@@ -1,9 +1,12 @@
 package com.smoky.bassshakertelemetry.audio;
 
 import com.smoky.bassshakertelemetry.config.BstConfig;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.sound.sampled.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -11,6 +14,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public final class AudioOutputEngine {
     private static final AudioOutputEngine INSTANCE = new AudioOutputEngine();
+
+    private static final Logger LOGGER = LogManager.getLogger("bassshakertelemetry");
 
     /**
      * Non-optional: mono means only one dominant vibration at a time.
@@ -250,6 +255,7 @@ public final class AudioOutputEngine {
     // --- UI test triggers (always audible even if the effect toggle is currently off) ---
 
     public void testRoadTexture() {
+        wakeForTests();
         // Short filtered-noise-ish burst via the impulse path.
         BstConfig.Data cfg = BstConfig.get();
         double gain01 = clamp(cfg.roadTextureGain / 0.30, 0.0, 1.0);
@@ -257,42 +263,49 @@ public final class AudioOutputEngine {
     }
 
     public void testDamageBurst() {
+        wakeForTests();
         BstConfig.Data cfg = BstConfig.get();
         double gain01 = clamp(cfg.damageBurstGain, 0.0, 1.0);
         triggerImpulse(42.0, Math.max(40, cfg.damageBurstMs), gain01, 0.90);
     }
 
     public void testBiomeChime() {
+        wakeForTests();
         BstConfig.Data cfg = BstConfig.get();
         double gain01 = clamp(cfg.biomeChimeGain, 0.0, 1.0);
         triggerImpulse(80.0, 90, gain01, 0.0);
     }
 
     public void testAccelBump() {
+        wakeForTests();
         BstConfig.Data cfg = BstConfig.get();
         double gain01 = clamp(cfg.accelBumpGain, 0.0, 1.0);
         triggerImpulse(32.0, Math.max(40, cfg.accelBumpMs), gain01, 0.0);
     }
 
     public void testSoundHaptics() {
+        wakeForTests();
         BstConfig.Data cfg = BstConfig.get();
         double gain01 = clamp(cfg.soundHapticsGain * 0.60, 0.0, 1.0);
         triggerImpulse(36.0, 120, gain01, 0.35);
     }
 
     public void testGameplayHaptics() {
+        wakeForTests();
         BstConfig.Data cfg = BstConfig.get();
         double gain01 = clamp(cfg.gameplayHapticsGain * 0.60, 0.0, 1.0);
         triggerImpulse(44.0, 120, gain01, 0.25);
     }
 
     public void testFootsteps() {
+        wakeForTests();
         BstConfig.Data cfg = BstConfig.get();
         double gain01 = clamp(cfg.footstepHapticsGain, 0.0, 1.0);
         triggerImpulse(44.0, 55, gain01, 0.42);
     }
 
     public void testMiningSwing() {
+        wakeForTests();
         BstConfig.Data cfg = BstConfig.get();
         double gain01 = clamp(cfg.miningSwingHapticsGain, 0.0, 1.0);
         triggerImpulse(46.0, 26, gain01, 0.08);
@@ -303,8 +316,15 @@ public final class AudioOutputEngine {
      * Uses a high priority so it stays dominant while testing.
      */
     public void testLatencyPulse() {
+        wakeForTests();
         double gain01 = clamp(BstConfig.get().masterVolume * 0.90, 0.0, 1.0);
         triggerImpulse(42.0, 55, gain01, 0.12, "single", 160, 60, 95, 0);
+    }
+
+    private void wakeForTests() {
+        // Tests should be able to open/play even when the player isn't in-world.
+        telemetryLive = true;
+        lastTelemetryNanos = System.nanoTime();
     }
 
     private void triggerAccelBump(double intensity01) {
@@ -321,6 +341,24 @@ public final class AudioOutputEngine {
         if (!BstConfig.get().enabled()) {
             return;
         }
+
+        BstConfig.Data cfg = BstConfig.get();
+        String device = (cfg.outputDeviceName == null || cfg.outputDeviceName.isBlank()) ? "<Default>" : cfg.outputDeviceName;
+        LOGGER.info("[BST] Starting audio engine: device='{}' bufferMs={} masterVol={} enabled=true", device, cfg.javaSoundBufferMs, cfg.masterVolume);
+
+        try {
+            List<String> devices = AudioDeviceUtil.listOutputDeviceNames(FORMAT);
+            if (devices.isEmpty()) {
+                LOGGER.warn("[BST] No JavaSound output devices found that support {}", FORMAT);
+            } else if (devices.size() <= 24) {
+                LOGGER.info("[BST] JavaSound output devices ({}): {}", devices.size(), devices);
+            } else {
+                LOGGER.info("[BST] JavaSound output devices: {} (showing first 24): {}", devices.size(), devices.subList(0, 24));
+            }
+        } catch (Exception e) {
+            LOGGER.warn("[BST] Failed to enumerate JavaSound devices ({})", e.toString());
+        }
+
         running.set(true);
         Thread t = new Thread(this::runLoop, "BST-Audio");
         t.setDaemon(true);
@@ -341,6 +379,8 @@ public final class AudioOutputEngine {
 
     private void runLoop() {
         SourceDataLine line = null;
+        long startedNs = System.nanoTime();
+        boolean loggedNoTelemetryHint = false;
         try {
             int framesPerChunk = 1024;
             byte[] buffer = new byte[framesPerChunk * CHANNELS * BYTES_PER_SAMPLE];
@@ -378,6 +418,10 @@ public final class AudioOutputEngine {
 
                 if (line == null) {
                     if (!hasFreshTelemetry) {
+                        if (!loggedNoTelemetryHint && (System.nanoTime() - startedNs) > 2_000_000_000L) {
+                            loggedNoTelemetryHint = true;
+                            LOGGER.info("[BST] Waiting for in-world telemetry before opening audio (join a world). Use Advanced Settings 'Test' buttons to force playback.");
+                        }
                         try {
                             Thread.sleep(50);
                         } catch (InterruptedException ignored) {
@@ -387,14 +431,27 @@ public final class AudioOutputEngine {
 
                     line = openLine();
                     if (line == null) {
-                        running.set(false);
-                        return;
+                        LOGGER.error("[BST] Failed to open any audio line; will retry in 1s");
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ignored) {
+                        }
+                        continue;
                     }
                     try {
                         line.start();
-                    } catch (Exception ignored) {
-                        running.set(false);
-                        return;
+                    } catch (Exception e) {
+                        LOGGER.error("[BST] Failed to start audio line ({}); will retry", e.toString());
+                        try {
+                            line.close();
+                        } catch (Exception ignored) {
+                        }
+                        line = null;
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException ignored) {
+                        }
+                        continue;
                     }
                 }
 
@@ -717,9 +774,27 @@ public final class AudioOutputEngine {
                     biomeChimeSamplesLeft.set(0);
                 }
 
-                line.write(buffer, 0, buffer.length);
+                try {
+                    line.write(buffer, 0, buffer.length);
+                } catch (Exception e) {
+                    LOGGER.warn("[BST] Audio write failed ({}); reopening device", e.toString());
+                    try {
+                        line.stop();
+                    } catch (Exception ignored) {
+                    }
+                    try {
+                        line.flush();
+                    } catch (Exception ignored) {
+                    }
+                    try {
+                        line.close();
+                    } catch (Exception ignored) {
+                    }
+                    line = null;
+                }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            LOGGER.error("[BST] Audio thread crashed", e);
         } finally {
             if (line != null) {
                 try {
@@ -768,9 +843,11 @@ public final class AudioOutputEngine {
 
                     logOpenedLine(line, preferred, bufferMs);
                     return line;
+                } else {
+                    LOGGER.warn("[BST] Preferred device not found or unsupported: '{}'", preferred);
                 }
             } catch (Exception e) {
-                System.err.println("[BST] Failed to open preferred audio device: " + preferred + " (" + e.getClass().getSimpleName() + ")");
+                LOGGER.warn("[BST] Failed to open preferred audio device: '{}'", preferred, e);
             }
         }
 
@@ -790,7 +867,7 @@ public final class AudioOutputEngine {
             logOpenedLine(line, "<Default>", bufferMs);
             return line;
         } catch (Exception e) {
-            System.err.println("[BST] Failed to open default audio device (" + e.getClass().getSimpleName() + ")");
+            LOGGER.error("[BST] Failed to open default audio device", e);
             return null;
         }
     }
@@ -801,7 +878,7 @@ public final class AudioOutputEngine {
             int frameSize = FORMAT.getFrameSize();
             int frames = (frameSize <= 0) ? 0 : (bytes / frameSize);
             double ms = (frames * 1000.0) / SAMPLE_RATE;
-            System.out.println("[BST] Opened audio line: device=" + deviceLabel + ", requestedBufferMs=" + requestedBufferMs + ", actualBufferMs~=" + String.format(java.util.Locale.ROOT, "%.1f", ms) + " (" + bytes + " bytes)");
+            LOGGER.info("[BST] Opened audio line: device='{}' requestedBufferMs={} actualBufferMs~={} ({} bytes)", deviceLabel, requestedBufferMs, String.format(java.util.Locale.ROOT, "%.1f", ms), bytes);
         } catch (Exception ignored) {
         }
     }
