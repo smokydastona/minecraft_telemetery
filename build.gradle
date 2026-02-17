@@ -5,7 +5,36 @@ plugins {
 }
 
 group = project.mod_group_id
-version = project.mod_version
+
+// --- Versioning ---
+// Forge accepts any version string, but for distribution we want monotonically increasing versions.
+// We keep a human-edited base version in gradle.properties and append the git commit count.
+// (CI uses fetch-depth: 0 so commit count is stable there.)
+def baseVersion = (project.findProperty('mod_version_base') ?: project.findProperty('mod_version') ?: '0.1.0').toString().trim()
+
+def gitCommitCountOrNull = {
+    try {
+        def stdout = new ByteArrayOutputStream()
+        exec {
+            workingDir rootDir
+            commandLine 'git', 'rev-list', '--count', 'HEAD'
+            standardOutput = stdout
+            errorOutput = new ByteArrayOutputStream()
+            ignoreExitValue = true
+        }
+        def s = stdout.toString('UTF-8').trim()
+        if (s == null || s.isBlank()) return null
+        return Integer.parseInt(s)
+    } catch (Exception ignored) {
+        return null
+    }
+}
+
+def commitCount = gitCommitCountOrNull()
+def resolvedModVersion = (commitCount == null) ? baseVersion : (baseVersion + '.' + commitCount)
+
+version = resolvedModVersion
+ext.resolvedModVersion = resolvedModVersion
 
 base {
     archivesName = project.mod_id
@@ -50,7 +79,7 @@ processResources {
     def replaceProps = [
             mod_id: project.mod_id,
             mod_name: project.mod_name,
-            mod_version: project.mod_version,
+        mod_version: project.ext.resolvedModVersion,
             minecraft_version: project.minecraft_version,
             forge_version: project.forge_version,
             mod_group_id: project.mod_group_id
