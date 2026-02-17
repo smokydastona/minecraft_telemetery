@@ -4,7 +4,10 @@ import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import com.smoky.bassshakertelemetry.config.BstVibrationProfiles;
 import net.minecraft.client.Minecraft;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -59,14 +62,38 @@ public final class DamageHapticsHandler {
         var resolved = BstVibrationProfiles.get().resolve("damage.generic", scale01, 1.0);
         if (resolved != null) {
             double gain01 = clamp(resolved.intensity01() * clamp(cfg.damageBurstGain, 0.0, 1.0), 0.0, 1.0);
-            AudioOutputEngine.get().triggerImpulse(
+
+            // Directional damage: if the damage source has a position, encode the direction so you can
+            // feel where the hit came from.
+            var player = mc.player;
+            DamageSource src = event.getSource();
+            SourcePos source = resolveDamageSourcePos(src);
+
+            var store = BstVibrationProfiles.get();
+            var encoded = DirectionalEncoding.apply(
+                    store,
+                    player,
+                    resolved.directional(),
+                    source.hasSource,
+                    source.x,
+                    source.y,
+                    source.z,
                     resolved.frequencyHz(),
+                    gain01
+            );
+
+            String pat = (resolved.pattern() == null || resolved.pattern().isBlank()) ? "single" : resolved.pattern();
+            AudioOutputEngine.get().triggerImpulse(
+                    encoded.frequencyHz(),
                     resolved.durationMs(),
-                    gain01,
+                    encoded.gain01(),
                     resolved.noiseMix01(),
-                    resolved.pattern(),
+                    pat,
                     resolved.pulsePeriodMs(),
-                    resolved.pulseWidthMs()
+                    resolved.pulseWidthMs(),
+                    resolved.priority(),
+                    encoded.delayMs(),
+                    "damage.generic"
             );
         } else {
             AudioOutputEngine.get().triggerDamageBurst(scale01);
@@ -180,14 +207,39 @@ public final class DamageHapticsHandler {
                 var resolved = BstVibrationProfiles.get().resolve("damage.generic", scale01, 1.0);
                 if (resolved != null) {
                     double gain01 = clamp(resolved.intensity01() * clamp(cfg.damageBurstGain, 0.0, 1.0), 0.0, 1.0);
+
+                    // Tick-based fallback may not have a DamageSource; use lastHurtByMob when available.
+                    Entity attacker = player.getLastHurtByMob();
+                    boolean hasSource = attacker != null;
+                    double sx = hasSource ? attacker.getX() : player.getX();
+                    double sy = hasSource ? attacker.getY() : player.getY();
+                    double sz = hasSource ? attacker.getZ() : player.getZ();
+
+                    var store = BstVibrationProfiles.get();
+                    var encoded = DirectionalEncoding.apply(
+                        store,
+                        player,
+                        resolved.directional(),
+                        hasSource,
+                        sx,
+                        sy,
+                        sz,
+                        resolved.frequencyHz(),
+                        gain01
+                    );
+
+                    String pat = (resolved.pattern() == null || resolved.pattern().isBlank()) ? "single" : resolved.pattern();
                     AudioOutputEngine.get().triggerImpulse(
-                            resolved.frequencyHz(),
-                            resolved.durationMs(),
-                            gain01,
-                            resolved.noiseMix01(),
-                            resolved.pattern(),
-                            resolved.pulsePeriodMs(),
-                            resolved.pulseWidthMs()
+                        encoded.frequencyHz(),
+                        resolved.durationMs(),
+                        encoded.gain01(),
+                        resolved.noiseMix01(),
+                        pat,
+                        resolved.pulsePeriodMs(),
+                        resolved.pulseWidthMs(),
+                        resolved.priority(),
+                        encoded.delayMs(),
+                        "damage.generic"
                     );
                 } else {
                     AudioOutputEngine.get().triggerDamageBurst(scale01);
@@ -296,5 +348,50 @@ public final class DamageHapticsHandler {
         if (v < lo) return lo;
         if (v > hi) return hi;
         return v;
+    }
+
+    private record SourcePos(boolean hasSource, double x, double y, double z) {
+    }
+
+    private static SourcePos resolveDamageSourcePos(DamageSource src) {
+        if (src == null) {
+            return new SourcePos(false, 0.0, 0.0, 0.0);
+        }
+
+        try {
+            Entity e = src.getEntity();
+            if (e != null) {
+                return new SourcePos(true, e.getX(), e.getY(), e.getZ());
+            }
+        } catch (Exception ignored) {
+        }
+
+        try {
+            Entity e = src.getDirectEntity();
+            if (e != null) {
+                return new SourcePos(true, e.getX(), e.getY(), e.getZ());
+            }
+        } catch (Exception ignored) {
+        }
+
+        // Environmental damage sometimes reports a source position without an entity.
+        Vec3 pos = tryGetSourcePositionReflective(src);
+        if (pos != null) {
+            return new SourcePos(true, pos.x, pos.y, pos.z);
+        }
+
+        return new SourcePos(false, 0.0, 0.0, 0.0);
+    }
+
+    private static Vec3 tryGetSourcePositionReflective(DamageSource src) {
+        try {
+            var m = src.getClass().getMethod("getSourcePosition");
+            Object r = m.invoke(src);
+            if (r instanceof Vec3 v) {
+                return v;
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 }

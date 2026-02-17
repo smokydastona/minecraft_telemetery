@@ -24,7 +24,10 @@
 ## Effects (current)
 
 - **Road texture**: low-frequency filtered noise scaled by speed (toggleable; default OFF).
-- **Damage burst**: short decaying burst triggered on hurt (with client-tick fallback for timing), plus subtle periodic danger ticks (fire/drowning/poison/wither) and a one-shot death rumble.
+- **Damage**: triggers on hurt timing (with client-tick fallback). When a damage source position is available (attacker/projectile/source position), `damage.generic` is **directional** so you can feel where it came from.
+- **Periodic danger ticks**: subtle repeating pulses for fire/drowning/poison/wither.
+- **Death rumble**: one-shot death effect (boom + “womp” tail).
+- **Flight wind (Elytra)**: low rumble impulses while gliding that shift left/right as you turn (profile key: `flight.wind`).
 - **Biome chime**: short low sine “bump” on biome changes.
 - **Accel bump**: short low thump on large accel spikes (toggleable; default OFF).
 - **Sound haptics**: maps many in-game sounds (explosions, thunder, hurt, break/place, steps, attacks, doors/containers/buttons/levers, etc.) into short impulses.
@@ -65,6 +68,11 @@ Some profiles can be marked `directional: true`. When a source position is known
 - `encoding.*.intensityMul`: optional gain multiplier per direction band
 
 Directional encoding is applied for both server-relayed event haptics (packet includes a source position) and client-only sound haptics (derived from `PlaySoundEvent` using the sound instance world position).
+
+Directional encoding is also applied to:
+
+- `damage.generic` when a damage source position is known
+- `flight.wind` (uses a synthetic source point that shifts with yaw-rate while gliding)
 
 Profiles also support:
 

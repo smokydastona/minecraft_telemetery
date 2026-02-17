@@ -199,6 +199,9 @@ public final class BstVibrationProfiles {
             // Movement
             map.put("movement.land", new Profile(46.0, 0.22, 85, 0.18, "shockwave", "none", 160, 60, true, 4, false, true));
             map.put("movement.footstep", new Profile(58.0, 0.24, 45, 0.12, "shockwave", "none", 160, 60, false, 2, false, false));
+            
+            // Flight
+            map.put("flight.wind", new Profile(38.0, 0.26, 220, 0.55, "soft_single", "none", 160, 60, true, 2, false, false));
 
             // Boss
             map.put("boss.dragon_wing", new Profile(32.0, 0.70, 400, 0.50, "pulse_loop", "log_distance", 170, 70, true, 9, false, false));
@@ -309,6 +312,18 @@ public final class BstVibrationProfiles {
                     "      \"pattern\": \"shockwave\",\n" +
                     "      \"falloff\": \"none\",\n" +
                     "      \"noiseMix\": 0.12,\n" +
+                    "      \"priority\": 2\n" +
+                    "    }\n" +
+                    "  },\n\n" +
+                    "  \"flight\": {\n" +
+                    "    \"wind\": {\n" +
+                    "      \"frequency\": 38,\n" +
+                    "      \"intensity\": 0.26,\n" +
+                    "      \"duration\": 220,\n" +
+                    "      \"pattern\": \"soft_single\",\n" +
+                    "      \"falloff\": \"none\",\n" +
+                    "      \"noiseMix\": 0.55,\n" +
+                    "      \"directional\": true,\n" +
                     "      \"priority\": 2\n" +
                     "    }\n" +
                     "  },\n\n" +
