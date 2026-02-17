@@ -10,7 +10,7 @@ group = project.mod_group_id
 // Forge accepts any version string, but for distribution we want monotonically increasing versions.
 // We keep a human-edited base version in gradle.properties and append the git commit count.
 // (CI uses fetch-depth: 0 so commit count is stable there.)
-def baseVersion = (project.findProperty('mod_version_base') ?: project.findProperty('mod_version') ?: '0.1.0').toString().trim()
+def baseVersion = (project.findProperty('mod_version') ?: project.findProperty('mod_version_base') ?: '0.1').toString().trim()
 
 def gitCommitCountOrNull = {
     try {
