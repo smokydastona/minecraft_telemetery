@@ -16,7 +16,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Directional flight wind impulses while gliding (profile key: `flight.wind`).
 - Mounted haptics: hoof pulses on ground mounts (profile key: `mount.hoof`) and flying mounts swap to `flight.wind` while airborne.
 - Directional Warden heartbeat pulses that follow the in-game heartbeat sound timing, scale with distance, and are capped to stay quieter than damage (profile key: `boss.warden_heartbeat`).
-- Ender Dragon sound cues (roar/growl/flap) now produce directional, distance-scaled haptics so the rumble shifts around you as the dragon moves (and are capped to never exceed damage haptics).
+- Ender Dragon sound cues (roar/growl/flap) now produce directional, distance-scaled haptics so the rumble shifts around you as the dragon moves (and are capped to never exceed 90% of damage haptics).
 
 ### Changed
 - Network protocol version bumped (client/server must match mod version).

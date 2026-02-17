@@ -95,7 +95,7 @@ public final class SoundHapticsHandler {
 
         // Boss safety rule: dragon cues should never be louder than the maximum configured damage haptic.
         if (impulse.bucketKey != null && impulse.bucketKey.startsWith("dragon")) {
-            gain = Math.min(gain, maxDamageGain01(cfg));
+            gain = Math.min(gain, maxDamageGain01(cfg) * 0.90);
         }
 
         if (!rateLimit(impulse.bucketKey, cfg.soundHapticsCooldownMs)) {
