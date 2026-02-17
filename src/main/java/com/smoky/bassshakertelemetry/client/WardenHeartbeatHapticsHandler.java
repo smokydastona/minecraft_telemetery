@@ -4,92 +4,113 @@ import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import com.smoky.bassshakertelemetry.config.BstVibrationProfiles;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.monster.warden.Warden;
-import net.minecraftforge.event.TickEvent;
+import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
-import java.util.List;
-
 /**
- * Proximity-driven directional "heartbeat" coming from nearby Wardens.
+ * Directional "heartbeat" haptic triggered from the actual Warden heartbeat sound.
  *
- * This is intentionally quieter than damage haptics and uses a lower priority so it never masks hits.
+ * Cadence should match the game audio; loudness scales with distance and is capped to stay
+ * quieter than damage haptics.
  */
 public final class WardenHeartbeatHapticsHandler {
     private static final String PROFILE_KEY = "boss.warden_heartbeat";
 
-    // Detection radius in blocks. Kept moderate to avoid constant scanning.
     private static final double MAX_RANGE_BLOCKS = 36.0;
 
-    // Heartbeat cadence bounds.
-    private static final int FAR_PERIOD_MS = 1200;
-    private static final int NEAR_PERIOD_MS = 520;
-
-    private static final long SCAN_COOLDOWN_NANOS = 160_000_000L; // 160ms
-
-    private long lastScanNanos;
-    private long lastBeatNanos;
-
-    private Warden cachedNearest;
-    private double cachedDist;
+    private long lastFireNanos;
 
     @SubscribeEvent
     @SuppressWarnings("null")
-    public void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
+    public void onPlaySound(PlaySoundEvent event) {
+        BstConfig.Data cfg = BstConfig.get();
+        if (!cfg.enabled) {
             return;
         }
 
-        BstConfig.Data cfg = BstConfig.get();
-        if (!cfg.enabled) {
-            clear();
+        SoundInstance sound = event.getSound();
+        if (sound == null) {
             return;
         }
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.isPaused() || mc.player == null || mc.level == null) {
-            clear();
             return;
         }
 
         var player = mc.player;
         if (player.isDeadOrDying() || player.getHealth() <= 0.0f) {
-            clear();
             return;
         }
 
+        // Ignore music/records/ambient.
+        SoundSource source;
+        try {
+            source = sound.getSource();
+        } catch (NullPointerException ignored) {
+            return;
+        }
+        if (source == SoundSource.MUSIC || source == SoundSource.RECORDS || source == SoundSource.AMBIENT) {
+            return;
+        }
+
+        ResourceLocation loc;
+        try {
+            loc = sound.getLocation();
+        } catch (NullPointerException ignored) {
+            return;
+        }
+        if (loc == null) {
+            return;
+        }
+
+        String path = loc.getPath();
+        if (path == null || path.isBlank()) {
+            return;
+        }
+
+        String p = path.toLowerCase();
+        if (!(p.contains("warden") && p.contains("heartbeat"))) {
+            return;
+        }
+
+        // De-dupe in case the sound system dispatches multiple instances very close together.
         long now = System.nanoTime();
-
-        if (now - lastScanNanos >= SCAN_COOLDOWN_NANOS) {
-            lastScanNanos = now;
-            scanNearestWarden(mc);
+        if (lastFireNanos != 0L && (now - lastFireNanos) < 80_000_000L) {
+            return;
         }
+        lastFireNanos = now;
 
-        if (cachedNearest == null) {
+        // If the heartbeat sound is muted to ~0, avoid firing.
+        double volume;
+        try {
+            volume = sound.getVolume();
+        } catch (NullPointerException ignored) {
+            return;
+        }
+        if (volume <= 0.001) {
             return;
         }
 
-        // If the warden is no longer valid or out of range, stop.
-        if (!cachedNearest.isAlive() || cachedNearest.isRemoved() || cachedDist > MAX_RANGE_BLOCKS) {
-            cachedNearest = null;
+        // Compute distance scale (louder when closer), and ignore beyond a reasonable radius.
+        Vec3 playerPos = player.position();
+        double dx = sound.getX() - playerPos.x;
+        double dy = sound.getY() - playerPos.y;
+        double dz = sound.getZ() - playerPos.z;
+        double dist = Math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
+        if (dist > MAX_RANGE_BLOCKS) {
             return;
         }
 
-        // Louder when closer.
-        double distance01 = 1.0 - clamp(cachedDist / MAX_RANGE_BLOCKS, 0.0, 1.0);
+        double distance01 = 1.0 - clamp(dist / MAX_RANGE_BLOCKS, 0.0, 1.0);
         if (distance01 <= 0.001) {
             return;
         }
 
-        int periodMs = (int) Math.round(lerp(FAR_PERIOD_MS, NEAR_PERIOD_MS, distance01));
-        long periodNs = Math.max(80L, (long) periodMs) * 1_000_000L;
-
-        if (lastBeatNanos != 0L && (now - lastBeatNanos) < periodNs) {
-            return;
-        }
-        lastBeatNanos = now;
-
-        // Resolve profile. Use a low priority and cap the gain so it stays quieter than damage.
         var store = BstVibrationProfiles.get();
         var resolved = store.resolve(PROFILE_KEY, 1.0, 1.0);
         if (resolved == null) {
@@ -115,9 +136,9 @@ public final class WardenHeartbeatHapticsHandler {
                 player,
                 resolved.directional(),
                 true,
-                cachedNearest.getX(),
-                cachedNearest.getY(),
-                cachedNearest.getZ(),
+                sound.getX(),
+                sound.getY(),
+                sound.getZ(),
                 resolved.frequencyHz(),
                 gain01
         );
@@ -135,56 +156,6 @@ public final class WardenHeartbeatHapticsHandler {
                 encoded.delayMs(),
                 PROFILE_KEY
         );
-    }
-
-    @SuppressWarnings("null")
-    private void scanNearestWarden(Minecraft mc) {
-        var player = mc.player;
-        var level = mc.level;
-        if (player == null || level == null) {
-            cachedNearest = null;
-            return;
-        }
-
-        var scanBox = player.getBoundingBox().inflate(MAX_RANGE_BLOCKS);
-        List<Warden> wardens = level.getEntitiesOfClass(
-                Warden.class,
-                scanBox,
-                w -> w != null && w.isAlive()
-        );
-
-        if (wardens.isEmpty()) {
-            cachedNearest = null;
-            cachedDist = 0.0;
-            return;
-        }
-
-        Warden best = null;
-        double bestDist = Double.MAX_VALUE;
-        for (Warden w : wardens) {
-            if (w == null) {
-                continue;
-            }
-            double d = w.distanceTo(player);
-            if (d < bestDist) {
-                bestDist = d;
-                best = w;
-            }
-        }
-
-        cachedNearest = best;
-        cachedDist = bestDist;
-    }
-
-    private void clear() {
-        cachedNearest = null;
-        cachedDist = 0.0;
-        lastBeatNanos = 0L;
-        lastScanNanos = 0L;
-    }
-
-    private static double lerp(double a, double b, double t) {
-        return a + (b - a) * clamp(t, 0.0, 1.0);
     }
 
     private static double clamp(double v, double min, double max) {

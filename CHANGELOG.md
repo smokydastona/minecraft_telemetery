@@ -15,7 +15,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Directional damage haptics when a source position is known.
 - Directional flight wind impulses while gliding (profile key: `flight.wind`).
 - Mounted haptics: hoof pulses on ground mounts (profile key: `mount.hoof`) and flying mounts swap to `flight.wind` while airborne.
-- Proximity-driven directional Warden heartbeat pulses that scale with distance and are capped to stay quieter than damage (profile key: `boss.warden_heartbeat`).
+- Directional Warden heartbeat pulses that follow the in-game heartbeat sound timing, scale with distance, and are capped to stay quieter than damage (profile key: `boss.warden_heartbeat`).
 
 ### Changed
 - Network protocol version bumped (client/server must match mod version).
