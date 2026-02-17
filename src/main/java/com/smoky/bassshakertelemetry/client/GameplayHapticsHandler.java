@@ -100,10 +100,10 @@ public final class GameplayHapticsHandler {
                 player.getX(),
                 player.getY(),
                 player.getZ(),
-                52.0,
-                50,
+            48.0,
+            72,
                 clamp(gain, 0.0, 1.0),
-                0.08,
+            0.12,
                 5
         );
     }
@@ -118,14 +118,14 @@ public final class GameplayHapticsHandler {
         if (hr != null && hr.getType() == HitResult.Type.BLOCK) {
             bucket = "gameplay.use_block";
             // Short, higher-frequency "click" feel.
-            freq = 76.0;
-            dur = 24;
-            noise = 0.02;
+            freq = 72.0;
+            dur = 34;
+            noise = 0.03;
         } else {
             bucket = "gameplay.use_misc";
-            freq = 82.0;
-            dur = 20;
-            noise = 0.01;
+            freq = 76.0;
+            dur = 30;
+            noise = 0.025;
         }
 
         double gain = 0.18 * clamp(cfg.gameplayHapticsGain, 0.0, 2.0);

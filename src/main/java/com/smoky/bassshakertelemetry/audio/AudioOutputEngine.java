@@ -905,15 +905,34 @@ public final class AudioOutputEngine {
     }
 
     private static double impulseEnvelope(String pattern, int sampleIndex, int totalSamples, int samplesLeft, int pulsePeriodSamples, int pulseWidthSamples) {
-        // Small attack/release to avoid clicks when starting/stopping.
-        int attackSamples = (int) (SAMPLE_RATE * 0.010); // 10ms
-        int releaseSamples = (int) (SAMPLE_RATE * 0.015); // 15ms
-        double attack = (attackSamples <= 0) ? 1.0 : clamp(sampleIndex / (double) attackSamples, 0.0, 1.0);
-        double release = (releaseSamples <= 0) ? 1.0 : clamp(samplesLeft / (double) releaseSamples, 0.0, 1.0);
-
         double overallProgress = (totalSamples <= 1) ? 1.0 : clamp(sampleIndex / (double) (totalSamples - 1), 0.0, 1.0);
 
         String p = (pattern == null) ? "single" : pattern.trim().toLowerCase();
+
+        // Small attack/release to avoid clicks when starting/stopping.
+        // Some patterns intentionally override this to feel softer (gameplay clicks) or punchier (damage).
+        double attackMs;
+        double releaseMs;
+        switch (p) {
+            case "soft_single" -> {
+                attackMs = 0.020; // 20ms
+                releaseMs = 0.028; // 28ms
+            }
+            case "punch" -> {
+                attackMs = 0.003; // 3ms
+                releaseMs = 0.012; // 12ms
+            }
+            default -> {
+                attackMs = 0.010; // 10ms
+                releaseMs = 0.015; // 15ms
+            }
+        }
+
+        int attackSamples = (int) (SAMPLE_RATE * attackMs);
+        int releaseSamples = (int) (SAMPLE_RATE * releaseMs);
+        double attack = (attackSamples <= 0) ? 1.0 : clamp(sampleIndex / (double) attackSamples, 0.0, 1.0);
+        double release = (releaseSamples <= 0) ? 1.0 : clamp(samplesLeft / (double) releaseSamples, 0.0, 1.0);
+
         double env;
 
         switch (p) {
@@ -924,6 +943,10 @@ public final class AudioOutputEngine {
             case "shockwave" -> {
                 // Punchy onset then rapid decay.
                 env = Math.exp(-overallProgress * 6.0);
+            }
+            case "punch" -> {
+                // Like shockwave but with a shorter attack to feel more abrupt.
+                env = Math.exp(-overallProgress * 6.6);
             }
             case "pulse_loop" -> {
                 int period = Math.max(1, pulsePeriodSamples);
@@ -941,6 +964,11 @@ public final class AudioOutputEngine {
             }
             case "single" -> {
                 // Raised-cosine envelope (sin^2) reduces attack punch vs a simple half-sine.
+                double e = Math.sin(overallProgress * Math.PI);
+                env = e * e;
+            }
+            case "soft_single" -> {
+                // Same general shape as "single" but paired with a longer attack/release above.
                 double e = Math.sin(overallProgress * Math.PI);
                 env = e * e;
             }

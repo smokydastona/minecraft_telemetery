@@ -166,7 +166,7 @@ public final class BstVibrationProfiles {
             Map<String, Profile> map = new HashMap<>();
 
             // Damage
-            map.put("damage.generic", new Profile(62.0, 0.48, 95, 0.18, "shockwave", "none", 160, 60, true, 9, true, false));
+            map.put("damage.generic", new Profile(66.0, 0.60, 82, 0.14, "punch", "none", 160, 60, true, 10, true, false));
             map.put("damage.fall", new Profile(45.0, 0.30, 180, 0.30, "single", "none", 160, 60, true, 7, false, true));
             map.put("damage.death", new Profile(30.0, 0.80, 1200, 0.55, "fade_out", "none", 160, 60, false, 10, false, false));
 

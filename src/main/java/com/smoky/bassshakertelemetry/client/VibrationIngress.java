@@ -165,6 +165,15 @@ public final class VibrationIngress {
                                         int priority) {
         noteLocalEvent(keyOrBucket, priority, hasSource, sourceX, sourceY, sourceZ);
 
+        String pat = "single";
+        if (keyOrBucket != null) {
+            String k = keyOrBucket.trim().toLowerCase();
+            if (k.startsWith("gameplay.attack_") || k.startsWith("gameplay.use_")) {
+                // Gameplay clicks should feel less "spiky" than other one-shots.
+                pat = "soft_single";
+            }
+        }
+
         var store = BstVibrationProfiles.get();
         var player = Minecraft.getInstance().player;
         var encoded = DirectionalEncoding.apply(
@@ -184,7 +193,7 @@ public final class VibrationIngress {
                 durationMs,
                 encoded.gain01(),
                 noiseMix01,
-                "single",
+            pat,
                 160,
                 60,
                 priority,

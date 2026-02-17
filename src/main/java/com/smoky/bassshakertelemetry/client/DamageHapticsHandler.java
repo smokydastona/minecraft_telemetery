@@ -104,21 +104,61 @@ public final class DamageHapticsHandler {
         boolean deadNow = player.isDeadOrDying() || player.getHealth() <= 0.0f;
         if (deadNow && !lastDead) {
             var resolved = BstVibrationProfiles.get().resolve("damage.death", 1.0, 1.0);
+            double baseGain01;
+            double baseHz;
+            int baseMs;
+            double baseNoise;
+            String basePattern;
             if (resolved != null) {
-                double gain01 = clamp(resolved.intensity01() * clamp(cfg.damageBurstGain, 0.0, 1.0), 0.0, 1.0);
-                AudioOutputEngine.get().triggerImpulse(
-                        resolved.frequencyHz(),
-                        resolved.durationMs(),
-                        gain01,
-                        resolved.noiseMix01(),
-                        resolved.pattern(),
-                        resolved.pulsePeriodMs(),
-                        resolved.pulseWidthMs()
-                );
+                baseGain01 = clamp(resolved.intensity01() * clamp(cfg.damageBurstGain, 0.0, 1.0), 0.0, 1.0);
+                baseHz = resolved.frequencyHz();
+                baseMs = resolved.durationMs();
+                baseNoise = resolved.noiseMix01();
+                basePattern = resolved.pattern();
             } else {
-                double gain01 = clamp(cfg.damageBurstGain * 0.95, 0.0, 1.0);
-                AudioOutputEngine.get().triggerImpulse(24.0, 520, gain01, 0.65);
+                baseGain01 = clamp(cfg.damageBurstGain * 0.95, 0.0, 1.0);
+                baseHz = 30.0;
+                baseMs = 1050;
+                baseNoise = 0.55;
+                basePattern = "fade_out";
             }
+
+            // Desired feel: a larger boom, then a slower "womp-wah" tail.
+            // We approximate the downward sweep as a 2-stage impulse with a short delay.
+            double boomHz = clamp(baseHz + 14.0, 34.0, 78.0);
+            int boomMs = Math.max(120, Math.min(220, (int) (baseMs * 0.18)));
+            double boomGain01 = clamp(baseGain01 * 1.00, 0.0, 1.0);
+            double boomNoise = clamp(0.18 + (baseNoise * 0.30), 0.0, 0.65);
+
+            double tailHz = clamp(baseHz - 10.0, 20.0, 52.0);
+            int tailMs = Math.max(650, Math.min(1100, (int) (baseMs * 0.85)));
+            double tailGain01 = clamp(baseGain01 * 0.92, 0.0, 1.0);
+            double tailNoise = clamp(0.55 + (baseNoise * 0.25), 0.0, 0.85);
+
+            AudioOutputEngine.get().triggerImpulse(
+                    boomHz,
+                    boomMs,
+                    boomGain01,
+                    boomNoise,
+                    "punch",
+                    160,
+                    60,
+                    95,
+                    0,
+                    "damage.death_boom"
+            );
+            AudioOutputEngine.get().triggerImpulse(
+                    tailHz,
+                    tailMs,
+                    tailGain01,
+                    tailNoise,
+                    (basePattern == null || basePattern.isBlank()) ? "fade_out" : basePattern,
+                    160,
+                    60,
+                    90,
+                    115,
+                    "damage.death_womp"
+            );
         }
         lastDead = deadNow;
 
