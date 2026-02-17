@@ -1,6 +1,7 @@
 package com.smoky.bassshakertelemetry.client;
 
 import com.smoky.bassshakertelemetry.config.BstConfig;
+import com.smoky.bassshakertelemetry.config.BstVibrationProfiles;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.resources.ResourceLocation;
@@ -91,6 +92,11 @@ public final class SoundHapticsHandler {
             gain *= distanceScale01(mc.player.position(), sound, impulse.distanceRefBlocks);
         }
         gain = clamp(gain, 0.0, 1.0);
+
+        // Boss safety rule: dragon cues should never be louder than the maximum configured damage haptic.
+        if (impulse.bucketKey != null && impulse.bucketKey.startsWith("dragon")) {
+            gain = Math.min(gain, maxDamageGain01(cfg));
+        }
 
         if (!rateLimit(impulse.bucketKey, cfg.soundHapticsCooldownMs)) {
             return;
@@ -219,8 +225,18 @@ public final class SoundHapticsHandler {
         if (p.contains("warden") && (p.contains("sonic") || p.contains("boom") || p.contains("roar"))) {
             return new HapticImpulse("warden", 26.0, 240, clamp(base * 0.95, 0.0, 1.0), 0.65, 14.0, true, 9);
         }
-        if ((p.contains("ender_dragon") || p.contains("dragon")) && (p.contains("growl") || p.contains("flap") || p.contains("death") || p.contains("fireball"))) {
-            return new HapticImpulse("dragon", 24.0, 320, clamp(base * 0.9, 0.0, 1.0), 0.60, 16.0, true, 9);
+        if (p.contains("ender_dragon") || p.contains("dragon")) {
+            // Ender Dragon cues should be directional and distance-scaled so they "move" as the dragon moves.
+            // We prefer the in-game sound timing (roars/growls/flaps) to drive cadence.
+            if (p.contains("roar") || p.contains("growl")) {
+                return new HapticImpulse("dragon_roar", 24.0, 360, clamp(base * 1.00, 0.0, 1.0), 0.65, 26.0, true, 9);
+            }
+            if (p.contains("flap")) {
+                return new HapticImpulse("dragon_flap", 28.0, 220, clamp(base * 0.60, 0.0, 0.9), 0.55, 22.0, true, 6);
+            }
+            if (p.contains("death") || p.contains("fireball")) {
+                return new HapticImpulse("dragon", 24.0, 320, clamp(base * 0.90, 0.0, 1.0), 0.60, 22.0, true, 9);
+            }
         }
 
         // Default for other player/block/hostile sounds: tiny nudge, but only from "active" sources.
@@ -235,6 +251,18 @@ public final class SoundHapticsHandler {
         if (v < min) return min;
         if (v > max) return max;
         return v;
+    }
+
+    private static double maxDamageGain01(BstConfig.Data cfg) {
+        // Use the profile system if available so this tracks user tuning.
+        try {
+            var resolved = BstVibrationProfiles.get().resolve("damage.generic", 1.0, 1.0);
+            if (resolved != null) {
+                return clamp(resolved.intensity01() * clamp(cfg.damageBurstGain, 0.0, 1.0), 0.0, 1.0);
+            }
+        } catch (Exception ignored) {
+        }
+        return clamp(cfg.damageBurstGain, 0.0, 1.0);
     }
 
     private record HapticImpulse(String bucketKey, double freqHz, int durationMs, double gain, double noiseMix, double distanceRefBlocks, boolean directional, int priority) {
