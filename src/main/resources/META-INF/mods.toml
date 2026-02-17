@@ -6,6 +6,7 @@ license="All Rights Reserved"
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
+logoFile="icon.png"
 authors="smoky"
 description='''
 Exposes simple real-time telemetry and outputs it as a dedicated audio stream
