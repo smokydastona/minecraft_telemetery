@@ -29,6 +29,7 @@
 - **Death rumble**: one-shot death effect (boom + “womp” tail).
 - **Flight wind (Elytra)**: low rumble impulses while gliding that shift left/right as you turn (profile key: `flight.wind`).
 - **Mounted haptics**: while riding, ground mounts emit hoof “clump” pulses (`mount.hoof`). Mounts that can fly swap to `flight.wind` while airborne.
+- **Warden heartbeat**: proximity-driven heartbeat pulses from nearby Wardens (profile key: `boss.warden_heartbeat`). This is directional and scales up as you get closer, but is intentionally capped to stay quieter than damage.
 - **Biome chime**: short low sine “bump” on biome changes.
 - **Accel bump**: short low thump on large accel spikes (toggleable; default OFF).
 - **Sound haptics**: maps many in-game sounds (explosions, thunder, hurt, break/place, steps, attacks, doors/containers/buttons/levers, etc.) into short impulses.

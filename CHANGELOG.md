@@ -12,6 +12,10 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Server-relayed haptics packet now includes source position (enables directional encoding in multiplayer).
 - Advanced settings: JavaSound output buffer size selector (helps tune latency/stability).
 - Advanced settings: latency test pulse toggle.
+- Directional damage haptics when a source position is known.
+- Directional flight wind impulses while gliding (profile key: `flight.wind`).
+- Mounted haptics: hoof pulses on ground mounts (profile key: `mount.hoof`) and flying mounts swap to `flight.wind` while airborne.
+- Proximity-driven directional Warden heartbeat pulses that scale with distance and are capped to stay quieter than damage (profile key: `boss.warden_heartbeat`).
 
 ### Changed
 - Network protocol version bumped (client/server must match mod version).

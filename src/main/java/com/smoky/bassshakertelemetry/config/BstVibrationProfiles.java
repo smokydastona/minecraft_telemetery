@@ -209,6 +209,7 @@ public final class BstVibrationProfiles {
             // Boss
             map.put("boss.dragon_wing", new Profile(32.0, 0.70, 400, 0.50, "pulse_loop", "log_distance", 170, 70, true, 9, false, false));
             map.put("boss.wither_spawn", new Profile(24.0, 1.00, 1500, 0.70, "fade_out", "log_distance", 160, 60, true, 10, false, false));
+            map.put("boss.warden_heartbeat", new Profile(30.0, 0.22, 160, 0.50, "soft_single", "none", 160, 60, true, 2, false, false));
 
             return new Store(new Global(), Encoding.defaults(), map);
         }
@@ -340,6 +341,19 @@ public final class BstVibrationProfiles {
                     "      \"falloff\": \"none\",\n" +
                     "      \"noiseMix\": 0.28,\n" +
                     "      \"directional\": false,\n" +
+                    "      \"priority\": 2\n" +
+                    "    }\n" +
+                    "  },\n\n" +
+
+                    "  \"boss\": {\n" +
+                    "    \"warden_heartbeat\": {\n" +
+                    "      \"frequency\": 30,\n" +
+                    "      \"intensity\": 0.22,\n" +
+                    "      \"duration\": 160,\n" +
+                    "      \"pattern\": \"soft_single\",\n" +
+                    "      \"falloff\": \"none\",\n" +
+                    "      \"noiseMix\": 0.50,\n" +
+                    "      \"directional\": true,\n" +
                     "      \"priority\": 2\n" +
                     "    }\n" +
                     "  },\n\n" +

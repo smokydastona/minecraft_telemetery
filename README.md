@@ -19,6 +19,7 @@ The current design goal is **"encoded mono surround"**: direction is encoded int
 - **Event impulses**: damage (directional when a source is known), danger ticks (fire/drowning/poison/wither), death rumble.
 - **Flight wind (Elytra)**: a low rumble layer while gliding that shifts left/right as you turn (key: `flight.wind`).
 - **Mounted haptics**: ground mounts emit hoof “clump” pulses (key: `mount.hoof`); flying mounts swap to `flight.wind` while airborne.
+- **Warden heartbeat**: a proximity-driven directional heartbeat pulse from nearby Wardens (key: `boss.warden_heartbeat`), intentionally quieter than damage.
 - **Client-only sound haptics**: infers impulses from `PlaySoundEvent` (explosions, thunder, hurt, break/place, steps, attacks, doors/containers/buttons/levers, etc.). These now also participate in encoded-mono direction using the sound instance position.
 - **Gameplay haptics (non-sexual)**: attack/use clicks, mining pulse, XP gains.
 - **Footsteps / mining swing**: short pulses tuned for readability (no constant “engine rumble”).
