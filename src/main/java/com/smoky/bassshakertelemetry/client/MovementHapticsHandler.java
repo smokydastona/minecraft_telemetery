@@ -74,7 +74,10 @@ public final class MovementHapticsHandler {
                             resolved.noiseMix01(),
                             resolved.pattern(),
                             resolved.pulsePeriodMs(),
-                            resolved.pulseWidthMs()
+                            resolved.pulseWidthMs(),
+                            resolved.priority(),
+                            0,
+                            "movement.land"
                     );
                 }
             }
@@ -118,11 +121,14 @@ public final class MovementHapticsHandler {
                                 resolved.noiseMix01(),
                                 resolved.pattern(),
                                 resolved.pulsePeriodMs(),
-                                resolved.pulseWidthMs()
+                                resolved.pulseWidthMs(),
+                                resolved.priority(),
+                                0,
+                                "movement.footstep"
                         );
                     } else {
                         // Crunchier, less clicky step: more filtered noise, lower fundamental, longer envelope.
-                        AudioOutputEngine.get().triggerImpulse(44.0, 55, gain01, 0.42);
+                        AudioOutputEngine.get().triggerImpulse(44.0, 55, gain01, 0.42, "single", 160, 60, 5, 0, "movement.footstep");
                     }
                 }
             }

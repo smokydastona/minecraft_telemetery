@@ -167,7 +167,7 @@ public final class GameplayHapticsHandler {
         }
 
         double gain = 0.28 * clamp(cfg.gameplayHapticsGain, 0.0, 2.0);
-        AudioOutputEngine.get().triggerImpulse(42.0, 30, clamp(gain, 0.0, 1.0), 0.18);
+        AudioOutputEngine.get().triggerImpulse(42.0, 30, clamp(gain, 0.0, 1.0), 0.18, "single", 160, 60, 3, 0, "gameplay.mine_pulse");
     }
 
     private void onXpChange(int level, float progress, BstConfig.Data cfg) {
@@ -195,7 +195,7 @@ public final class GameplayHapticsHandler {
         }
 
         double gain = (leveledUp ? 0.55 : 0.30) * clamp(cfg.gameplayHapticsGain, 0.0, 2.0);
-        AudioOutputEngine.get().triggerImpulse(58.0, leveledUp ? 90 : 55, clamp(gain, 0.0, 1.0), 0.08);
+        AudioOutputEngine.get().triggerImpulse(58.0, leveledUp ? 90 : 55, clamp(gain, 0.0, 1.0), 0.08, "single", 160, 60, 3, 0, leveledUp ? "gameplay.xp_level" : "gameplay.xp_gain");
 
         lastXpLevel = level;
         lastXpProgress = progress;

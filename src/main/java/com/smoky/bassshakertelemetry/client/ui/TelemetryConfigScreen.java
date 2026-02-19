@@ -91,6 +91,19 @@ public final class TelemetryConfigScreen extends Screen {
                 .build());
 
         y += rowH + rowGap;
+
+        this.addRenderableWidget(Button.builder(
+                        Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.open")),
+                        b -> {
+                            if (this.minecraft != null) {
+                                this.minecraft.setScreen(new SoundScapeConfigScreen(this));
+                            }
+                        })
+                .bounds(leftX, y, contentWidth, rowH)
+                .build());
+
+        y += rowH + rowGap;
+
         int colGap = 10;
         int colWidth = Math.max(60, (contentWidth - colGap) / 2);
         int colLeftX = leftX;

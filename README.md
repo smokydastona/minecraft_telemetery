@@ -2,11 +2,15 @@
 
 Bass Shaker Telemetry is a Forge mod that turns Minecraft gameplay events into a **dedicated tactile audio stream** (JavaSound) for bass shakers / tactile transducers.
 
-The current design goal is **"encoded mono surround"**: direction is encoded into *one* vibration waveform using small frequency bias + micro-delay, while a **priority + ducking** mixer ensures one dominant vibration stays readable.
+The current design goal is **"encoded mono surround"** for stereo output: direction is encoded into *one* vibration waveform using small frequency bias + micro-delay, while a **priority + ducking** mixer ensures one dominant vibration stays readable.
+
+The mod also supports an optional **Sound Scape (7.1)** mode that routes haptic categories across up to **8 output channels** (FL/FR/C/LFE/SL/SR/BL/BR) so you can drive multiple transducers.
 
 ## What it does
 
-- **Tactile audio output**: 48kHz 16‑bit PCM (mono mix duplicated to L/R for compatibility), routed to a selectable output device.
+- **Tactile audio output**: 48kHz 16‑bit PCM, routed to a selectable output device.
+	- Default: stereo output (mono mix duplicated to L/R for compatibility).
+	- Optional: 7.1 (8ch) output in **Sound Scape** mode, with category/group routing.
 - **Priority & ducking (non-optional)**: when multiple effects overlap, one dominant vibration wins; others are ducked to keep impacts clear.
 - **Encoded-mono direction**: when a source position is known and a profile is `directional: true`, the mod selects `front/rear/left/right` encoding bands and applies:
 	- `frequencyBiasHz` (small Hz offset)
@@ -38,6 +42,8 @@ In-game:
 - Output device selection, master volume, per-effect toggles and volume sliders.
 - Advanced settings includes an optional output buffer size selector and a latency test pulse.
 - Each effect slider includes a **Test** button.
+- **Sound Scape (7.1)**: category routing + group management for mapping haptics across multiple output channels. If no multichannel device is available, the UI restricts routing choices to stereo.
+	- Includes an optional per-effect overrides editor (debug key → target).
 
 On disk:
 

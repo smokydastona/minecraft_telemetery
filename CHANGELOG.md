@@ -7,6 +7,9 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 ## [Unreleased]
 
 ### Added
+- Sound Scape (7.1) routing: per-category routing UI with editable channel groups (targets up to 8 output channels: FL/FR/C/LFE/SL/SR/BL/BR).
+- Sound Scape overrides editor: per-effect (debug key) routing rules that take priority over category routing.
+- Optional 7.1 (8-channel) JavaSound output with stereo fallback when multichannel output is unavailable.
 - Encoded-mono direction encoding scaffolding in vibration profiles (`encoding` root object + per-profile `directional` + `priority`).
 - Priority-aware impulse mixing with ducking so only one vibration is dominant at a time.
 - Server-relayed haptics packet now includes source position (enables directional encoding in multiplayer).

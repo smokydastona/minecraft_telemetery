@@ -9,6 +9,11 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public final class BstConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -42,7 +47,7 @@ public final class BstConfig {
             String json = Files.readString(path, StandardCharsets.UTF_8);
             Data parsed = GSON.fromJson(json, Data.class);
             if (parsed != null) {
-                INSTANCE = parsed;
+                INSTANCE = sanitize(parsed);
             }
         } catch (Exception ignored) {
             // If config is corrupt, keep defaults.
@@ -53,10 +58,141 @@ public final class BstConfig {
         var path = path();
         try {
             Files.createDirectories(path.getParent());
+            INSTANCE = sanitize(INSTANCE);
             String json = GSON.toJson(INSTANCE);
             Files.writeString(path, json, StandardCharsets.UTF_8);
         } catch (IOException ignored) {
         }
+    }
+
+    private static Data sanitize(Data data) {
+        Data d = (data == null) ? new Data() : data;
+
+        // --- Sound Scape defaults ---
+        if (d.soundScapeGroups == null) {
+            d.soundScapeGroups = new HashMap<>();
+        }
+        if (!d.soundScapeGroups.containsKey("All")) {
+            d.soundScapeGroups.put("All", defaultAllChannels());
+        } else {
+            // Ensure the group isn't empty (empty groups are confusing and break routing).
+            List<String> v = d.soundScapeGroups.get("All");
+            if (v == null || v.isEmpty()) {
+                d.soundScapeGroups.put("All", defaultAllChannels());
+            }
+        }
+
+        if (d.soundScapeCategoryRouting == null) {
+            d.soundScapeCategoryRouting = new HashMap<>();
+        }
+        // Default all known categories to All.
+        for (String cat : SoundScapeCategories.KNOWN_CATEGORIES) {
+            d.soundScapeCategoryRouting.putIfAbsent(cat, "grp:All");
+        }
+
+        if (d.soundScapeOverrides == null) {
+            d.soundScapeOverrides = new HashMap<>();
+        }
+
+        // Normalize group channel ids.
+        Map<String, List<String>> normalizedGroups = new HashMap<>();
+        for (Map.Entry<String, List<String>> e : d.soundScapeGroups.entrySet()) {
+            if (e == null) continue;
+            String name = (e.getKey() == null) ? "" : e.getKey().trim();
+            if (name.isEmpty()) continue;
+
+            List<String> channels = e.getValue();
+            if (channels == null) {
+                channels = List.of();
+            }
+            ArrayList<String> out = new ArrayList<>();
+            for (String ch : channels) {
+                String n = normalizeChannelId(ch);
+                if (!n.isEmpty() && !out.contains(n)) {
+                    out.add(n);
+                }
+            }
+            if (!out.isEmpty()) {
+                normalizedGroups.put(name, out);
+            }
+        }
+        // Always re-apply All.
+        normalizedGroups.putIfAbsent("All", defaultAllChannels());
+        d.soundScapeGroups = normalizedGroups;
+
+        // Normalize routing targets.
+        d.soundScapeCategoryRouting = normalizeRoutingMap(d.soundScapeCategoryRouting);
+        d.soundScapeOverrides = normalizeRoutingMap(d.soundScapeOverrides);
+
+        // Clamp channel count to supported values (currently 2 or 8).
+        if (d.soundScapeChannels != 2 && d.soundScapeChannels != 8) {
+            d.soundScapeChannels = 8;
+        }
+
+        return d;
+    }
+
+    private static Map<String, String> normalizeRoutingMap(Map<String, String> in) {
+        Map<String, String> out = new HashMap<>();
+        if (in == null) {
+            return out;
+        }
+        for (Map.Entry<String, String> e : in.entrySet()) {
+            if (e == null) continue;
+            String key = (e.getKey() == null) ? "" : e.getKey().trim();
+            if (key.isEmpty()) continue;
+            String v = normalizeTargetId(e.getValue());
+            if (!v.isEmpty()) {
+                out.put(key, v);
+            }
+        }
+        return out;
+    }
+
+    private static List<String> defaultAllChannels() {
+        // 7.1 channel ids. Order here doesn't matter for a group; it's a set.
+        return List.of("FL", "FR", "C", "LFE", "SL", "SR", "BL", "BR");
+    }
+
+    private static String normalizeChannelId(String raw) {
+        if (raw == null) return "";
+        String v = raw.trim().toUpperCase(Locale.ROOT);
+        return switch (v) {
+            case "L" -> "FL";
+            case "R" -> "FR";
+            case "FL", "FR", "C", "LFE", "SL", "SR", "BL", "BR" -> v;
+            default -> "";
+        };
+    }
+
+    private static String normalizeTargetId(String raw) {
+        if (raw == null) {
+            return "";
+        }
+        String v = raw.trim();
+        if (v.isEmpty()) {
+            return "";
+        }
+
+        // Allow bare channel ids (legacy-ish).
+        String ch = normalizeChannelId(v);
+        if (!ch.isEmpty()) {
+            return "ch:" + ch;
+        }
+
+        String lower = v.toLowerCase(Locale.ROOT);
+        if (lower.startsWith("ch:")) {
+            String n = normalizeChannelId(v.substring(3));
+            return n.isEmpty() ? "" : ("ch:" + n);
+        }
+        if (lower.startsWith("grp:")) {
+            String name = v.substring(4).trim();
+            return name.isEmpty() ? "" : ("grp:" + name);
+        }
+
+        // Treat anything else as a group name.
+        String name = v.trim();
+        return name.isEmpty() ? "" : ("grp:" + name);
     }
 
     public static final class Data {
@@ -132,8 +268,58 @@ public final class BstConfig {
         public int accelBumpMs = 60;
         public double accelBumpGain = 0.65;
 
+        // --- Sound Scape (multi-transducer routing) ---
+        // When enabled, the audio engine will attempt to open an 8-channel (7.1) JavaSound output line.
+        // If the selected device does not support 8 channels, it will fall back to stereo.
+        public boolean soundScapeEnabled = false;
+
+        // Reserved for future: currently supported values are 2 or 8.
+        public int soundScapeChannels = 8;
+
+        // Category routing: category key -> target id ("ch:FL" or "grp:All").
+        public Map<String, String> soundScapeCategoryRouting = new HashMap<>();
+
+        // Groups: group name -> list of channel ids (FL, FR, C, LFE, SL, SR, BL, BR).
+        public Map<String, List<String>> soundScapeGroups = new HashMap<>();
+
+        // Optional per-effect overrides: debugKey/bucket -> target id.
+        public Map<String, String> soundScapeOverrides = new HashMap<>();
+
         public boolean enabled() {
             return enabled;
         }
+    }
+
+    /**
+     * Stable string category keys used by the Sound Scape routing UI and engine.
+     * Keep these stable for config compatibility.
+     */
+    public static final class SoundScapeCategories {
+        private SoundScapeCategories() {
+        }
+
+        public static final String ROAD = "road";
+        public static final String DAMAGE = "damage";
+        public static final String BIOME_CHIME = "biome_chime";
+        public static final String ACCEL_BUMP = "accel_bump";
+        public static final String SOUND = "sound";
+        public static final String GAMEPLAY = "gameplay";
+        public static final String FOOTSTEPS = "footsteps";
+        public static final String MOUNTED = "mounted";
+        public static final String MINING_SWING = "mining_swing";
+        public static final String CUSTOM = "custom";
+
+        private static final List<String> KNOWN_CATEGORIES = List.of(
+                ROAD,
+                DAMAGE,
+                BIOME_CHIME,
+                ACCEL_BUMP,
+                SOUND,
+                GAMEPLAY,
+                FOOTSTEPS,
+                MOUNTED,
+                MINING_SWING,
+                CUSTOM
+        );
     }
 }

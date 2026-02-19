@@ -72,11 +72,14 @@ public final class MiningSwingHapticsHandler {
                     resolved.noiseMix01(),
                     resolved.pattern(),
                     resolved.pulsePeriodMs(),
-                    resolved.pulseWidthMs()
+                    resolved.pulseWidthMs(),
+                    resolved.priority(),
+                    0,
+                    "mining.swing"
             );
         } else {
             // Short tactile "tap" that matches the swing.
-            AudioOutputEngine.get().triggerImpulse(46.0, 26, gain01, 0.08);
+            AudioOutputEngine.get().triggerImpulse(46.0, 26, gain01, 0.08, "single", 160, 60, 5, 0, "mining.swing");
         }
     }
 

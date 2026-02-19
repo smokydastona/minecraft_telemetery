@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 import javax.sound.sampled.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -23,22 +24,35 @@ public final class AudioOutputEngine {
      */
     private static final double DUCK_FACTOR = 0.30;
 
-    // 48kHz, mono rendered then duplicated to stereo for better device compatibility.
+        // 48kHz PCM output.
     private static final float SAMPLE_RATE = 48_000f;
-    private static final int CHANNELS = 2;
     private static final int BYTES_PER_SAMPLE = 2; // 16-bit
-    private static final AudioFormat FORMAT = new AudioFormat(
+
+        private static final AudioFormat FORMAT_STEREO = new AudioFormat(
             AudioFormat.Encoding.PCM_SIGNED,
             SAMPLE_RATE,
             16,
-            CHANNELS,
-            CHANNELS * BYTES_PER_SAMPLE,
+            2,
+            2 * BYTES_PER_SAMPLE,
             SAMPLE_RATE,
             false
     );
 
+        private static final AudioFormat FORMAT_7_1 = new AudioFormat(
+            AudioFormat.Encoding.PCM_SIGNED,
+            SAMPLE_RATE,
+            16,
+            8,
+            8 * BYTES_PER_SAMPLE,
+            SAMPLE_RATE,
+            false
+        );
+
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicReference<Thread> audioThread = new AtomicReference<>();
+
+    // Last successfully opened output channel count (2 or 8). Used for UI/status.
+    private volatile int activeOutputChannels = 2;
 
     // Live telemetry inputs (client thread updates)
     private volatile double speed;
@@ -89,7 +103,26 @@ public final class AudioOutputEngine {
     }
 
     public AudioFormat format() {
-        return FORMAT;
+        return preferredFormat();
+    }
+
+    /**
+     * Explicit 7.1 format for probing device support.
+     */
+    public AudioFormat format7_1() {
+        return FORMAT_7_1;
+    }
+
+    public int getActiveOutputChannels() {
+        return activeOutputChannels;
+    }
+
+    private static AudioFormat preferredFormat() {
+        BstConfig.Data cfg = BstConfig.get();
+        if (cfg != null && cfg.soundScapeEnabled && cfg.soundScapeChannels == 8) {
+            return FORMAT_7_1;
+        }
+        return FORMAT_STEREO;
     }
 
     public void updateTelemetry(double speed, double accel, boolean elytra) {
@@ -380,9 +413,10 @@ public final class AudioOutputEngine {
         LOGGER.info("[BST] Starting audio engine: device='{}' bufferMs={} masterVol={} enabled=true", device, cfg.javaSoundBufferMs, cfg.masterVolume);
 
         try {
-            List<String> devices = AudioDeviceUtil.listOutputDeviceNames(FORMAT);
+            AudioFormat fmt = preferredFormat();
+            List<String> devices = AudioDeviceUtil.listOutputDeviceNames(fmt);
             if (devices.isEmpty()) {
-                LOGGER.warn("[BST] No JavaSound output devices found that support {}", FORMAT);
+                LOGGER.warn("[BST] No JavaSound output devices found that support {}", fmt);
             } else if (devices.size() <= 24) {
                 LOGGER.info("[BST] JavaSound output devices ({}): {}", devices.size(), devices);
             } else {
@@ -416,7 +450,11 @@ public final class AudioOutputEngine {
         boolean loggedNoTelemetryHint = false;
         try {
             int framesPerChunk = 1024;
-            byte[] buffer = new byte[framesPerChunk * CHANNELS * BYTES_PER_SAMPLE];
+            byte[] buffer = new byte[framesPerChunk * 2 * BYTES_PER_SAMPLE];
+            int bufferChannels = 2;
+
+            // Per-frame accumulation (reused).
+            double[] ch = new double[8];
 
             double bumpPhase = 0.0;
             double chimePhase = 0.0;
@@ -462,7 +500,7 @@ public final class AudioOutputEngine {
                         continue;
                     }
 
-                    line = openLine();
+                    line = openLinePreferred();
                     if (line == null) {
                         LOGGER.error("[BST] Failed to open any audio line; will retry in 1s");
                         try {
@@ -471,6 +509,22 @@ public final class AudioOutputEngine {
                         }
                         continue;
                     }
+
+                    try {
+                        bufferChannels = Math.max(1, line.getFormat().getChannels());
+                    } catch (Exception ignored) {
+                        bufferChannels = 2;
+                    }
+                    if (bufferChannels != 2 && bufferChannels != 8) {
+                        bufferChannels = 2;
+                    }
+                    activeOutputChannels = bufferChannels;
+                    buffer = new byte[framesPerChunk * bufferChannels * BYTES_PER_SAMPLE];
+                    // Ensure scratch buffer can hold up to 8 channels.
+                    if (ch.length < bufferChannels) {
+                        ch = new double[bufferChannels];
+                    }
+
                     try {
                         line.start();
                     } catch (Exception e) {
@@ -500,6 +554,12 @@ public final class AudioOutputEngine {
                 double headroom = clamp(cfg.outputHeadroom, 0.10, 1.0);
                 double master = clamp(cfg.masterVolume, 0.0, 1.0) * headroom;
                 double limiterDrive = clamp(cfg.limiterDrive, 1.0, 8.0);
+
+                SoundScapeRouter router = new SoundScapeRouter(cfg, bufferChannels);
+                int roadMask = router.maskForCategory(BstConfig.SoundScapeCategories.ROAD);
+                int damageMask = router.maskForCategory(BstConfig.SoundScapeCategories.DAMAGE);
+                int bumpMask = router.maskForCategory(BstConfig.SoundScapeCategories.ACCEL_BUMP);
+                int chimeMask = router.maskForCategory(BstConfig.SoundScapeCategories.BIOME_CHIME);
 
                 int damageLeft = damageBurstSamplesLeft.get();
                 int biomeLeft = biomeChimeSamplesLeft.get();
@@ -643,9 +703,13 @@ public final class AudioOutputEngine {
                 int idx = 0;
                 synchronized (impulseLock) {
                     for (int i = 0; i < framesPerChunk; i++) {
-                    double sample = 0.0;
+                    // Clear per-channel accumulation.
+                    for (int c = 0; c < bufferChannels; c++) {
+                        ch[c] = 0.0;
+                    }
 
                     double g = startGain + ((endGain - startGain) * (i / (double) framesPerChunk));
+                    double mg = master * g;
 
                     if (cfg.roadTextureEnabled) {
                         // A filtered noise rumble, speed-scaled.
@@ -660,7 +724,8 @@ public final class AudioOutputEngine {
                         double white = (random.nextDouble() * 2.0) - 1.0;
                         roadNoiseState += (white - roadNoiseState) * a;
 
-                        sample += roadNoiseState * cfg.roadTextureGain * speedRamp * roadMul;
+                        double v = roadNoiseState * cfg.roadTextureGain * speedRamp * roadMul;
+                        addToChannels(ch, bufferChannels, roadMask, v);
                     }
 
                     if (cfg.damageBurstEnabled && damageLeft > 0) {
@@ -676,7 +741,8 @@ public final class AudioOutputEngine {
                         damageNoiseState += (white - damageNoiseState) * a;
 
                         double env = Math.sin(progress * Math.PI) * Math.exp(-progress * 5.0);
-                        sample += damageNoiseState * cfg.damageBurstGain * clamp(damageBurstIntensity, 0.0, 1.0) * env * damageMul;
+                        double v = damageNoiseState * cfg.damageBurstGain * clamp(damageBurstIntensity, 0.0, 1.0) * env * damageMul;
+                        addToChannels(ch, bufferChannels, damageMask, v);
                         damageLeft--;
                     }
 
@@ -720,7 +786,9 @@ public final class AudioOutputEngine {
                             v.noiseState += (white - v.noiseState) * a;
 
                             double w = (sine * (1.0 - v.noiseMix)) + (v.noiseState * v.noiseMix);
-                            sample += w * v.gain * env * voiceMul;
+                            double voice = w * v.gain * env * voiceMul;
+                            int mask = router.maskForEffectKey(v.debugKey);
+                            addToChannels(ch, bufferChannels, mask, voice);
 
                             v.phase += step;
                             if (v.phase > (2.0 * Math.PI)) {
@@ -737,7 +805,8 @@ public final class AudioOutputEngine {
                         double env = Math.sin(progress * Math.PI);
                         // Low thump around ~32Hz
                         double bump = Math.sin(bumpPhase) * env;
-                        sample += bump * cfg.accelBumpGain * bumpMul;
+                        double v = bump * cfg.accelBumpGain * bumpMul;
+                        addToChannels(ch, bufferChannels, bumpMask, v);
                         bumpLeft--;
                     }
 
@@ -746,21 +815,20 @@ public final class AudioOutputEngine {
                         int total = Math.max(1, biomeChimeTotalSamples.get());
                         double progress = 1.0 - (biomeLeft / (double) total);
                         double env = Math.sin(progress * Math.PI); // bell-ish half-sine envelope
-                        sample += Math.sin(chimePhase) * clamp(cfg.biomeChimeGain, 0.0, 1.0) * env * chimeMul;
+                        double v = Math.sin(chimePhase) * clamp(cfg.biomeChimeGain, 0.0, 1.0) * env * chimeMul;
+                        addToChannels(ch, bufferChannels, chimeMask, v);
                         biomeLeft--;
                     }
 
-                    // Soft limiter (tanh saturation) + hard clamp as final safety.
-                    sample = softClipTanh(sample, limiterDrive);
-                    sample = clamp(sample, -1.0, 1.0);
+                    // Per-channel limiter + convert to int16.
+                    for (int c = 0; c < bufferChannels; c++) {
+                        double sample = softClipTanh(ch[c], limiterDrive);
+                        sample = clamp(sample, -1.0, 1.0);
+                        short s16 = (short) (sample * mg * 32767);
 
-                    short s16 = (short) (sample * master * g * 32767);
-
-                    // stereo duplicate
-                    buffer[idx++] = (byte) (s16 & 0xFF);
-                    buffer[idx++] = (byte) ((s16 >>> 8) & 0xFF);
-                    buffer[idx++] = (byte) (s16 & 0xFF);
-                    buffer[idx++] = (byte) ((s16 >>> 8) & 0xFF);
+                        buffer[idx++] = (byte) (s16 & 0xFF);
+                        buffer[idx++] = (byte) ((s16 >>> 8) & 0xFF);
+                    }
 
                     // Fixed low thump oscillator (~32Hz) used for accel bump.
                     bumpPhase += (2.0 * Math.PI * 32.0) / SAMPLE_RATE;
@@ -846,12 +914,53 @@ public final class AudioOutputEngine {
         }
     }
 
-    private SourceDataLine openLine() {
-        DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, FORMAT);
+    private static void addToChannels(double[] ch, int channelCount, int mask, double v) {
+        if (v == 0.0) {
+            return;
+        }
+        int m = mask;
+        if (m == 0) {
+            // Default: all channels.
+            if (channelCount == 2) {
+                ch[0] += v;
+                ch[1] += v;
+                return;
+            }
+            for (int c = 0; c < channelCount; c++) {
+                ch[c] += v;
+            }
+            return;
+        }
+
+        for (int c = 0; c < channelCount; c++) {
+            if (((m >>> c) & 1) != 0) {
+                ch[c] += v;
+            }
+        }
+    }
+
+    private SourceDataLine openLinePreferred() {
+        AudioFormat preferred = preferredFormat();
+        SourceDataLine line = openLineWithFormat(preferred);
+        if (line != null) {
+            return line;
+        }
+
+        // Fallback: if we asked for 8ch but couldn't open, try stereo.
+        if (preferred.getChannels() != 2) {
+            LOGGER.warn("[BST] Falling back to stereo output (device does not support 8-channel output)");
+            return openLineWithFormat(FORMAT_STEREO);
+        }
+
+        return null;
+    }
+
+    private SourceDataLine openLineWithFormat(AudioFormat format) {
+        DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, format);
         BstConfig.Data cfg = BstConfig.get();
         String preferred = cfg.outputDeviceName;
         int bufferMs = clampInt(cfg.javaSoundBufferMs, 0, 500);
-        int frameSize = FORMAT.getFrameSize();
+        int frameSize = format.getFrameSize();
         int requestedFrames = (bufferMs <= 0) ? 0 : (int) Math.round((bufferMs / 1000.0) * SAMPLE_RATE);
         // Keep the request within a reasonable range (device may clamp anyway).
         requestedFrames = clampInt(requestedFrames, 0, ((int) SAMPLE_RATE) * 2);
@@ -860,21 +969,21 @@ public final class AudioOutputEngine {
         // Try the preferred device first.
         if (preferred != null && !preferred.isBlank()) {
             try {
-                Mixer.Info mixerInfo = AudioDeviceUtil.findMixerByName(preferred, FORMAT);
+                Mixer.Info mixerInfo = AudioDeviceUtil.findMixerByName(preferred, format);
                 if (mixerInfo != null) {
                     Mixer mixer = AudioSystem.getMixer(mixerInfo);
                     SourceDataLine line = (SourceDataLine) mixer.getLine(lineInfo);
                     if (requestedBytes > 0) {
                         try {
-                            line.open(FORMAT, requestedBytes);
+                            line.open(format, requestedBytes);
                         } catch (Exception ignored) {
-                            line.open(FORMAT);
+                            line.open(format);
                         }
                     } else {
-                        line.open(FORMAT);
+                        line.open(format);
                     }
 
-                    logOpenedLine(line, preferred, bufferMs);
+                    logOpenedLine(line, preferred, bufferMs, format);
                     return line;
                 } else {
                     LOGGER.warn("[BST] Preferred device not found or unsupported: '{}'", preferred);
@@ -889,15 +998,15 @@ public final class AudioOutputEngine {
             SourceDataLine line = (SourceDataLine) AudioSystem.getLine(lineInfo);
             if (requestedBytes > 0) {
                 try {
-                    line.open(FORMAT, requestedBytes);
+                    line.open(format, requestedBytes);
                 } catch (Exception ignored) {
-                    line.open(FORMAT);
+                    line.open(format);
                 }
             } else {
-                line.open(FORMAT);
+                line.open(format);
             }
 
-            logOpenedLine(line, "<Default>", bufferMs);
+            logOpenedLine(line, "<Default>", bufferMs, format);
             return line;
         } catch (Exception e) {
             LOGGER.error("[BST] Failed to open default audio device", e);
@@ -905,14 +1014,159 @@ public final class AudioOutputEngine {
         }
     }
 
-    private static void logOpenedLine(SourceDataLine line, String deviceLabel, int requestedBufferMs) {
+    private static void logOpenedLine(SourceDataLine line, String deviceLabel, int requestedBufferMs, AudioFormat format) {
         try {
             int bytes = line.getBufferSize();
-            int frameSize = FORMAT.getFrameSize();
+            int frameSize = format.getFrameSize();
             int frames = (frameSize <= 0) ? 0 : (bytes / frameSize);
             double ms = (frames * 1000.0) / SAMPLE_RATE;
-            LOGGER.info("[BST] Opened audio line: device='{}' requestedBufferMs={} actualBufferMs~={} ({} bytes)", deviceLabel, requestedBufferMs, String.format(java.util.Locale.ROOT, "%.1f", ms), bytes);
+            LOGGER.info("[BST] Opened audio line: device='{}' fmt={}ch requestedBufferMs={} actualBufferMs~={} ({} bytes)", deviceLabel, format.getChannels(), requestedBufferMs, String.format(java.util.Locale.ROOT, "%.1f", ms), bytes);
         } catch (Exception ignored) {
+        }
+    }
+
+    private static final class SoundScapeRouter {
+        private final int channelCount;
+        private final int allMask;
+        private final Map<String, Integer> groupMasks = new java.util.HashMap<>();
+        private final Map<String, Integer> categoryMasks = new java.util.HashMap<>();
+        private final Map<String, Integer> overrideMasks = new java.util.HashMap<>();
+
+        SoundScapeRouter(BstConfig.Data cfg, int channelCount) {
+            this.channelCount = (channelCount == 8) ? 8 : 2;
+            this.allMask = (this.channelCount == 8) ? 0xFF : 0x03;
+
+            Map<String, java.util.List<String>> groups = (cfg == null) ? null : cfg.soundScapeGroups;
+            if (groups != null) {
+                for (Map.Entry<String, java.util.List<String>> e : groups.entrySet()) {
+                    if (e == null) continue;
+                    String name = (e.getKey() == null) ? "" : e.getKey().trim();
+                    if (name.isEmpty()) continue;
+                    int mask = 0;
+                    java.util.List<String> members = e.getValue();
+                    if (members != null) {
+                        for (String m : members) {
+                            mask |= channelIdToMask(m);
+                        }
+                    }
+                    if (mask != 0) {
+                        groupMasks.put(name.toLowerCase(java.util.Locale.ROOT), mask);
+                    }
+                }
+            }
+
+            // Ensure All exists.
+            groupMasks.putIfAbsent("all", allMask);
+
+            Map<String, String> cats = (cfg == null) ? null : cfg.soundScapeCategoryRouting;
+            if (cats != null) {
+                for (Map.Entry<String, String> e : cats.entrySet()) {
+                    if (e == null) continue;
+                    String k = (e.getKey() == null) ? "" : e.getKey().trim().toLowerCase(java.util.Locale.ROOT);
+                    if (k.isEmpty()) continue;
+                    categoryMasks.put(k, targetToMask(e.getValue()));
+                }
+            }
+
+            Map<String, String> overrides = (cfg == null) ? null : cfg.soundScapeOverrides;
+            if (overrides != null) {
+                for (Map.Entry<String, String> e : overrides.entrySet()) {
+                    if (e == null) continue;
+                    String k = (e.getKey() == null) ? "" : e.getKey().trim().toLowerCase(java.util.Locale.ROOT);
+                    if (k.isEmpty()) continue;
+                    overrideMasks.put(k, targetToMask(e.getValue()));
+                }
+            }
+        }
+
+        int maskForCategory(String categoryKey) {
+            if (categoryKey == null) {
+                return allMask;
+            }
+            String k = categoryKey.trim().toLowerCase(java.util.Locale.ROOT);
+            if (k.isEmpty()) {
+                return allMask;
+            }
+            Integer m = categoryMasks.get(k);
+            return (m == null || m == 0) ? allMask : m;
+        }
+
+        int maskForEffectKey(String debugKey) {
+            if (debugKey == null || debugKey.isBlank()) {
+                return maskForCategory(BstConfig.SoundScapeCategories.CUSTOM);
+            }
+            String k = debugKey.trim().toLowerCase(java.util.Locale.ROOT);
+            Integer o = overrideMasks.get(k);
+            if (o != null && o != 0) {
+                return o;
+            }
+            String cat = classifyCategory(k);
+            return maskForCategory(cat);
+        }
+
+        private String classifyCategory(String key) {
+            if (key.startsWith("damage.")) return BstConfig.SoundScapeCategories.DAMAGE;
+            if (key.startsWith("movement.")) return BstConfig.SoundScapeCategories.FOOTSTEPS;
+            if (key.startsWith("mining.")) return BstConfig.SoundScapeCategories.MINING_SWING;
+            if (key.startsWith("mount.") || key.startsWith("flight.")) return BstConfig.SoundScapeCategories.MOUNTED;
+            if (key.startsWith("gameplay.")) return BstConfig.SoundScapeCategories.GAMEPLAY;
+
+            // Sound buckets (from SoundHapticsHandler) and everything else default here.
+            return BstConfig.SoundScapeCategories.SOUND;
+        }
+
+        private int targetToMask(String raw) {
+            if (raw == null || raw.isBlank()) {
+                return allMask;
+            }
+            String v = raw.trim();
+            String lower = v.toLowerCase(java.util.Locale.ROOT);
+            if (lower.startsWith("ch:")) {
+                return channelIdToMask(v.substring(3));
+            }
+            if (lower.startsWith("grp:")) {
+                String name = v.substring(4).trim().toLowerCase(java.util.Locale.ROOT);
+                if (name.isEmpty()) {
+                    return allMask;
+                }
+                Integer m = groupMasks.get(name);
+                return (m == null || m == 0) ? allMask : m;
+            }
+
+            // Allow bare channel ids.
+            int asCh = channelIdToMask(v);
+            if (asCh != 0) {
+                return asCh;
+            }
+
+            // Treat as group name.
+            Integer m = groupMasks.get(lower);
+            return (m == null || m == 0) ? allMask : m;
+        }
+
+        private int channelIdToMask(String raw) {
+            if (raw == null) return 0;
+            String v = raw.trim().toUpperCase(java.util.Locale.ROOT);
+            if (v.isEmpty()) return 0;
+
+            // Stereo fallback: any non-FL/FR channel collapses to both.
+            if (channelCount == 2) {
+                if ("FL".equals(v) || "L".equals(v)) return 0x01;
+                if ("FR".equals(v) || "R".equals(v)) return 0x02;
+                return 0x03;
+            }
+
+            return switch (v) {
+                case "FL", "L" -> 0x01;
+                case "FR", "R" -> 0x02;
+                case "C" -> 0x04;
+                case "LFE" -> 0x08;
+                case "SL" -> 0x10;
+                case "SR" -> 0x20;
+                case "BL" -> 0x40;
+                case "BR" -> 0x80;
+                default -> 0;
+            };
         }
     }
 

@@ -11,7 +11,9 @@
 ## Audio engine behavior
 
 - Sample rate: 48 kHz
-- Format: 16-bit PCM stereo (mono mix duplicated to L/R)
+- Format:
+	- Default: 16-bit PCM stereo (mono mix duplicated to L/R)
+	- Optional: 16-bit PCM 7.1 (8-channel interleaved) when **Sound Scape** is enabled
 - Smoothing: 1-pole smoothing on continuous amplitude to avoid clicks
 - Safety: output headroom + soft limiter (tanh) to reduce clipping
 - Gating: automatically fades out and eventually closes the audio line when no live telemetry (e.g., menus / pause)
@@ -42,6 +44,13 @@
 
 - Per-effect volume sliders are available under **Advanced settings → Effect volumes**.
 - Each effect slider has a **Test** button directly underneath to preview that effect without needing to trigger it in gameplay.
+
+Sound Scape routing:
+
+- A **Sound Scape (7.1)** screen is available for routing broad haptic categories to specific channels (FL/FR/C/LFE/SL/SR/BL/BR) or to named groups.
+- Groups are editable lists of channels (e.g., a “Seat” group could be `[LFE, BL, BR]`).
+- Per-effect overrides can be added as **debug key → target** rules. Overrides use exact key match (case-insensitive) and take priority over category routing.
+- If a multichannel output device cannot be detected/opened, the UI restricts routing options to stereo (FL/FR).
 
 Timing knobs are available under **Advanced settings → Timing** (durations/cooldowns/periods).
 
