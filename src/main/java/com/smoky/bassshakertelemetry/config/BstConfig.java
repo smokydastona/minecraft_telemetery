@@ -124,6 +124,44 @@ public final class BstConfig {
         d.soundScapeCategoryRouting = normalizeRoutingMap(d.soundScapeCategoryRouting);
         d.soundScapeOverrides = normalizeRoutingMap(d.soundScapeOverrides);
 
+        // Per-bus routing (optional additional mask).
+        if (d.soundScapeBusRouting == null) {
+            d.soundScapeBusRouting = new HashMap<>();
+        }
+        d.soundScapeBusRouting = normalizeRoutingMap(d.soundScapeBusRouting);
+        // Default all known buses to All.
+        d.soundScapeBusRouting.putIfAbsent("ui", "grp:All");
+        d.soundScapeBusRouting.putIfAbsent("danger", "grp:All");
+        d.soundScapeBusRouting.putIfAbsent("environmental", "grp:All");
+        d.soundScapeBusRouting.putIfAbsent("continuous", "grp:All");
+        d.soundScapeBusRouting.putIfAbsent("impact", "grp:All");
+        d.soundScapeBusRouting.putIfAbsent("modded", "grp:All");
+
+        // Clamp spatial settings.
+        d.soundScapeSpatialDistanceAttenStrength = clamp(d.soundScapeSpatialDistanceAttenStrength, 0.0, 1.0);
+
+        // Per-transducer calibration defaults.
+        if (d.soundScapeCalibration == null) {
+            d.soundScapeCalibration = new HashMap<>();
+        }
+        Map<String, Data.TransducerCalibration> normCal = new HashMap<>();
+        for (Map.Entry<String, Data.TransducerCalibration> e : d.soundScapeCalibration.entrySet()) {
+            if (e == null) continue;
+            String id = normalizeChannelId(e.getKey());
+            if (id.isEmpty()) continue;
+            Data.TransducerCalibration c = (e.getValue() == null) ? new Data.TransducerCalibration() : e.getValue();
+            c.gainDb = clamp(c.gainDb, -24.0, 24.0);
+            c.eqFreqHz = clampInt(c.eqFreqHz, 10, 120);
+            c.eqGainDb = clampInt(c.eqGainDb, -12, 12);
+            c.comfortLimit01 = clamp(c.comfortLimit01, 0.0, 1.0);
+            normCal.put(id, c);
+        }
+        // Ensure all channels exist.
+        for (String id : defaultAllChannels()) {
+            normCal.putIfAbsent(id, new Data.TransducerCalibration());
+        }
+        d.soundScapeCalibration = normCal;
+
         // Clamp channel count to supported values (currently 2 or 8).
         if (d.soundScapeChannels != 2 && d.soundScapeChannels != 8) {
             d.soundScapeChannels = 8;
@@ -198,6 +236,18 @@ public final class BstConfig {
         // Treat anything else as a group name.
         String name = v.trim();
         return name.isEmpty() ? "" : ("grp:" + name);
+    }
+
+    private static double clamp(double v, double min, double max) {
+        if (v < min) return min;
+        if (v > max) return max;
+        return v;
+    }
+
+    private static int clampInt(int v, int min, int max) {
+        if (v < min) return min;
+        if (v > max) return max;
+        return v;
     }
 
     public static final class Data {
@@ -310,6 +360,33 @@ public final class BstConfig {
 
         // Optional per-effect overrides: debugKey/bucket -> target id.
         public Map<String, String> soundScapeOverrides = new HashMap<>();
+
+        // Optional per-bus routing: bus id -> target id. This is applied in addition to per-effect/category routing.
+        // Bus ids: ui, danger, environmental, continuous, impact, modded
+        public Map<String, String> soundScapeBusRouting = new HashMap<>();
+
+        // Phase 3: Spatial panning (applied when Sound Scape is enabled).
+        public boolean soundScapeSpatialEnabled = true;
+
+        // 0..1. 0 = no distance attenuation, 1 = full attenuation curve.
+        public double soundScapeSpatialDistanceAttenStrength = 0.50;
+
+        // Phase 3: Per-transducer calibration (applied post-mix, pre-limiter).
+        // Keyed by channel id (FL, FR, C, LFE, SL, SR, BL, BR).
+        public Map<String, TransducerCalibration> soundScapeCalibration = new HashMap<>();
+
+        public static final class TransducerCalibration {
+            // Output trim for this transducer.
+            public double gainDb = 0.0;
+
+            // Optional safety/comfort scale for this transducer (0..1).
+            // Applied in addition to gain trim.
+            public double comfortLimit01 = 1.0;
+
+            // Simple single-band peaking EQ (same shape as global output EQ).
+            public int eqFreqHz = 45;
+            public int eqGainDb = 0;
+        }
 
         public boolean enabled() {
             return enabled;

@@ -60,6 +60,16 @@ Sound Scape routing:
 - Per-effect overrides can be added as **debug key → target** rules. Overrides use exact key match (case-insensitive) and take priority over category routing.
 - If a multichannel output device cannot be detected/opened, the UI restricts routing options to stereo (FL/FR).
 
+Spatial (Phase 3):
+
+- Advanced settings → **Spatial** provides Sound Scape spatial controls:
+	- `soundScapeSpatialEnabled`: enables true multichannel panning (azimuth-based) for impulses when Sound Scape is active.
+	- `soundScapeSpatialDistanceAttenStrength`: distance attenuation strength (0..1).
+	- **Edit bus routing** opens a per-bus routing editor for `soundScapeBusRouting`.
+	- Per-channel calibration wizard for `soundScapeCalibration` (gain trim + simple single-band EQ per channel), with burst test, RMS auto-trim helper, and a per-channel comfort limit with a capture button.
+	- Spatial debugger with per-channel meters, waveform, low-frequency spectrogram, recent event timeline, and a buffer/queued latency estimate.
+- Optional per-bus routing (`soundScapeBusRouting`) can add an additional routing target per internal bus (`ui`, `danger`, `environmental`, `continuous`, `impact`, `modded`) on top of category/override routing.
+
 Timing knobs are available under **Advanced settings → Timing** (durations/cooldowns/periods).
 
 ## Build / artifacts
@@ -129,6 +139,13 @@ Config keys:
 - `webSocketSendTelemetry` (boolean, default `true`)
 - `webSocketSendHapticEvents` (boolean, default `true`)
 - `webSocketSendUnifiedEvents` (boolean, default `true`)
+
+Sound Scape (Phase 3) keys:
+
+- `soundScapeBusRouting` (map, bus id → target id)
+- `soundScapeSpatialEnabled` (boolean)
+- `soundScapeSpatialDistanceAttenStrength` (double 0..1)
+- `soundScapeCalibration` (map, channel id → `{ gainDb, eqFreqHz, eqGainDb }`)
 
 Packet formats (one JSON object per message):
 

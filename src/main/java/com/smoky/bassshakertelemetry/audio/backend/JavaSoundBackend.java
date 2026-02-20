@@ -148,6 +148,24 @@ public final class JavaSoundBackend implements HapticAudioBackend {
         }
 
         @Override
+        public int bufferSizeBytes() {
+            try {
+                return line.getBufferSize();
+            } catch (Exception ignored) {
+                return -1;
+            }
+        }
+
+        @Override
+        public int availableBytes() {
+            try {
+                return line.available();
+            } catch (Exception ignored) {
+                return -1;
+            }
+        }
+
+        @Override
         public void start() {
             line.start();
         }

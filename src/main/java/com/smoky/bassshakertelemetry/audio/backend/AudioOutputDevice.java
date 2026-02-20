@@ -12,6 +12,24 @@ public interface AudioOutputDevice {
 
     int channels();
 
+    /**
+     * Optional: total internal output buffer size, in bytes.
+     *
+     * <p>Returns a non-positive value when not supported.
+     */
+    default int bufferSizeBytes() {
+        return -1;
+    }
+
+    /**
+     * Optional: number of bytes that can be written without blocking.
+     *
+     * <p>Returns a negative value when not supported.
+     */
+    default int availableBytes() {
+        return -1;
+    }
+
     void start();
 
     void write(byte[] buffer, int offset, int length);

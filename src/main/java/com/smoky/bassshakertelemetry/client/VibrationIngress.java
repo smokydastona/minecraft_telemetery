@@ -39,7 +39,7 @@ public final class VibrationIngress {
         LOCAL
     }
 
-    private record DebugEvent(SourceType sourceType, String keyOrBucket, int priority, double frequencyHz, double gain01) {
+    private record DebugEvent(SourceType sourceType, String keyOrBucket, int priority, double frequencyHz, double gain01, double azimuthDeg, double distanceM) {
     }
 
     private record SuppressionEvent(String bucket, int incomingPriority, int suppressPriority) {
@@ -54,6 +54,9 @@ public final class VibrationIngress {
 
         var store = BstVibrationProfiles.get();
         var player = Minecraft.getInstance().player;
+
+        double azimuthDeg = computeAzimuthDeg(player, hasSource, sourceX, sourceZ);
+        double distanceM = computeDistanceMeters(player, hasSource, sourceX, sourceY, sourceZ);
 
         String directionBand = DirectionalEncoding.chooseBandName(
             store,
@@ -93,41 +96,43 @@ public final class VibrationIngress {
             )
         );
 
-        HapticEventContext.withEventContext(unified, () -> HapticEventContext.withDirectionBand(directionBand, () -> {
-            if (usesInstrument) {
-                // For DSP-backed instruments, do not apply the legacy DirectionalEncoding bias here.
-                // Instead, the DSP `direction` node can use the thread-local band hint (band=auto).
-                AudioOutputEngine.get().triggerInstrumentImpulse(
-                        instrumentId0,
-                        resolved.frequencyHz(),
-                        resolved.durationMs(),
-                        clamp(baseGain01, 0.0, 1.0),
-                        resolved.pattern(),
-                        resolved.pulsePeriodMs(),
-                        resolved.pulseWidthMs(),
-                        resolved.priority(),
-                        0,
-                        k
-                );
-            } else {
-                AudioOutputEngine.get().triggerImpulse(
-                        encoded.frequencyHz(),
-                        resolved.durationMs(),
-                        encoded.gain01(),
-                        resolved.noiseMix01(),
-                        resolved.pattern(),
-                        resolved.pulsePeriodMs(),
-                        resolved.pulseWidthMs(),
-                        resolved.priority(),
-                        encoded.delayMs(),
-                        k
-                );
-            }
-        }));
+        HapticEventContext.withEventContext(unified, () -> HapticEventContext.withDirectionBand(directionBand, () ->
+            HapticEventContext.withSpatialHint(azimuthDeg, distanceM, () -> {
+                if (usesInstrument) {
+                    // For DSP-backed instruments, do not apply the legacy DirectionalEncoding bias here.
+                    // Instead, the DSP `direction` node can use the thread-local band hint (band=auto).
+                    AudioOutputEngine.get().triggerInstrumentImpulse(
+                            instrumentId0,
+                            resolved.frequencyHz(),
+                            resolved.durationMs(),
+                            clamp(baseGain01, 0.0, 1.0),
+                            resolved.pattern(),
+                            resolved.pulsePeriodMs(),
+                            resolved.pulseWidthMs(),
+                            resolved.priority(),
+                            0,
+                            k
+                    );
+                } else {
+                    AudioOutputEngine.get().triggerImpulse(
+                            encoded.frequencyHz(),
+                            resolved.durationMs(),
+                            encoded.gain01(),
+                            resolved.noiseMix01(),
+                            resolved.pattern(),
+                            resolved.pulsePeriodMs(),
+                            resolved.pulseWidthMs(),
+                            resolved.priority(),
+                            encoded.delayMs(),
+                            k
+                    );
+                }
+            })
+        ));
 
         double dbgFreq = usesInstrument ? resolved.frequencyHz() : encoded.frequencyHz();
         double dbgGain = usesInstrument ? clamp(baseGain01, 0.0, 1.0) : encoded.gain01();
-        setLastEvent(SourceType.NETWORK, (key == null || key.isBlank()) ? "<network>" : key, resolved.priority(), dbgFreq, dbgGain);
+        setLastEvent(SourceType.NETWORK, (key == null || key.isBlank()) ? "<network>" : key, resolved.priority(), dbgFreq, dbgGain, azimuthDeg, distanceM);
     }
 
     private static double clamp(double v, double lo, double hi) {
@@ -178,6 +183,19 @@ public final class VibrationIngress {
 
         var store = BstVibrationProfiles.get();
         var player = Minecraft.getInstance().player;
+
+        String directionBand = DirectionalEncoding.chooseBandName(
+            store,
+            player,
+            directional,
+            true,
+            sourceX,
+            sourceZ
+        );
+
+        double azimuthDeg = computeAzimuthDeg(player, true, sourceX, sourceZ);
+        double distanceM = computeDistanceMeters(player, true, sourceX, sourceY, sourceZ);
+
         var encoded = DirectionalEncoding.apply(
                 store,
                 player,
@@ -205,20 +223,22 @@ public final class VibrationIngress {
             )
         );
 
-        HapticEventContext.withEventContext(unified, () -> AudioOutputEngine.get().triggerImpulse(
-            encoded.frequencyHz(),
-            durationMs,
-            encoded.gain01(),
-            noiseMix01,
-            "single",
-            160,
-            60,
-            priority,
-            encoded.delayMs(),
-            b
+        HapticEventContext.withEventContext(unified, () -> HapticEventContext.withDirectionBand(directionBand, () ->
+            HapticEventContext.withSpatialHint(azimuthDeg, distanceM, () -> AudioOutputEngine.get().triggerImpulse(
+                encoded.frequencyHz(),
+                durationMs,
+                encoded.gain01(),
+                noiseMix01,
+                "single",
+                160,
+                60,
+                priority,
+                encoded.delayMs(),
+                b
+            ))
         ));
 
-        setLastEvent(SourceType.SOUND, (bucket == null || bucket.isBlank()) ? "<sound>" : bucket, priority, encoded.frequencyHz(), encoded.gain01());
+        setLastEvent(SourceType.SOUND, (bucket == null || bucket.isBlank()) ? "<sound>" : bucket, priority, encoded.frequencyHz(), encoded.gain01(), azimuthDeg, distanceM);
     }
 
     /**
@@ -251,6 +271,19 @@ public final class VibrationIngress {
 
         var store = BstVibrationProfiles.get();
         var player = Minecraft.getInstance().player;
+
+        String directionBand = DirectionalEncoding.chooseBandName(
+            store,
+            player,
+            directional,
+            hasSource,
+            sourceX,
+            sourceZ
+        );
+
+        double azimuthDeg = computeAzimuthDeg(player, hasSource, sourceX, sourceZ);
+        double distanceM = computeDistanceMeters(player, hasSource, sourceX, sourceY, sourceZ);
+
         var encoded = DirectionalEncoding.apply(
                 store,
                 player,
@@ -277,20 +310,23 @@ public final class VibrationIngress {
             )
         );
 
-        HapticEventContext.withEventContext(unified, () -> AudioOutputEngine.get().triggerImpulse(
-            encoded.frequencyHz(),
-            durationMs,
-            encoded.gain01(),
-            noiseMix01,
-            patFinal,
-            160,
-            60,
-            priority,
-            encoded.delayMs(),
-            k
+        HapticEventContext.withEventContext(unified, () -> HapticEventContext.withDirectionBand(directionBand, () ->
+            HapticEventContext.withSpatialHint(azimuthDeg, distanceM, () -> AudioOutputEngine.get().triggerImpulse(
+                encoded.frequencyHz(),
+                durationMs,
+                encoded.gain01(),
+                noiseMix01,
+                patFinal,
+                160,
+                60,
+                priority,
+                encoded.delayMs(),
+                k
+            ))
         ));
 
-        setLastEvent(SourceType.LOCAL, (keyOrBucket == null || keyOrBucket.isBlank()) ? "<local>" : keyOrBucket, priority, encoded.frequencyHz(), encoded.gain01());
+
+        setLastEvent(SourceType.LOCAL, (keyOrBucket == null || keyOrBucket.isBlank()) ? "<local>" : keyOrBucket, priority, encoded.frequencyHz(), encoded.gain01(), azimuthDeg, distanceM);
     }
 
     private static void noteAuthoritativeEvent(String key, int priority, boolean hasSource, double x, double y, double z) {
@@ -384,9 +420,9 @@ public final class VibrationIngress {
         return HapticEventType.ENVIRONMENTAL;
     }
 
-    private static void setLastEvent(SourceType sourceType, String keyOrBucket, int priority, double frequencyHz, double gain01) {
+    private static void setLastEvent(SourceType sourceType, String keyOrBucket, int priority, double frequencyHz, double gain01, double azimuthDeg, double distanceM) {
         synchronized (debugLock) {
-            lastEvent = new DebugEvent(sourceType, keyOrBucket, priority, frequencyHz, gain01);
+            lastEvent = new DebugEvent(sourceType, keyOrBucket, priority, frequencyHz, gain01, azimuthDeg, distanceM);
         }
     }
 
@@ -410,7 +446,7 @@ public final class VibrationIngress {
             if (lastEvent == null) {
                 return "";
             }
-            return String.format(java.util.Locale.ROOT, "freq=%.1fHz gain=%.2f", lastEvent.frequencyHz, lastEvent.gain01);
+            return String.format(java.util.Locale.ROOT, "freq=%.1fHz gain=%.2f  az=%.0f° dist=%.1fm", lastEvent.frequencyHz, lastEvent.gain01, lastEvent.azimuthDeg, lastEvent.distanceM);
         }
     }
 
@@ -425,5 +461,47 @@ public final class VibrationIngress {
 
     public static String getOverlayLine4() {
         return AudioOutputEngine.get().getDominantDebugString();
+    }
+
+    private static double computeAzimuthDeg(net.minecraft.client.player.LocalPlayer player, boolean hasSource, double sourceX, double sourceZ) {
+        if (player == null || !hasSource) {
+            return 0.0;
+        }
+
+        double dx = sourceX - player.getX();
+        double dz = sourceZ - player.getZ();
+        if ((dx * dx) + (dz * dz) < 1.0e-6) {
+            return 0.0;
+        }
+
+        double yawRad = Math.toRadians(player.getYRot());
+        // Minecraft axes: +X east, +Z south. yaw=0 faces +Z.
+        double fwdX = -Math.sin(yawRad);
+        double fwdZ = Math.cos(yawRad);
+        double rightX = Math.cos(yawRad);
+        double rightZ = Math.sin(yawRad);
+
+        double localX = (dx * rightX) + (dz * rightZ);
+        double localZ = (dx * fwdX) + (dz * fwdZ);
+
+        double az = Math.toDegrees(Math.atan2(localX, localZ));
+        az = az % 360.0;
+        if (az > 180.0) az -= 360.0;
+        if (az < -180.0) az += 360.0;
+        return az;
+    }
+
+    private static double computeDistanceMeters(net.minecraft.client.player.LocalPlayer player, boolean hasSource, double sourceX, double sourceY, double sourceZ) {
+        if (player == null || !hasSource) {
+            return 0.0;
+        }
+        double dx = sourceX - player.getX();
+        double dy = sourceY - player.getY();
+        double dz = sourceZ - player.getZ();
+        double d2 = (dx * dx) + (dy * dy) + (dz * dz);
+        if (d2 <= 0.0) {
+            return 0.0;
+        }
+        return Math.sqrt(d2);
     }
 }

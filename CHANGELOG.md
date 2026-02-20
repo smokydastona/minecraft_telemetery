@@ -33,12 +33,21 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Phase 2: in-game haptic instrument graph editor (MVP) under Advanced settings.
 - Phase 2 DSP: added `direction` encoder node and a lightweight per-node preview value in the graph editor (visual debugging).
 - Phase 2 DSP: `direction` node supports `band: "auto"` to follow event source direction when available.
+- Phase 3 Spatial (Sound Scape): azimuth + distance hints are propagated into the audio engine for true multichannel panning.
+- Phase 3 Spatial (Sound Scape): optional distance attenuation control.
+- Phase 3 Spatial (Sound Scape): optional per-bus routing (`soundScapeBusRouting`) in addition to category/override routing.
+- Phase 3 Spatial (Sound Scape): per-transducer calibration (`soundScapeCalibration`) with per-channel gain trim + simple EQ applied post-mix.
+- Advanced settings: new **Spatial** screen (toggles + distance attenuation + links to routing, calibration wizard, and spatial debugger).
+- Spatial calibration wizard screen with per-channel test tones/sweep/latency pulse and calibration sliders.
+- Spatial calibration wizard: burst test button, RMS auto-trim helper, per-channel comfort limit, and a guided Back/Next flow with one-click comfort capture.
+- Minimal spatial debugger screen showing last event, azimuth/distance, and engine status.
 
 ### Changed
 - Default directional instruments (`impact_heavy`, `heartbeat_warden`, `wind_elytra`) now include a `direction` node with `band: "auto"`.
 - Network protocol version bumped (client/server must match mod version).
 - Audio output now goes through a backend abstraction selected by `audioBackend` (Phase 1 foundation; currently only `javasound` is implemented).
 - Impulse ducking is now per-bus (see `HapticBus`); impulses are no longer globally ducked by other one-shot effects, while road texture still ducks under active events.
+- Spatial debugger now shows per-channel meters, waveform, low-frequency spectrogram, recent event timeline, and a buffer/queued latency estimate.
 
 ## [0.1.23] - 2026-02-16
 

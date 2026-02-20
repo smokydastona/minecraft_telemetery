@@ -43,6 +43,7 @@ In-game:
 - Minecraft main menu → **Mods** → **Bass Shaker Telemetry** → **Config**
 - Output device selection, master volume, per-effect toggles and volume sliders.
 - Advanced settings includes an optional output buffer size selector, a latency test pulse, calibration tones/sweep, and a haptic instrument graph editor (Phase 2).
+- Advanced settings also includes a **Spatial** section (Phase 3) for Sound Scape: spatial panning toggle, distance attenuation, a guided per-channel calibration wizard (gain + simple EQ, burst test, RMS auto-trim, comfort limit capture), and a real-time spatial debugger (meters/waveform/spectrogram/timeline/latency).
 - Each effect slider includes a **Test** button.
 - **Sound Scape (7.1)**: category routing + group management for mapping haptics across multiple output channels. If no multichannel device is available, the UI restricts routing choices to stereo.
 	- Includes an optional per-effect overrides editor (debug key → target).

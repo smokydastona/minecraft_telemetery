@@ -208,6 +208,16 @@ public final class AdvancedSettingsScreen extends Screen {
             b -> AudioOutputEngine.get().stopCalibration()
         ).bounds(0, 0, contentWidth - 12, rowH).build()));
 
+        settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.config.spatial"));
+        settingsList.addSettingEntry(new ButtonOnlyEntry(Button.builder(
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.spatial_open")),
+            b -> {
+                if (this.minecraft != null) {
+                    this.minecraft.setScreen(new SpatialConfigScreen(this));
+                }
+            }
+        ).bounds(0, 0, contentWidth - 12, rowH).build()));
+
         settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.config.instruments"));
         settingsList.addSettingEntry(new ButtonOnlyEntry(Button.builder(
             Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.instruments_open_editor")),

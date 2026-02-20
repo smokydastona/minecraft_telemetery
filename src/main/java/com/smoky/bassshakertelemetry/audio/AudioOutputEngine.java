@@ -15,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.sound.sampled.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -106,6 +107,229 @@ public final class AudioOutputEngine {
 
     // Road texture state
     private volatile double roadNoiseState;
+
+    // --- Phase 3: Real-time debugger taps (capture is opt-in for performance) ---
+
+    private static final int DEBUG_WAVE_SAMPLES = 256;
+    private static final int DEBUG_SPECT_FFT_SIZE = 4096;
+    private static final int DEBUG_SPECT_BINS = 16;
+    private static final int DEBUG_SPECT_COLS = 64;
+
+    private static final AtomicBoolean DEBUG_CAPTURE_ENABLED = new AtomicBoolean(false);
+    private static final AtomicReference<DebugSnapshot> DEBUG_SNAPSHOT = new AtomicReference<>(null);
+
+    private static final Object DEBUG_EVENT_LOCK = new Object();
+    private static final int DEBUG_EVENT_CAPACITY = 64;
+    private static final DebugEvent[] DEBUG_EVENTS = new DebugEvent[DEBUG_EVENT_CAPACITY];
+    private static int debugEventWriteIndex;
+
+    public static void setDebugCaptureEnabled(boolean enabled) {
+        DEBUG_CAPTURE_ENABLED.set(enabled);
+    }
+
+    public static DebugSnapshot getDebugSnapshot() {
+        return DEBUG_SNAPSHOT.get();
+    }
+
+    public static DebugEvent[] getRecentDebugEvents(int maxCount) {
+        int n = Math.max(0, Math.min(DEBUG_EVENT_CAPACITY, Math.max(0, maxCount)));
+        if (n == 0) {
+            return new DebugEvent[0];
+        }
+        DebugEvent[] out = new DebugEvent[n];
+        synchronized (DEBUG_EVENT_LOCK) {
+            int w = debugEventWriteIndex;
+            int copied = 0;
+            for (int i = 0; i < DEBUG_EVENT_CAPACITY && copied < n; i++) {
+                int idx = (w - 1 - i);
+                while (idx < 0) {
+                    idx += DEBUG_EVENT_CAPACITY;
+                }
+                DebugEvent ev = DEBUG_EVENTS[idx];
+                if (ev == null) {
+                    continue;
+                }
+                out[copied++] = ev;
+            }
+            if (copied < n) {
+                return Arrays.copyOf(out, copied);
+            }
+        }
+        return out;
+    }
+
+    private static void recordDebugEvent(String debugKey,
+                                         HapticBus bus,
+                                         double startFreqHz,
+                                         double endFreqHz,
+                                         int durationMs,
+                                         double gain01,
+                                         int priority,
+                                         int delayMs,
+                                         int forcedMask,
+                                         double azimuthDeg,
+                                         double distanceM) {
+        DebugEvent ev = new DebugEvent(
+                System.nanoTime(),
+                (debugKey == null) ? "" : debugKey,
+                (bus == null) ? HapticBus.MODDED : bus,
+                startFreqHz,
+                endFreqHz,
+                durationMs,
+                gain01,
+                priority,
+                delayMs,
+                forcedMask,
+                azimuthDeg,
+                distanceM
+        );
+        synchronized (DEBUG_EVENT_LOCK) {
+            DEBUG_EVENTS[debugEventWriteIndex] = ev;
+            debugEventWriteIndex = (debugEventWriteIndex + 1) % DEBUG_EVENT_CAPACITY;
+        }
+    }
+
+    public static final class DebugSnapshot {
+        public final long updatedNanos;
+        public final int channels;
+        public final float[] rms01;
+        public final float[] peak01;
+
+        /** Latest mono waveform window, normalized to roughly [-1..1]. */
+        public final float[] waveform;
+
+        /** Flattened spectrogram buffer: cols x bins, column-major history ring. */
+        public final float[] spectrogram;
+        public final int spectrogramCols;
+        public final int spectrogramBins;
+        /** Next write column index in the spectrogram ring. */
+        public final int spectrogramWriteCol;
+
+        public final int deviceBufferBytes;
+        public final int deviceAvailableBytes;
+        public final double deviceBufferMs;
+        public final double queuedMs;
+
+        private DebugSnapshot(long updatedNanos,
+                              int channels,
+                              float[] rms01,
+                              float[] peak01,
+                              float[] waveform,
+                              float[] spectrogram,
+                              int spectrogramCols,
+                              int spectrogramBins,
+                              int spectrogramWriteCol,
+                              int deviceBufferBytes,
+                              int deviceAvailableBytes,
+                              double deviceBufferMs,
+                              double queuedMs) {
+            this.updatedNanos = updatedNanos;
+            this.channels = channels;
+            this.rms01 = rms01;
+            this.peak01 = peak01;
+            this.waveform = waveform;
+            this.spectrogram = spectrogram;
+            this.spectrogramCols = spectrogramCols;
+            this.spectrogramBins = spectrogramBins;
+            this.spectrogramWriteCol = spectrogramWriteCol;
+            this.deviceBufferBytes = deviceBufferBytes;
+            this.deviceAvailableBytes = deviceAvailableBytes;
+            this.deviceBufferMs = deviceBufferMs;
+            this.queuedMs = queuedMs;
+        }
+    }
+
+    public static final class DebugEvent {
+        public final long createdNanos;
+        public final String debugKey;
+        public final HapticBus bus;
+        public final double startFreqHz;
+        public final double endFreqHz;
+        public final int durationMs;
+        public final double gain01;
+        public final int priority;
+        public final int delayMs;
+        public final int forcedMask;
+        public final double azimuthDeg;
+        public final double distanceM;
+
+        private DebugEvent(long createdNanos,
+                           String debugKey,
+                           HapticBus bus,
+                           double startFreqHz,
+                           double endFreqHz,
+                           int durationMs,
+                           double gain01,
+                           int priority,
+                           int delayMs,
+                           int forcedMask,
+                           double azimuthDeg,
+                           double distanceM) {
+            this.createdNanos = createdNanos;
+            this.debugKey = debugKey;
+            this.bus = bus;
+            this.startFreqHz = startFreqHz;
+            this.endFreqHz = endFreqHz;
+            this.durationMs = durationMs;
+            this.gain01 = gain01;
+            this.priority = priority;
+            this.delayMs = delayMs;
+            this.forcedMask = forcedMask;
+            this.azimuthDeg = azimuthDeg;
+            this.distanceM = distanceM;
+        }
+    }
+
+    private static void fftRadix2InPlace(double[] real, double[] imag) {
+        int n = real.length;
+        if (n <= 1) {
+            return;
+        }
+        // Bit-reversal permutation
+        int j = 0;
+        for (int i = 1; i < n; i++) {
+            int bit = n >>> 1;
+            while ((j & bit) != 0) {
+                j ^= bit;
+                bit >>>= 1;
+            }
+            j ^= bit;
+            if (i < j) {
+                double tr = real[i];
+                real[i] = real[j];
+                real[j] = tr;
+                double ti = imag[i];
+                imag[i] = imag[j];
+                imag[j] = ti;
+            }
+        }
+
+        for (int len = 2; len <= n; len <<= 1) {
+            double ang = -2.0 * Math.PI / len;
+            double wlenR = Math.cos(ang);
+            double wlenI = Math.sin(ang);
+            for (int i = 0; i < n; i += len) {
+                double wR = 1.0;
+                double wI = 0.0;
+                int half = len >>> 1;
+                for (int k = 0; k < half; k++) {
+                    int u = i + k;
+                    int v = u + half;
+                    double vR = (real[v] * wR) - (imag[v] * wI);
+                    double vI = (real[v] * wI) + (imag[v] * wR);
+                    double uR = real[u];
+                    double uI = imag[u];
+                    real[u] = uR + vR;
+                    imag[u] = uI + vI;
+                    real[v] = uR - vR;
+                    imag[v] = uI - vI;
+                    double nextWR = (wR * wlenR) - (wI * wlenI);
+                    wI = (wR * wlenI) + (wI * wlenR);
+                    wR = nextWR;
+                }
+            }
+        }
+    }
 
     private AudioOutputEngine() {
     }
@@ -278,7 +502,13 @@ public final class AudioOutputEngine {
         String dk = (debugKey == null) ? "" : debugKey.trim();
         HapticBus bus = busForDebugKey(dk);
 
-        enqueueImpulseVoice(f0, f1, samples, g, n, pat, pulsePeriodSamples, pulseWidthSamples, pri, delaySamples, dk, bus, "", null, null);
+        double azimuthDeg = HapticEventContext.currentAzimuthDeg();
+        double distanceM = HapticEventContext.currentDistanceMeters();
+
+        int forcedMask = forcedMaskFromDebugKey(dk);
+        recordDebugEvent(dk, bus, f0, f1, ms, g, pri, delayMs, forcedMask, azimuthDeg, distanceM);
+
+        enqueueImpulseVoice(f0, f1, samples, g, n, pat, pulsePeriodSamples, pulseWidthSamples, pri, delaySamples, dk, bus, "", null, null, azimuthDeg, distanceM);
 
         if (BstConfig.get().webSocketEnabled && BstConfig.get().webSocketSendHapticEvents) {
             TelemetryOut.emitHaptic(dk, f0, f1, ms, g, n, pat, pulsePeriodMs, pulseWidthMs, pri, delayMs);
@@ -339,7 +569,13 @@ public final class AudioOutputEngine {
         ctx.directionBand = HapticEventContext.currentDirectionBand();
         DspGraphInstance graph = inst.graph.instantiate(DSP_FACTORY);
 
-        enqueueImpulseVoice(f0, f1, samples, g, 0.0, pat, pulsePeriodSamples, pulseWidthSamples, pri, delaySamples, dk, bus, instId, graph, ctx);
+        double azimuthDeg = HapticEventContext.currentAzimuthDeg();
+        double distanceM = HapticEventContext.currentDistanceMeters();
+
+        int forcedMask = forcedMaskFromDebugKey(dk);
+        recordDebugEvent(dk, bus, f0, f1, ms, g, pri, delayMs, forcedMask, azimuthDeg, distanceM);
+
+        enqueueImpulseVoice(f0, f1, samples, g, 0.0, pat, pulsePeriodSamples, pulseWidthSamples, pri, delaySamples, dk, bus, instId, graph, ctx, azimuthDeg, distanceM);
 
         if (BstConfig.get().webSocketEnabled && BstConfig.get().webSocketSendHapticEvents) {
             // Legacy haptic packet format doesn't include instrument id yet; emit with noiseMix=0.
@@ -364,15 +600,22 @@ public final class AudioOutputEngine {
                                      HapticBus bus,
                                      String instrumentId,
                                      DspGraphInstance dspGraph,
-                                     DspContext dspContext) {
+                                     DspContext dspContext,
+                                     double azimuthDeg,
+                                     double distanceM) {
         synchronized (impulseLock) {
             String dk = (debugKey == null) ? "" : debugKey;
             String inst = (instrumentId == null) ? "" : instrumentId;
+            int forcedMask = forcedMaskFromDebugKey(dk);
 
             // Coalesce/extend a very similar active voice to avoid stacking identical pulses.
             for (ImpulseVoice v : impulses) {
                 String vdk = (v.debugKey == null) ? "" : v.debugKey;
                 if (!dk.equalsIgnoreCase(vdk)) {
+                    continue;
+                }
+
+                if (v.forcedMask != forcedMask) {
                     continue;
                 }
                 String vInst = (v.instrumentId == null) ? "" : v.instrumentId;
@@ -395,6 +638,14 @@ public final class AudioOutputEngine {
                     continue;
                 }
 
+                // Spatial: avoid coalescing events from clearly different directions/distances.
+                if (Math.abs(v.spatialAzimuthDeg - azimuthDeg) > 12.0) {
+                    continue;
+                }
+                if (Math.abs(v.spatialDistanceM - distanceM) > 2.5) {
+                    continue;
+                }
+
                 v.totalSamples = Math.max(v.totalSamples, samples);
                 v.samplesLeft = Math.max(v.samplesLeft, samples);
                 v.gain = Math.max(v.gain, gain01);
@@ -406,6 +657,8 @@ public final class AudioOutputEngine {
                     v.dspContext.retune(v.startFreqHz, v.endFreqHz);
                     v.dspContext.resize(v.totalSamples);
                 }
+                // Refresh spatial gains (config may have changed).
+                initVoiceSpatial(v, BstConfig.get(), azimuthDeg, distanceM);
                 return;
             }
 
@@ -430,6 +683,8 @@ public final class AudioOutputEngine {
             voice.createdNanos = System.nanoTime();
             voice.dspGraph = dspGraph;
             voice.dspContext = dspContext;
+            voice.forcedMask = forcedMask;
+            initVoiceSpatial(voice, BstConfig.get(), azimuthDeg, distanceM);
             impulses.add(voice);
 
             // Hard cap to avoid unbounded growth in pathological cases.
@@ -616,6 +871,42 @@ public final class AudioOutputEngine {
         triggerSweepImpulse(20.0, 120.0, 6500, gain01, 0.0, "flat", 160, 60, 97, 0, "cal.sweep_20_120hz");
     }
 
+    // --- Phase 3: Per-transducer calibration helpers (forced channel routing) ---
+
+    public void testCalibrationToneOnChannel(String channelId, double freqHz, int durationMs) {
+        wakeForTests();
+        String ch = (channelId == null) ? "" : channelId.trim().toUpperCase(java.util.Locale.ROOT);
+        double f = clamp(freqHz, 10.0, 120.0);
+        int ms = Math.max(50, durationMs);
+        double gain01 = clamp(BstConfig.get().masterVolume * 0.85, 0.0, 1.0);
+        triggerImpulse(f, ms, gain01, 0.0, "flat", 160, 60, 98, 0, "cal.ch." + ch + ".tone");
+    }
+
+    public void testCalibrationSweepOnChannel(String channelId) {
+        wakeForTests();
+        String ch = (channelId == null) ? "" : channelId.trim().toUpperCase(java.util.Locale.ROOT);
+        double gain01 = clamp(BstConfig.get().masterVolume * 0.85, 0.0, 1.0);
+        triggerSweepImpulse(20.0, 120.0, 6500, gain01, 0.0, "flat", 160, 60, 98, 0, "cal.ch." + ch + ".sweep");
+    }
+
+    /**
+     * Short, punchy burst for per-transducer calibration.
+     */
+    public void testCalibrationBurstOnChannel(String channelId) {
+        wakeForTests();
+        String ch = (channelId == null) ? "" : channelId.trim().toUpperCase(java.util.Locale.ROOT);
+        // Slightly lower than tone/sweep to keep it comfortable.
+        double gain01 = clamp(BstConfig.get().masterVolume * 0.75, 0.0, 1.0);
+        triggerImpulse(45.0, 45, gain01, 0.10, "punch", 160, 60, 98, 0, "cal.ch." + ch + ".burst");
+    }
+
+    public void testLatencyPulseOnChannel(String channelId) {
+        wakeForTests();
+        String ch = (channelId == null) ? "" : channelId.trim().toUpperCase(java.util.Locale.ROOT);
+        double gain01 = clamp(BstConfig.get().masterVolume * 0.90, 0.0, 1.0);
+        triggerImpulse(42.0, 55, gain01, 0.12, "single", 160, 60, 99, 0, "cal.ch." + ch + ".latency");
+    }
+
     /**
      * Stops any currently playing calibration tones/sweeps.
      * This targets only impulses with debugKey prefix "cal." and leaves normal gameplay haptics untouched.
@@ -707,10 +998,24 @@ public final class AudioOutputEngine {
             int bufferChannels = 2;
 
             OutputEq outputEq = new OutputEq();
+            TransducerEq transducerEq = new TransducerEq();
             SmartVolume smartVolume = new SmartVolume();
+
+            float[] transducerGain = new float[8];
 
             // Per-frame accumulation (reused).
             double[] ch = new double[8];
+
+            // Debug capture state (only used when DEBUG_CAPTURE_ENABLED is true).
+            float[] debugMonoRing = new float[DEBUG_SPECT_FFT_SIZE];
+            int debugMonoWrite = 0;
+            float[] debugWave = new float[DEBUG_WAVE_SAMPLES];
+            float[] debugSpect = new float[DEBUG_SPECT_COLS * DEBUG_SPECT_BINS];
+            int debugSpectWriteCol = 0;
+            double[] dbgSumSq = new double[8];
+            double[] dbgPeak = new double[8];
+            double[] fftReal = new double[DEBUG_SPECT_FFT_SIZE];
+            double[] fftImag = new double[DEBUG_SPECT_FFT_SIZE];
 
             double bumpPhase = 0.0;
             double chimePhase = 0.0;
@@ -805,6 +1110,17 @@ public final class AudioOutputEngine {
                 int damageMask = router.maskForCategory(BstConfig.SoundScapeCategories.DAMAGE);
                 int bumpMask = router.maskForCategory(BstConfig.SoundScapeCategories.ACCEL_BUMP);
                 int chimeMask = router.maskForCategory(BstConfig.SoundScapeCategories.BIOME_CHIME);
+
+                // Phase 3: per-transducer calibration is only meaningful in Sound Scape mode.
+                if (cfg.soundScapeEnabled) {
+                    fillTransducerGains(cfg, bufferChannels, transducerGain);
+                    transducerEq.updateIfNeeded(cfg, bufferChannels);
+                } else {
+                    for (int c = 0; c < 8; c++) {
+                        transducerGain[c] = 1.0f;
+                    }
+                    transducerEq.resetIfDisabled();
+                }
 
                 int damageLeft = damageBurstSamplesLeft.get();
                 int biomeLeft = biomeChimeSamplesLeft.get();
@@ -974,8 +1290,17 @@ public final class AudioOutputEngine {
                 double bumpMul = (dominantKind == 4) ? 1.0 : DUCK_FACTOR;
                 double chimeMul = (dominantKind == 5) ? 1.0 : DUCK_FACTOR;
 
+                boolean debugCapture = DEBUG_CAPTURE_ENABLED.get();
+                if (debugCapture) {
+                    Arrays.fill(dbgSumSq, 0, Math.max(1, bufferChannels), 0.0);
+                    Arrays.fill(dbgPeak, 0, Math.max(1, bufferChannels), 0.0);
+                }
+
                 int idx = 0;
                 synchronized (impulseLock) {
+                    int waveStep = debugCapture ? Math.max(1, framesPerChunk / DEBUG_WAVE_SAMPLES) : 1;
+                    int waveIndex = 0;
+
                     for (int i = 0; i < framesPerChunk; i++) {
                     // Clear per-channel accumulation.
                     for (int c = 0; c < bufferChannels; c++) {
@@ -1074,8 +1399,10 @@ public final class AudioOutputEngine {
                                 }
                             }
                             double voice = w * v.gain * env * voiceMul;
-                            int mask = router.maskForEffectKey(v.debugKey);
-                            addToChannels(ch, bufferChannels, mask, voice);
+                                int mask = (v.forcedMask != 0)
+                                    ? v.forcedMask
+                                    : (router.maskForEffectKey(v.debugKey) & router.maskForBus(bus));
+                            addToChannelsSpatial(ch, bufferChannels, mask, v, voice);
 
                             v.samplesLeft--;
                         }
@@ -1112,8 +1439,14 @@ public final class AudioOutputEngine {
                     double sv = smartVolume.currentGain();
 
                     // Per-channel limiter + convert to int16.
+                    double monoSum = 0.0;
                     for (int c = 0; c < bufferChannels; c++) {
                         double s = ch[c] * sv;
+                        // Per-transducer calibration (gain + EQ)
+                        if (cfg.soundScapeEnabled) {
+                            s *= transducerGain[c];
+                            s = transducerEq.process(c, s);
+                        }
                             if (cfg.outputEqEnabled && cfg.outputEqGainDb != 0) {
                                 outputEq.updateIfNeeded(cfg.outputEqFreqHz, cfg.outputEqGainDb, bufferChannels);
                                 s = outputEq.process(c, s);
@@ -1123,10 +1456,30 @@ public final class AudioOutputEngine {
 
                             double sample = softClipTanh(s, limiterDrive);
                         sample = clamp(sample, -1.0, 1.0);
-                        short s16 = (short) (sample * mg * 32767);
+
+                        double out = sample * mg;
+                        if (debugCapture) {
+                            dbgSumSq[c] += (out * out);
+                            double abs = Math.abs(out);
+                            if (abs > dbgPeak[c]) {
+                                dbgPeak[c] = abs;
+                            }
+                            monoSum += out;
+                        }
+
+                        short s16 = (short) (out * 32767);
 
                         buffer[idx++] = (byte) (s16 & 0xFF);
                         buffer[idx++] = (byte) ((s16 >>> 8) & 0xFF);
+                    }
+
+                    if (debugCapture) {
+                        double mono = monoSum / Math.max(1, bufferChannels);
+                        debugMonoRing[debugMonoWrite] = (float) clamp(mono, -1.0, 1.0);
+                        debugMonoWrite = (debugMonoWrite + 1) & (DEBUG_SPECT_FFT_SIZE - 1);
+                        if ((i % waveStep) == 0 && waveIndex < DEBUG_WAVE_SAMPLES) {
+                            debugWave[waveIndex++] = (float) clamp(mono, -1.0, 1.0);
+                        }
                     }
 
                     // Fixed low thump oscillator (~32Hz) used for accel bump.
@@ -1141,6 +1494,76 @@ public final class AudioOutputEngine {
                         chimePhase -= (2.0 * Math.PI);
                     }
                 }
+                }
+
+                if (debugCapture) {
+                    int fmtFrameSize = 0;
+                    try {
+                        AudioFormat fmt = device.format();
+                        fmtFrameSize = (fmt == null) ? 0 : fmt.getFrameSize();
+                    } catch (Exception ignored) {
+                    }
+
+                    int bufferBytes = (device == null) ? -1 : device.bufferSizeBytes();
+                    int availableBytes = (device == null) ? -1 : device.availableBytes();
+                    double bufferMs = 0.0;
+                    double queuedMs = 0.0;
+                    if (bufferBytes > 0 && fmtFrameSize > 0) {
+                        int frames = bufferBytes / fmtFrameSize;
+                        bufferMs = (frames * 1000.0) / SAMPLE_RATE;
+                    }
+                    if (bufferBytes > 0 && availableBytes >= 0 && fmtFrameSize > 0) {
+                        int queuedBytes = Math.max(0, bufferBytes - availableBytes);
+                        int queuedFrames = queuedBytes / fmtFrameSize;
+                        queuedMs = (queuedFrames * 1000.0) / SAMPLE_RATE;
+                    }
+
+                    // FFT-based low-frequency "spectrogram" (bins 1..DEBUG_SPECT_BINS).
+                    for (int n = 0; n < DEBUG_SPECT_FFT_SIZE; n++) {
+                        int src = (debugMonoWrite + n) & (DEBUG_SPECT_FFT_SIZE - 1);
+                        double x = debugMonoRing[src];
+                        double w = 0.5 - (0.5 * Math.cos((2.0 * Math.PI * n) / (DEBUG_SPECT_FFT_SIZE - 1)));
+                        fftReal[n] = x * w;
+                        fftImag[n] = 0.0;
+                    }
+                    fftRadix2InPlace(fftReal, fftImag);
+
+                    int colBase = debugSpectWriteCol * DEBUG_SPECT_BINS;
+                    double norm = Math.max(1.0, DEBUG_SPECT_FFT_SIZE / 2.0);
+                    for (int b = 0; b < DEBUG_SPECT_BINS; b++) {
+                        int k = b + 1;
+                        double re = fftReal[k];
+                        double im = fftImag[k];
+                        double mag = Math.sqrt((re * re) + (im * im)) / norm;
+                        double db = 20.0 * Math.log10(mag + 1.0e-9);
+                        double v = (db + 60.0) / 60.0; // -60dB..0dB -> 0..1
+                        debugSpect[colBase + b] = (float) clamp(v, 0.0, 1.0);
+                    }
+                    debugSpectWriteCol = (debugSpectWriteCol + 1) % DEBUG_SPECT_COLS;
+
+                    float[] rms01 = new float[bufferChannels];
+                    float[] peak01 = new float[bufferChannels];
+                    for (int c = 0; c < bufferChannels; c++) {
+                        double rms = Math.sqrt(dbgSumSq[c] / Math.max(1, framesPerChunk));
+                        rms01[c] = (float) clamp(rms, 0.0, 1.0);
+                        peak01[c] = (float) clamp(dbgPeak[c], 0.0, 1.0);
+                    }
+
+                    DEBUG_SNAPSHOT.set(new DebugSnapshot(
+                            nowNs,
+                            bufferChannels,
+                            rms01,
+                            peak01,
+                            Arrays.copyOf(debugWave, debugWave.length),
+                            Arrays.copyOf(debugSpect, debugSpect.length),
+                            DEBUG_SPECT_COLS,
+                            DEBUG_SPECT_BINS,
+                            debugSpectWriteCol,
+                            bufferBytes,
+                            availableBytes,
+                            bufferMs,
+                            queuedMs
+                    ));
                 }
 
                 synchronized (impulseLock) {
@@ -1220,6 +1643,198 @@ public final class AudioOutputEngine {
                 ch[c] += v;
             }
         }
+    }
+
+    private static final String[] CHANNEL_IDS_7_1 = new String[]{"FL", "FR", "C", "LFE", "SL", "SR", "BL", "BR"};
+
+    private static void fillTransducerGains(BstConfig.Data cfg, int channelCount, float[] out) {
+        if (out == null) {
+            return;
+        }
+        int n = (channelCount == 8) ? 8 : 2;
+        for (int i = 0; i < n; i++) {
+            out[i] = 1.0f;
+        }
+        if (cfg == null || cfg.soundScapeCalibration == null) {
+            return;
+        }
+        for (int c = 0; c < n; c++) {
+            String id = (n == 2) ? ((c == 0) ? "FL" : "FR") : CHANNEL_IDS_7_1[c];
+            BstConfig.Data.TransducerCalibration cal = cfg.soundScapeCalibration.get(id);
+            double db = (cal == null) ? 0.0 : cal.gainDb;
+            double comfort = (cal == null) ? 1.0 : cal.comfortLimit01;
+            comfort = clamp(comfort, 0.0, 1.0);
+            out[c] = (float) (dbToLinear(db) * comfort);
+        }
+    }
+
+    private static float dbToLinear(double db) {
+        double d = db;
+        if (!Double.isFinite(d)) {
+            d = 0.0;
+        }
+        d = clamp(d, -24.0, 24.0);
+        return (float) Math.pow(10.0, d / 20.0);
+    }
+
+    private static int forcedMaskFromDebugKey(String debugKey) {
+        if (debugKey == null || debugKey.isBlank()) {
+            return 0;
+        }
+        String raw = debugKey.trim();
+        String lower = raw.toLowerCase(java.util.Locale.ROOT);
+        if (!lower.startsWith("cal.ch.")) {
+            return 0;
+        }
+        int start = "cal.ch.".length();
+        int end = raw.indexOf('.', start);
+        String id = ((end >= 0) ? raw.substring(start, end) : raw.substring(start)).trim().toUpperCase(java.util.Locale.ROOT);
+        if (id.isEmpty()) {
+            return 0;
+        }
+        return switch (id) {
+            case "FL", "L" -> 0x01;
+            case "FR", "R" -> 0x02;
+            case "C" -> 0x04;
+            case "LFE" -> 0x08;
+            case "SL" -> 0x10;
+            case "SR" -> 0x20;
+            case "BL" -> 0x40;
+            case "BR" -> 0x80;
+            default -> 0;
+        };
+    }
+
+    private static void addToChannelsSpatial(double[] ch, int channelCount, int mask, ImpulseVoice voice, double v) {
+        if (voice == null) {
+            addToChannels(ch, channelCount, mask, v);
+            return;
+        }
+        if (v == 0.0) {
+            return;
+        }
+        if (!voice.spatialEnabled) {
+            addToChannels(ch, channelCount, mask, v);
+            return;
+        }
+        int m = (mask == 0) ? ((channelCount == 8) ? 0xFF : 0x03) : mask;
+        voice.ensureMaskedPan(channelCount, m);
+
+        if (channelCount == 2) {
+            if ((m & 0x01) != 0) ch[0] += v * voice.maskedPan2L;
+            if ((m & 0x02) != 0) ch[1] += v * voice.maskedPan2R;
+            return;
+        }
+
+        // 8ch (7.1) expected; channelCount is clamped elsewhere.
+        if ((m & 0x01) != 0) ch[0] += v * voice.maskedPan8FL;
+        if ((m & 0x02) != 0) ch[1] += v * voice.maskedPan8FR;
+        if ((m & 0x04) != 0) ch[2] += v * voice.maskedPan8C;
+        if ((m & 0x08) != 0) ch[3] += v * voice.maskedPan8LFE;
+        if ((m & 0x10) != 0) ch[4] += v * voice.maskedPan8SL;
+        if ((m & 0x20) != 0) ch[5] += v * voice.maskedPan8SR;
+        if ((m & 0x40) != 0) ch[6] += v * voice.maskedPan8BL;
+        if ((m & 0x80) != 0) ch[7] += v * voice.maskedPan8BR;
+    }
+
+    private static void initVoiceSpatial(ImpulseVoice v, BstConfig.Data cfg, double azimuthDeg, double distanceM) {
+        if (v == null) {
+            return;
+        }
+
+        double az = azimuthDeg;
+        if (!Double.isFinite(az)) {
+            az = 0.0;
+        }
+        az = az % 360.0;
+        if (az > 180.0) az -= 360.0;
+        if (az < -180.0) az += 360.0;
+
+        double dist = distanceM;
+        if (!Double.isFinite(dist) || dist < 0.0) {
+            dist = 0.0;
+        }
+        dist = Math.min(dist, 2048.0);
+
+        v.spatialAzimuthDeg = az;
+        v.spatialDistanceM = dist;
+
+        boolean spatialEnabled = cfg != null && cfg.soundScapeEnabled && cfg.soundScapeSpatialEnabled;
+        v.spatialEnabled = spatialEnabled;
+
+        // Reset cached masked gains whenever base changes.
+        v.cachedPanChannels = -1;
+        v.cachedPanMask = Integer.MIN_VALUE;
+
+        if (!spatialEnabled) {
+            v.basePan2L = 1.0f;
+            v.basePan2R = 1.0f;
+            v.basePan8FL = v.basePan8FR = v.basePan8C = v.basePan8LFE = v.basePan8SL = v.basePan8SR = v.basePan8BL = v.basePan8BR = 1.0f;
+            return;
+        }
+
+        double strength = (cfg == null) ? 0.5 : clamp(cfg.soundScapeSpatialDistanceAttenStrength, 0.0, 1.0);
+        double curve = 1.0 / (1.0 + (dist / 6.0));
+        curve = clamp(curve, 0.25, 1.0);
+        float distMul = (float) (1.0 + ((curve - 1.0) * strength));
+
+        // Stereo (fallback): equal-power left/right pan using azimuth.
+        double pan = clamp(az / 90.0, -1.0, 1.0); // -1 left .. +1 right
+        double theta = (pan + 1.0) * (Math.PI / 4.0);
+        v.basePan2L = (float) (Math.cos(theta) * distMul);
+        v.basePan2R = (float) (Math.sin(theta) * distMul);
+
+        // 7.1 ring panning (LFE excluded from ring).
+        float[] g8 = computeRing71PanGains(az);
+        v.basePan8FL = g8[0] * distMul;
+        v.basePan8FR = g8[1] * distMul;
+        v.basePan8C = g8[2] * distMul;
+        v.basePan8LFE = g8[3] * distMul;
+        v.basePan8SL = g8[4] * distMul;
+        v.basePan8SR = g8[5] * distMul;
+        v.basePan8BL = g8[6] * distMul;
+        v.basePan8BR = g8[7] * distMul;
+    }
+
+    private static float[] computeRing71PanGains(double azimuthDeg) {
+        // Returns base gains for channel indices:
+        // 0 FL, 1 FR, 2 C, 3 LFE, 4 SL, 5 SR, 6 BL, 7 BR
+        float[] out = new float[8];
+
+        // Convert [-180,180] to [0,360): 0 front, 90 right, 180 rear, 270 left.
+        double a = azimuthDeg;
+        a = a % 360.0;
+        if (a < 0.0) a += 360.0;
+
+        // Ring points in ascending order (degrees).
+        // C(0), FR(45), SR(110), BR(150), BL(210), SL(250), FL(315)
+        final double[] ang = new double[]{0.0, 45.0, 110.0, 150.0, 210.0, 250.0, 315.0};
+        final int[] ch = new int[]{2, 1, 5, 7, 6, 4, 0};
+
+        int i0 = 0;
+        for (int i = ang.length - 1; i >= 0; i--) {
+            if (a >= ang[i]) {
+                i0 = i;
+                break;
+            }
+        }
+        int i1 = (i0 + 1) % ang.length;
+        double a0 = ang[i0];
+        double a1 = ang[i1];
+        if (i1 == 0) {
+            a1 += 360.0;
+        }
+        double t = (a1 == a0) ? 0.0 : clamp((a - a0) / (a1 - a0), 0.0, 1.0);
+
+        // Equal-power crossfade between the two nearest ring speakers.
+        float w0 = (float) Math.cos(t * (Math.PI / 2.0));
+        float w1 = (float) Math.sin(t * (Math.PI / 2.0));
+
+        out[ch[i0]] = w0;
+        out[ch[i1]] = w1;
+        // LFE stays 0 by default for directional panning.
+        out[3] = 0.0f;
+        return out;
     }
 
     @SuppressWarnings("unused")
@@ -1315,6 +1930,7 @@ public final class AudioOutputEngine {
         private final Map<String, Integer> groupMasks = new java.util.HashMap<>();
         private final Map<String, Integer> categoryMasks = new java.util.HashMap<>();
         private final Map<String, Integer> overrideMasks = new java.util.HashMap<>();
+        private final Map<String, Integer> busMasks = new java.util.HashMap<>();
 
         SoundScapeRouter(BstConfig.Data cfg, int channelCount) {
             this.channelCount = (channelCount == 8) ? 8 : 2;
@@ -1361,6 +1977,24 @@ public final class AudioOutputEngine {
                     overrideMasks.put(k, targetToMask(e.getValue()));
                 }
             }
+
+            Map<String, String> buses = (cfg == null) ? null : cfg.soundScapeBusRouting;
+            if (buses != null) {
+                for (Map.Entry<String, String> e : buses.entrySet()) {
+                    if (e == null) continue;
+                    String k = (e.getKey() == null) ? "" : e.getKey().trim().toLowerCase(java.util.Locale.ROOT);
+                    if (k.isEmpty()) continue;
+                    busMasks.put(k, targetToMask(e.getValue()));
+                }
+            }
+
+            // Defaults: if a bus isn't explicitly set, treat it as All.
+            busMasks.putIfAbsent("ui", allMask);
+            busMasks.putIfAbsent("danger", allMask);
+            busMasks.putIfAbsent("environmental", allMask);
+            busMasks.putIfAbsent("continuous", allMask);
+            busMasks.putIfAbsent("impact", allMask);
+            busMasks.putIfAbsent("modded", allMask);
         }
 
         int maskForCategory(String categoryKey) {
@@ -1386,6 +2020,22 @@ public final class AudioOutputEngine {
             }
             String cat = classifyCategory(k);
             return maskForCategory(cat);
+        }
+
+        int maskForBus(HapticBus bus) {
+            if (bus == null) {
+                return allMask;
+            }
+            String key = switch (bus) {
+                case UI -> "ui";
+                case DANGER -> "danger";
+                case ENVIRONMENTAL -> "environmental";
+                case CONTINUOUS -> "continuous";
+                case IMPACT -> "impact";
+                case MODDED -> "modded";
+            };
+            Integer m = busMasks.get(key);
+            return (m == null || m == 0) ? allMask : m;
         }
 
         private String classifyCategory(String key) {
@@ -1569,6 +2219,7 @@ public final class AudioOutputEngine {
         String pattern;
         String debugKey;
         String instrumentId;
+        int forcedMask;
         int pulsePeriodSamples;
         int pulseWidthSamples;
 
@@ -1581,6 +2232,122 @@ public final class AudioOutputEngine {
         int priority;
         HapticBus bus;
         long createdNanos;
+
+        // --- Phase 3: Spatial panning ---
+        boolean spatialEnabled;
+        double spatialAzimuthDeg;
+        double spatialDistanceM;
+
+        // Base pan gains (pre-mask, pre-normalization)
+        float basePan2L;
+        float basePan2R;
+
+        float basePan8FL;
+        float basePan8FR;
+        float basePan8C;
+        float basePan8LFE;
+        float basePan8SL;
+        float basePan8SR;
+        float basePan8BL;
+        float basePan8BR;
+
+        // Cached masked+normalized gains for the last (channels,mask) combination.
+        int cachedPanChannels = -1;
+        int cachedPanMask = Integer.MIN_VALUE;
+
+        float maskedPan2L;
+        float maskedPan2R;
+
+        float maskedPan8FL;
+        float maskedPan8FR;
+        float maskedPan8C;
+        float maskedPan8LFE;
+        float maskedPan8SL;
+        float maskedPan8SR;
+        float maskedPan8BL;
+        float maskedPan8BR;
+
+        void ensureMaskedPan(int channelCount, int mask) {
+            int ch = (channelCount == 8) ? 8 : 2;
+            if (cachedPanChannels == ch && cachedPanMask == mask) {
+                return;
+            }
+            cachedPanChannels = ch;
+            cachedPanMask = mask;
+
+            if (ch == 2) {
+                maskedPan2L = ((mask & 0x01) != 0) ? basePan2L : 0.0f;
+                maskedPan2R = ((mask & 0x02) != 0) ? basePan2R : 0.0f;
+
+                double n = Math.sqrt((maskedPan2L * maskedPan2L) + (maskedPan2R * maskedPan2R));
+                if (n < 1.0e-6) {
+                    int count = 0;
+                    if ((mask & 0x01) != 0) count++;
+                    if ((mask & 0x02) != 0) count++;
+                    if (count <= 0) {
+                        maskedPan2L = maskedPan2R = 0.0f;
+                        return;
+                    }
+                    float g = (float) (1.0 / Math.sqrt(count));
+                    maskedPan2L = ((mask & 0x01) != 0) ? g : 0.0f;
+                    maskedPan2R = ((mask & 0x02) != 0) ? g : 0.0f;
+                    return;
+                }
+
+                float inv = (float) (1.0 / n);
+                maskedPan2L *= inv;
+                maskedPan2R *= inv;
+                return;
+            }
+
+            maskedPan8FL = ((mask & 0x01) != 0) ? basePan8FL : 0.0f;
+            maskedPan8FR = ((mask & 0x02) != 0) ? basePan8FR : 0.0f;
+            maskedPan8C = ((mask & 0x04) != 0) ? basePan8C : 0.0f;
+            maskedPan8LFE = ((mask & 0x08) != 0) ? basePan8LFE : 0.0f;
+            maskedPan8SL = ((mask & 0x10) != 0) ? basePan8SL : 0.0f;
+            maskedPan8SR = ((mask & 0x20) != 0) ? basePan8SR : 0.0f;
+            maskedPan8BL = ((mask & 0x40) != 0) ? basePan8BL : 0.0f;
+            maskedPan8BR = ((mask & 0x80) != 0) ? basePan8BR : 0.0f;
+
+            double n = 0.0;
+            n += maskedPan8FL * maskedPan8FL;
+            n += maskedPan8FR * maskedPan8FR;
+            n += maskedPan8C * maskedPan8C;
+            n += maskedPan8LFE * maskedPan8LFE;
+            n += maskedPan8SL * maskedPan8SL;
+            n += maskedPan8SR * maskedPan8SR;
+            n += maskedPan8BL * maskedPan8BL;
+            n += maskedPan8BR * maskedPan8BR;
+            n = Math.sqrt(n);
+
+            if (n < 1.0e-6) {
+                int count = Integer.bitCount(mask & 0xFF);
+                if (count <= 0) {
+                    maskedPan8FL = maskedPan8FR = maskedPan8C = maskedPan8LFE = maskedPan8SL = maskedPan8SR = maskedPan8BL = maskedPan8BR = 0.0f;
+                    return;
+                }
+                float g = (float) (1.0 / Math.sqrt(count));
+                maskedPan8FL = ((mask & 0x01) != 0) ? g : 0.0f;
+                maskedPan8FR = ((mask & 0x02) != 0) ? g : 0.0f;
+                maskedPan8C = ((mask & 0x04) != 0) ? g : 0.0f;
+                maskedPan8LFE = ((mask & 0x08) != 0) ? g : 0.0f;
+                maskedPan8SL = ((mask & 0x10) != 0) ? g : 0.0f;
+                maskedPan8SR = ((mask & 0x20) != 0) ? g : 0.0f;
+                maskedPan8BL = ((mask & 0x40) != 0) ? g : 0.0f;
+                maskedPan8BR = ((mask & 0x80) != 0) ? g : 0.0f;
+                return;
+            }
+
+            float inv = (float) (1.0 / n);
+            maskedPan8FL *= inv;
+            maskedPan8FR *= inv;
+            maskedPan8C *= inv;
+            maskedPan8LFE *= inv;
+            maskedPan8SL *= inv;
+            maskedPan8SR *= inv;
+            maskedPan8BL *= inv;
+            maskedPan8BR *= inv;
+        }
     }
 
     private static final class OutputEq {
@@ -1662,6 +2429,117 @@ public final class AudioOutputEngine {
             lastChannels = -1;
             for (int i = 0; i < 8; i++) {
                 x1[i] = x2[i] = y1[i] = y2[i] = 0.0;
+            }
+        }
+    }
+
+    private static final class TransducerEq {
+        // RBJ peaking EQ with fixed Q.
+        private static final double Q = 1.0;
+
+        private final boolean[] active = new boolean[8];
+        private final int[] lastFreqHz = new int[8];
+        private final int[] lastGainDb = new int[8];
+
+        // Coeffs (per channel)
+        private final double[] b0 = new double[8];
+        private final double[] b1 = new double[8];
+        private final double[] b2 = new double[8];
+        private final double[] a1 = new double[8];
+        private final double[] a2 = new double[8];
+
+        // State
+        private final double[] x1 = new double[8];
+        private final double[] x2 = new double[8];
+        private final double[] y1 = new double[8];
+        private final double[] y2 = new double[8];
+
+        TransducerEq() {
+            for (int i = 0; i < 8; i++) {
+                lastFreqHz[i] = -1;
+                lastGainDb[i] = Integer.MIN_VALUE;
+            }
+        }
+
+        void updateIfNeeded(BstConfig.Data cfg, int channels) {
+            int n = (channels == 8) ? 8 : 2;
+
+            for (int c = 0; c < 8; c++) {
+                if (c >= n) {
+                    active[c] = false;
+                    continue;
+                }
+
+                if (cfg == null || cfg.soundScapeCalibration == null) {
+                    active[c] = false;
+                    continue;
+                }
+
+                String id = (n == 2) ? ((c == 0) ? "FL" : "FR") : CHANNEL_IDS_7_1[c];
+                BstConfig.Data.TransducerCalibration cal = cfg.soundScapeCalibration.get(id);
+                int f = (cal == null) ? 45 : clampInt(cal.eqFreqHz, 10, 120);
+                int g = (cal == null) ? 0 : clampInt(cal.eqGainDb, -12, 12);
+
+                if (g == 0) {
+                    // Disable EQ on this channel.
+                    active[c] = false;
+                    lastFreqHz[c] = f;
+                    lastGainDb[c] = 0;
+                    continue;
+                }
+
+                if (active[c] && f == lastFreqHz[c] && g == lastGainDb[c]) {
+                    continue;
+                }
+
+                lastFreqHz[c] = f;
+                lastGainDb[c] = g;
+                active[c] = true;
+
+                // Reset state for this channel when settings change.
+                x1[c] = x2[c] = y1[c] = y2[c] = 0.0;
+
+                // Compute RBJ peaking EQ coefficients.
+                double A = Math.pow(10.0, g / 40.0);
+                double w0 = (2.0 * Math.PI * f) / SAMPLE_RATE;
+                double cos = Math.cos(w0);
+                double sin = Math.sin(w0);
+                double alpha = sin / (2.0 * Q);
+
+                double bb0 = 1.0 + alpha * A;
+                double bb1 = -2.0 * cos;
+                double bb2 = 1.0 - alpha * A;
+                double aa0 = 1.0 + (alpha / A);
+                double aa1 = -2.0 * cos;
+                double aa2 = 1.0 - (alpha / A);
+
+                b0[c] = bb0 / aa0;
+                b1[c] = bb1 / aa0;
+                b2[c] = bb2 / aa0;
+                a1[c] = aa1 / aa0;
+                a2[c] = aa2 / aa0;
+            }
+        }
+
+        double process(int channel, double x) {
+            int c = (channel < 0) ? 0 : Math.min(channel, 7);
+            if (!active[c]) {
+                return x;
+            }
+            double y = (b0[c] * x) + (b1[c] * x1[c]) + (b2[c] * x2[c]) - (a1[c] * y1[c]) - (a2[c] * y2[c]);
+            x2[c] = x1[c];
+            x1[c] = x;
+            y2[c] = y1[c];
+            y1[c] = y;
+            return y;
+        }
+
+        void resetIfDisabled() {
+            for (int c = 0; c < 8; c++) {
+                active[c] = false;
+                lastFreqHz[c] = -1;
+                lastGainDb[c] = Integer.MIN_VALUE;
+                x1[c] = x2[c] = y1[c] = y2[c] = 0.0;
             }
         }
     }
