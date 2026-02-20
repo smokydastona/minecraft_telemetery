@@ -515,6 +515,8 @@ public final class AudioOutputEngine {
             byte[] buffer = new byte[framesPerChunk * 2 * BYTES_PER_SAMPLE];
             int bufferChannels = 2;
 
+            OutputEq outputEq = new OutputEq();
+
             // Per-frame accumulation (reused).
             double[] ch = new double[8];
 
@@ -890,7 +892,15 @@ public final class AudioOutputEngine {
 
                     // Per-channel limiter + convert to int16.
                     for (int c = 0; c < bufferChannels; c++) {
-                        double sample = softClipTanh(ch[c], limiterDrive);
+                            double s = ch[c];
+                            if (cfg.outputEqEnabled && cfg.outputEqGainDb != 0) {
+                                outputEq.updateIfNeeded(cfg.outputEqFreqHz, cfg.outputEqGainDb, bufferChannels);
+                                s = outputEq.process(c, s);
+                            } else {
+                                outputEq.resetIfDisabled();
+                            }
+
+                            double sample = softClipTanh(s, limiterDrive);
                         sample = clamp(sample, -1.0, 1.0);
                         short s16 = (short) (sample * mg * 32767);
 
@@ -1360,5 +1370,88 @@ public final class AudioOutputEngine {
 
         int priority;
         long createdNanos;
+    }
+
+    private static final class OutputEq {
+        // RBJ peaking EQ with fixed Q (keeps UI minimal).
+        private static final double Q = 1.0;
+
+        private int lastFreqHz = -1;
+        private int lastGainDb = Integer.MIN_VALUE;
+        private int lastChannels = -1;
+        private boolean active;
+
+        // Coeffs
+        private double b0, b1, b2, a1, a2;
+
+        // Per-channel state
+        private final double[] x1 = new double[8];
+        private final double[] x2 = new double[8];
+        private final double[] y1 = new double[8];
+        private final double[] y2 = new double[8];
+
+        void updateIfNeeded(int freqHz, int gainDb, int channels) {
+            int f = clampInt(freqHz, 10, 120);
+            int g = clampInt(gainDb, -12, 12);
+            int ch = (channels == 8) ? 8 : 2;
+
+            if (active && f == lastFreqHz && g == lastGainDb && ch == lastChannels) {
+                return;
+            }
+
+            lastFreqHz = f;
+            lastGainDb = g;
+            lastChannels = ch;
+            active = true;
+
+            // Reset state when settings change to avoid dragging old resonances across.
+            for (int i = 0; i < 8; i++) {
+                x1[i] = x2[i] = y1[i] = y2[i] = 0.0;
+            }
+
+            // Compute RBJ peaking EQ coefficients.
+            double A = Math.pow(10.0, g / 40.0);
+            double w0 = (2.0 * Math.PI * f) / SAMPLE_RATE;
+            double cos = Math.cos(w0);
+            double sin = Math.sin(w0);
+            double alpha = sin / (2.0 * Q);
+
+            double bb0 = 1.0 + alpha * A;
+            double bb1 = -2.0 * cos;
+            double bb2 = 1.0 - alpha * A;
+            double aa0 = 1.0 + (alpha / A);
+            double aa1 = -2.0 * cos;
+            double aa2 = 1.0 - (alpha / A);
+
+            // Normalize by a0.
+            b0 = bb0 / aa0;
+            b1 = bb1 / aa0;
+            b2 = bb2 / aa0;
+            a1 = aa1 / aa0;
+            a2 = aa2 / aa0;
+        }
+
+        double process(int channel, double x) {
+            int c = (channel < 0) ? 0 : Math.min(channel, 7);
+            double y = (b0 * x) + (b1 * x1[c]) + (b2 * x2[c]) - (a1 * y1[c]) - (a2 * y2[c]);
+            x2[c] = x1[c];
+            x1[c] = x;
+            y2[c] = y1[c];
+            y1[c] = y;
+            return y;
+        }
+
+        void resetIfDisabled() {
+            if (!active) {
+                return;
+            }
+            active = false;
+            lastFreqHz = -1;
+            lastGainDb = Integer.MIN_VALUE;
+            lastChannels = -1;
+            for (int i = 0; i < 8; i++) {
+                x1[i] = x2[i] = y1[i] = y2[i] = 0.0;
+            }
+        }
     }
 }

@@ -52,6 +52,11 @@ public final class AdvancedSettingsScreen extends Screen {
     private int demoStep;
     private long demoNextNanos;
 
+    private Button outputEqButton;
+    private boolean outputEqEnabled;
+    private IntSlider outputEqFreqSlider;
+    private IntSlider outputEqGainSlider;
+
     private static final int[] BUFFER_CHOICES_MS = new int[]{0, 10, 20, 30, 40, 60, 80, 100, 150, 200};
 
     public AdvancedSettingsScreen(Screen parent) {
@@ -156,6 +161,19 @@ public final class AdvancedSettingsScreen extends Screen {
             .build();
         settingsList.addSettingEntry(new ButtonOnlyEntry(demoButton));
 
+        settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.config.tone_shaping"));
+
+        outputEqEnabled = BstConfig.get().outputEqEnabled;
+        outputEqButton = Button.builder(Objects.requireNonNull(outputEqLabel()), b -> toggleOutputEq())
+            .bounds(0, 0, contentWidth - 12, rowH)
+            .build();
+        settingsList.addSettingEntry(new ButtonOnlyEntry(outputEqButton));
+
+        outputEqFreqSlider = new IntSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.output_eq_freq", BstConfig.get().outputEqFreqHz, 10, 120, "Hz");
+        outputEqGainSlider = new IntSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.output_eq_gain", BstConfig.get().outputEqGainDb, -12, 12, "dB");
+        settingsList.addSettingEntry(new SliderOnlyEntry(outputEqFreqSlider));
+        settingsList.addSettingEntry(new SliderOnlyEntry(outputEqGainSlider));
+
         settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.config.calibration"));
 
         settingsList.addSettingEntry(new ButtonOnlyEntry(Button.builder(
@@ -214,6 +232,10 @@ public final class AdvancedSettingsScreen extends Screen {
         if (bufferButton != null) {
             data.javaSoundBufferMs = BUFFER_CHOICES_MS[clampIndex(bufferChoiceIndex)];
         }
+
+        data.outputEqEnabled = outputEqEnabled;
+        if (outputEqFreqSlider != null) data.outputEqFreqHz = outputEqFreqSlider.getIntValue();
+        if (outputEqGainSlider != null) data.outputEqGainDb = outputEqGainSlider.getIntValue();
 
         data.debugOverlayEnabled = debugOverlayEnabled;
 
@@ -277,6 +299,19 @@ public final class AdvancedSettingsScreen extends Screen {
         if (demoButton != null) {
             demoButton.setMessage(Objects.requireNonNull(demoLabel()));
         }
+    }
+
+    private void toggleOutputEq() {
+        outputEqEnabled = !outputEqEnabled;
+        if (outputEqButton != null) {
+            outputEqButton.setMessage(Objects.requireNonNull(outputEqLabel()));
+        }
+    }
+
+    private Component outputEqLabel() {
+        return outputEqEnabled
+                ? Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.output_eq_on"))
+                : Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.output_eq_off"));
     }
 
     private void stopDemo() {

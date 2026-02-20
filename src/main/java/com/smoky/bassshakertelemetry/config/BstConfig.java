@@ -252,6 +252,11 @@ public final class BstConfig {
         // Soft-limiter drive. Higher = more saturation and less peak clipping.
         public double limiterDrive = 2.5;
 
+        // Output tone shaping (simple single-band EQ)
+        public boolean outputEqEnabled = false;
+        public int outputEqFreqHz = 45;
+        public int outputEqGainDb = 0;
+
         public int damageBurstMs = 90;
         public double damageBurstGain = 0.8;
 

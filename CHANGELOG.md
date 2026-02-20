@@ -15,6 +15,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Server-relayed haptics packet now includes source position (enables directional encoding in multiplayer).
 - Advanced settings: JavaSound output buffer size selector (helps tune latency/stability).
 - Advanced settings: latency test pulse toggle.
+- Advanced settings: Output EQ tone shaping (single-band, with freq + gain).
 - Advanced settings: calibration test tones (30 Hz, 60 Hz) and a 20→120 Hz sweep.
 - Advanced settings: calibration Stop/Silence button.
 - New impulse pattern: `flat` (sustained tone-friendly envelope).
