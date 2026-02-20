@@ -19,6 +19,7 @@ public final class DspNodeFactory {
             case "randomizer", "random" -> new RandomizerNode(def);
             case "compressor", "limiter", "compressor_limiter" -> new CompressorLimiterNode(def);
             case "mixer", "mix" -> new MixerNode(def);
+            case "direction", "direction_encoder", "dir" -> new DirectionEncoderNode(def);
             default -> new ConstantNode(0.0);
         };
     }

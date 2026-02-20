@@ -1,7 +1,10 @@
 package com.smoky.bassshakertelemetry.client.ui;
 
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
+import com.smoky.bassshakertelemetry.audio.dsp.DspContext;
 import com.smoky.bassshakertelemetry.audio.dsp.DspGraph;
+import com.smoky.bassshakertelemetry.audio.dsp.DspGraphInstance;
+import com.smoky.bassshakertelemetry.audio.dsp.DspNodeFactory;
 import com.smoky.bassshakertelemetry.config.BstHapticInstruments;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -33,6 +36,8 @@ public final class HapticInstrumentEditorScreen extends Screen {
     private static final int NODE_HEADER_H = 14;
     private static final int PORT_SPACING = 10;
     private static final int PORT_R = 3;
+
+    private static final DspNodeFactory DSP_FACTORY = new DspNodeFactory();
 
     private final Screen parent;
 
@@ -72,6 +77,7 @@ public final class HapticInstrumentEditorScreen extends Screen {
         "filter",
         "randomizer",
         "compressor",
+        "direction",
         "mixer",
         "constant"
     );
@@ -363,7 +369,7 @@ public final class HapticInstrumentEditorScreen extends Screen {
         String t = (type == null) ? "" : type.trim().toLowerCase(Locale.ROOT);
         Map<String, String> m = new LinkedHashMap<>();
         switch (t) {
-            case "envelope", "filter", "compressor" -> m.put("in", "");
+            case "envelope", "filter", "compressor", "direction" -> m.put("in", "");
             case "harmonic" -> m.put("fm", "");
             case "mixer" -> {
                 m.put("a", "");
@@ -405,6 +411,13 @@ public final class HapticInstrumentEditorScreen extends Screen {
                 p.put("ratio", 6.0);
                 p.put("attackMs", 6.0);
                 p.put("releaseMs", 90.0);
+            }
+            case "direction" -> {
+                p.put("useProfileEncoding", 1.0);
+                p.put("band", "center");
+                p.put("timeOffsetMs", 0.0);
+                p.put("intensityMul", 1.0);
+                p.put("mix", 1.0);
             }
             case "mixer" -> {
                 p.put("mode", "mix");
@@ -469,6 +482,8 @@ public final class HapticInstrumentEditorScreen extends Screen {
     private void drawNodes(GuiGraphics g) {
         var font = Objects.requireNonNull(this.font, "font");
 
+        Map<String, Double> debugValues = computeDebugPreviewValues();
+
         for (EditableNode n : nodes) {
             int h = nodeHeight(n);
             boolean isSelected = n.id.equals(selectedNodeId);
@@ -484,6 +499,13 @@ public final class HapticInstrumentEditorScreen extends Screen {
 
             String title = n.id + " : " + n.type;
             g.drawString(font, title, n.x + 6, n.y + 3, 0xFFFFFF);
+
+            Double v = debugValues.get(n.id);
+            if (v != null) {
+                String sv = Objects.requireNonNull(String.format(Locale.ROOT, "%.3f", v), "sv");
+                int w = font.width(Objects.requireNonNull(sv, "sv"));
+                g.drawString(font, Objects.requireNonNull(sv, "sv"), n.x + NODE_W - 10 - w, n.y + 3, 0xB0B0B0);
+            }
 
             // Output port
             int outX = n.x + NODE_W - 6;
@@ -503,6 +525,40 @@ public final class HapticInstrumentEditorScreen extends Screen {
 
                 g.drawString(font, Objects.requireNonNull(inputName, "inputName"), n.x + 10, inY - 4, 0xE0E0E0);
             }
+        }
+    }
+
+    private Map<String, Double> computeDebugPreviewValues() {
+        if (nodes.isEmpty()) {
+            return Map.of();
+        }
+
+        BstHapticInstruments.Store store = (workingStore != null) ? workingStore : BstHapticInstruments.get();
+        BstHapticInstruments.Instrument inst = (store == null) ? null : store.get(selectedInstrumentId);
+        double f = (inst == null) ? 55.0 : inst.defaults.frequencyHz;
+        int ms = (inst == null) ? 120 : inst.defaults.durationMs;
+
+        int samples = (int) Math.round((Math.max(10, ms) / 1000.0) * DspContext.SAMPLE_RATE);
+        samples = Math.max(1, samples);
+
+        try {
+            DspGraph graph = toGraph();
+            if (graph == null) {
+                return Map.of();
+            }
+
+            DspGraphInstance gi = graph.instantiate(DSP_FACTORY);
+            DspContext ctx = new DspContext(1337L, f, f, samples);
+            ctx.sampleIndex = Math.max(0, samples / 2);
+
+            Map<String, Double> out = new HashMap<>();
+            for (EditableNode n : nodes) {
+                if (n == null || n.id == null || n.id.isBlank()) continue;
+                out.put(n.id, gi.evalById(ctx, n.id));
+            }
+            return out;
+        } catch (Throwable ignored) {
+            return Map.of();
         }
     }
 

@@ -159,6 +159,12 @@ Editor controls (MVP):
 - **Copy JSON** copies the selected instrument JSON to the clipboard.
 - **Test** plays the selected instrument using its defaults.
 
+Available DSP node types (Phase 2 MVP):
+
+- `harmonic`, `noise`, `envelope`, `filter`, `randomizer`, `compressor`, `direction`, `mixer`, `constant`
+
+The editor also shows a lightweight per-node output preview value (visual debugging).
+
 This file controls per-event frequency/intensity/duration (and optional pattern/falloff flags) so you can tune chair feel without recompiling.
 
 ### Encoded-mono directional encoding

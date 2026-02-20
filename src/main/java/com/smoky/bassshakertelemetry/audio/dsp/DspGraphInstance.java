@@ -37,6 +37,22 @@ public final class DspGraphInstance {
         return evalIndex(ctx, outputIndex);
     }
 
+    /**
+     * Debug/helper: evaluate a specific node by id.
+     *
+     * <p>Used by the in-game graph editor for lightweight visual debugging.
+     */
+    public double evalById(DspContext ctx, String nodeId) {
+        if (ctx == null || nodeId == null || nodeId.isBlank()) {
+            return 0.0;
+        }
+        Integer idx = indexById.get(nodeId);
+        if (idx == null) {
+            return 0.0;
+        }
+        return evalIndex(ctx, idx);
+    }
+
     public double input(DspContext ctx, DspGraph.NodeDef def, String inputName) {
         if (def == null || inputName == null) {
             return 0.0;

@@ -31,6 +31,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Phase 2 foundation: DSP node graph runtime and a haptic instrument library file (`config/bassshakertelemetry_haptic_instruments.json`).
 - Vibration profiles now support optional `instrument` ids to play DSP-backed instrument impulses.
 - Phase 2: in-game haptic instrument graph editor (MVP) under Advanced settings.
+- Phase 2 DSP: added `direction` encoder node and a lightweight per-node preview value in the graph editor (visual debugging).
 
 ### Changed
 - Network protocol version bumped (client/server must match mod version).
