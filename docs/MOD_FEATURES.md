@@ -102,6 +102,13 @@ try {
 }
 ```
 
+API stability notes:
+
+- The intent is for `HapticApi` / `HapticEvent` to remain source-compatible across versions, but treat it as an alpha API.
+- Prefer namespaced keys (example: `mymod.recoil`, `mymod.engine`) so debug overlay entries are easy to read.
+- Avoid calling the API every tick for many entities; aggregate events and emit at a sensible rate.
+- If you ship with an optional integration, reflection (as above) is the safest approach.
+
 ## Config file
 
 Saved at `config/bassshakertelemetry.json`.
