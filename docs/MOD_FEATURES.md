@@ -63,6 +63,45 @@ This repo is intended to produce test JARs via GitHub Actions on `git push`.
 
 Local Gradle builds / `runClient` are intentionally not part of the workflow on this machine.
 
+## Mod Integration API
+
+Other mods can emit haptic events into Bass Shaker Telemetry using the public API package:
+
+- `com.smoky.bassshakertelemetry.api.HapticApi`
+- `com.smoky.bassshakertelemetry.api.HapticEvent`
+
+Notes:
+
+- The API is safe to call on dedicated servers (it gates all work behind `Dist.CLIENT`).
+- If your mod does not hard-depend on Bass Shaker Telemetry, use reflection so your mod doesn't crash when the mod is absent.
+
+Example (hard dependency / compile-time reference):
+
+```java
+import com.smoky.bassshakertelemetry.api.HapticApi;
+
+// short impulse
+HapticApi.sendImpulse("mymod.recoil", 60.0, 90, 0.8);
+
+// sustained tone (click-safe)
+HapticApi.sendTone("mymod.engine", 45.0, 400, 0.25);
+
+// sweep
+HapticApi.sendSweep("mymod.scan", 20.0, 120.0, 1200, 0.7);
+```
+
+Example (optional dependency via reflection):
+
+```java
+try {
+	Class<?> api = Class.forName("com.smoky.bassshakertelemetry.api.HapticApi");
+	api.getMethod("sendImpulse", String.class, double.class, int.class, double.class)
+			.invoke(null, "mymod.recoil", 60.0, 90, 0.8);
+} catch (Throwable ignored) {
+	// Bass Shaker Telemetry not installed (or API changed)
+}
+```
+
 ## Config file
 
 Saved at `config/bassshakertelemetry.json`.

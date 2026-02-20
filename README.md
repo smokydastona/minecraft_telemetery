@@ -58,6 +58,8 @@ Profiles are the source of truth for per-event tuning (frequency, intensity, dur
 
 For the full feature reference, see `docs/MOD_FEATURES.md`.
 
+For other mods, a small public integration API is available under `com.smoky.bassshakertelemetry.api`.
+
 Hardware tuning + troubleshooting guide: `docs/HARDWARE_TUNING_GUIDE.md`.
 
 When filing bugs, please include a debug overlay capture and the JavaSound buffer (requested vs accepted) log lines.
