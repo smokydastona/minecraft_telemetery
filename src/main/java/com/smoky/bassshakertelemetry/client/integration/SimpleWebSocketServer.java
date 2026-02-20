@@ -81,6 +81,10 @@ public final class SimpleWebSocketServer {
         return running;
     }
 
+    public int clientCount() {
+        return clients.size();
+    }
+
     public void broadcastText(String text) {
         if (!running) {
             return;

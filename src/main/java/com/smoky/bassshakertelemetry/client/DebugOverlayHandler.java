@@ -1,5 +1,6 @@
 package com.smoky.bassshakertelemetry.client;
 
+import com.smoky.bassshakertelemetry.client.integration.WebSocketTelemetryController;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -26,6 +27,7 @@ public final class DebugOverlayHandler {
         String l2 = VibrationIngress.getOverlayLine2();
         String l3 = VibrationIngress.getOverlayLine3();
         String l4 = VibrationIngress.getOverlayLine4();
+        String ws = WebSocketTelemetryController.getOverlayStatusLine();
 
         int x = 6;
         int y = 6;
@@ -38,6 +40,10 @@ public final class DebugOverlayHandler {
         }
         if (!l4.isBlank()) {
             event.getGuiGraphics().drawString(font, l4, x, y + 30, 0x99FF99);
+        }
+
+        if (ws != null && !ws.isBlank()) {
+            event.getGuiGraphics().drawString(font, ws, x, y + 40, 0x66CCFF);
         }
     }
 }
