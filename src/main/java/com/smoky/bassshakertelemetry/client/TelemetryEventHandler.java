@@ -3,6 +3,7 @@ package com.smoky.bassshakertelemetry.client;
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import com.smoky.bassshakertelemetry.config.BstVibrationProfiles;
+import com.smoky.bassshakertelemetry.telemetryout.TelemetryOut;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
@@ -77,6 +78,10 @@ public final class TelemetryEventHandler {
         }
 
         AudioOutputEngine.get().updateTelemetry(speed, accel, elytra);
+
+        if (BstConfig.get().webSocketEnabled && BstConfig.get().webSocketSendTelemetry) {
+            TelemetryOut.emitTelemetry(speed, accel, elytra);
+        }
     }
 
     private void maybeTriggerFlightWind(Player player, double speed, float yawDeltaDeg) {

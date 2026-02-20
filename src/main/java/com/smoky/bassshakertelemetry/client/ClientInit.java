@@ -1,5 +1,6 @@
 package com.smoky.bassshakertelemetry.client;
 
+import com.smoky.bassshakertelemetry.client.integration.WebSocketTelemetryController;
 import com.smoky.bassshakertelemetry.client.ui.TelemetryConfigScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -21,6 +22,8 @@ public final class ClientInit {
             MinecraftForge.EVENT_BUS.register(new WardenHeartbeatHapticsHandler());
         MinecraftForge.EVENT_BUS.register(new MiningSwingHapticsHandler());
         MinecraftForge.EVENT_BUS.register(new DebugOverlayHandler());
+
+        MinecraftForge.EVENT_BUS.register(new WebSocketTelemetryController());
 
         ModLoadingContext.get().registerExtensionPoint(
                 ConfigScreenHandler.ConfigScreenFactory.class,

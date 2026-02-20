@@ -129,6 +129,11 @@ public final class BstConfig {
             d.soundScapeChannels = 8;
         }
 
+        // --- External telemetry output (WebSocket) ---
+        if (d.webSocketPort <= 0 || d.webSocketPort > 65535) {
+            d.webSocketPort = 7117;
+        }
+
         return d;
     }
 
@@ -260,6 +265,13 @@ public final class BstConfig {
         // Smart Volume (slow auto-level)
         public boolean smartVolumeEnabled = false;
         public int smartVolumeTargetPct = 65;
+
+        // External telemetry output (WebSocket server, client-only)
+        // Default OFF: enable explicitly if you want to consume data externally.
+        public boolean webSocketEnabled = false;
+        public int webSocketPort = 7117;
+        public boolean webSocketSendTelemetry = true;
+        public boolean webSocketSendHapticEvents = true;
 
         public int damageBurstMs = 90;
         public double damageBurstGain = 0.8;

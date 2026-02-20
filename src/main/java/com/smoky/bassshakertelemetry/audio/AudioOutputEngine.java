@@ -1,6 +1,7 @@
 package com.smoky.bassshakertelemetry.audio;
 
 import com.smoky.bassshakertelemetry.config.BstConfig;
+import com.smoky.bassshakertelemetry.telemetryout.TelemetryOut;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -286,6 +287,10 @@ public final class AudioOutputEngine {
             while (impulses.size() > 24) {
                 impulses.remove(0);
             }
+        }
+
+        if (BstConfig.get().webSocketEnabled && BstConfig.get().webSocketSendHapticEvents) {
+            TelemetryOut.emitHaptic(dk, f0, f1, ms, g, n, pat, pulsePeriodMs, pulseWidthMs, pri, delayMs);
         }
     }
 

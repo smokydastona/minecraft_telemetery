@@ -45,6 +45,10 @@ In-game:
 - **Sound Scape (7.1)**: category routing + group management for mapping haptics across multiple output channels. If no multichannel device is available, the UI restricts routing choices to stereo.
 	- Includes an optional per-effect overrides editor (debug key → target).
 
+Optional integrations:
+
+- WebSocket telemetry output (JSON) can be enabled via config keys (client-only).
+
 On disk:
 
 - Main config: `config/bassshakertelemetry.json`

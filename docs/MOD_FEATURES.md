@@ -26,6 +26,10 @@
 - Debug overlay: optional developer overlay showing the last vibration source/key, priority, frequency, gain, and recent suppression.
 - Demo sequence: a simple built-in demo runner is available in Advanced settings → Audio for repeatable tuning.
 
+External output:
+
+- Optional WebSocket telemetry output (JSON events) can be enabled via config keys (see below).
+
 ## Effects (current)
 
 - **Road texture**: low-frequency filtered noise scaled by speed (toggleable; default OFF).
@@ -112,6 +116,24 @@ API stability notes:
 ## Config file
 
 Saved at `config/bassshakertelemetry.json`.
+
+### WebSocket telemetry output (client-only)
+
+When enabled, the mod starts a small WebSocket server on `127.0.0.1` and broadcasts JSON packets.
+
+Config keys:
+
+- `webSocketEnabled` (boolean, default `false`)
+- `webSocketPort` (int, default `7117`)
+- `webSocketSendTelemetry` (boolean, default `true`)
+- `webSocketSendHapticEvents` (boolean, default `true`)
+
+Packet formats (one JSON object per message):
+
+- Telemetry:
+	- `{"type":"telemetry","t":<epoch_ms>,"speed":<double>,"accel":<double>,"elytra":<bool>}`
+- Haptic events (emitted when a new impulse voice is created):
+	- `{"type":"haptic","t":<epoch_ms>,"key":"...","f0":<double>,"f1":<double>,"ms":<int>,"gain":<double>,"noise":<double>,"pattern":"...","pulsePeriodMs":<int>,"pulseWidthMs":<int>,"priority":<int>,"delayMs":<int>}`
 
 ## Vibration profiles (JSON)
 
