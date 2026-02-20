@@ -20,6 +20,7 @@
 - Priority & ducking (mono): when multiple effects overlap, one dominant vibration wins; others are ducked so impacts stay readable
 - Latency tuning: optional JavaSound output buffer size selection (larger buffers are often more stable but add latency)
 - Latency test: an in-game latency test pulse toggle is available in Advanced settings → Audio
+- Calibration tools: quick test tones + a frequency sweep are available in Advanced settings → Audio
 - Debug overlay: optional developer overlay showing the last vibration source/key, priority, frequency, gain, and recent suppression.
 - Demo sequence: a simple built-in demo runner is available in Advanced settings → Audio for repeatable tuning.
 
@@ -95,9 +96,12 @@ Profiles also support:
 Profiles can specify a `pattern`:
 
 - `single`: one envelope-shaped impulse (default)
+- `soft_single`: softer attack/release for less clicky taps
 - `shockwave`: strong onset with rapid decay (good for explosions)
+- `punch`: like shockwave, but more abrupt
 - `fade_out`: sustained onset fading to 0 by the end (good for death/long events)
 - `pulse_loop`: repeats short pulses for the profile duration
+- `flat`: constant sustain with click-safe attack/release (useful for calibration tones)
 
 For `pulse_loop`, you can optionally add:
 

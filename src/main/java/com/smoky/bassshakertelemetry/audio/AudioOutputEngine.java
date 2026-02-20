@@ -195,11 +195,26 @@ public final class AudioOutputEngine {
      * This does not affect audio; it's used only for the debug overlay.
      */
     public void triggerImpulse(double freqHz, int durationMs, double gain01, double noiseMix01, String pattern, int pulsePeriodMs, int pulseWidthMs, int priority, int delayMs, String debugKey) {
+        triggerImpulseInternal(freqHz, freqHz, durationMs, gain01, noiseMix01, pattern, pulsePeriodMs, pulseWidthMs, priority, delayMs, debugKey);
+    }
+
+    /**
+     * Frequency sweep impulse: linearly moves from startFreqHz to endFreqHz over the impulse duration.
+     * Uses the same envelope/pattern system as {@link #triggerImpulse(double, int, double, double, String, int, int, int, int, String)}.
+     */
+    public void triggerSweepImpulse(double startFreqHz, double endFreqHz, int durationMs, double gain01, double noiseMix01, String pattern,
+                                   int pulsePeriodMs, int pulseWidthMs, int priority, int delayMs, String debugKey) {
+        triggerImpulseInternal(startFreqHz, endFreqHz, durationMs, gain01, noiseMix01, pattern, pulsePeriodMs, pulseWidthMs, priority, delayMs, debugKey);
+    }
+
+    private void triggerImpulseInternal(double startFreqHz, double endFreqHz, int durationMs, double gain01, double noiseMix01, String pattern,
+                                        int pulsePeriodMs, int pulseWidthMs, int priority, int delayMs, String debugKey) {
         int ms = Math.max(10, durationMs);
         int samples = (int) ((ms / 1000.0) * SAMPLE_RATE);
         samples = Math.max(1, samples);
 
-        double f = clamp(freqHz, 10.0, 120.0);
+        double f0 = clamp(startFreqHz, 10.0, 120.0);
+        double f1 = clamp(endFreqHz, 10.0, 120.0);
         double g = clamp(gain01, 0.0, 1.0);
         double n = clamp(noiseMix01, 0.0, 1.0);
         String pat = (pattern == null || pattern.isBlank()) ? "single" : pattern;
@@ -231,7 +246,10 @@ public final class AudioOutputEngine {
                 if (!pat.equalsIgnoreCase(v.pattern)) {
                     continue;
                 }
-                if (Math.abs(v.freqHz - f) > 0.75) {
+                if (Math.abs(v.startFreqHz - f0) > 0.75) {
+                    continue;
+                }
+                if (Math.abs(v.endFreqHz - f1) > 0.75) {
                     continue;
                 }
 
@@ -249,7 +267,9 @@ public final class AudioOutputEngine {
             voice.totalSamples = samples;
             voice.samplesLeft = samples;
             voice.delaySamplesLeft = delaySamples;
-            voice.freqHz = f;
+            voice.freqHz = f0;
+            voice.startFreqHz = f0;
+            voice.endFreqHz = f1;
             voice.gain = g;
             voice.noiseMix = n;
             voice.pattern = pat;
@@ -385,6 +405,24 @@ public final class AudioOutputEngine {
         wakeForTests();
         double gain01 = clamp(BstConfig.get().masterVolume * 0.90, 0.0, 1.0);
         triggerImpulse(42.0, 55, gain01, 0.12, "single", 160, 60, 95, 0);
+    }
+
+    public void testCalibrationTone30Hz() {
+        wakeForTests();
+        double gain01 = clamp(BstConfig.get().masterVolume * 0.85, 0.0, 1.0);
+        triggerImpulse(30.0, 2000, gain01, 0.0, "flat", 160, 60, 97, 0, "cal.tone_30hz");
+    }
+
+    public void testCalibrationTone60Hz() {
+        wakeForTests();
+        double gain01 = clamp(BstConfig.get().masterVolume * 0.85, 0.0, 1.0);
+        triggerImpulse(60.0, 2000, gain01, 0.0, "flat", 160, 60, 97, 0, "cal.tone_60hz");
+    }
+
+    public void testCalibrationSweep() {
+        wakeForTests();
+        double gain01 = clamp(BstConfig.get().masterVolume * 0.85, 0.0, 1.0);
+        triggerSweepImpulse(20.0, 120.0, 6500, gain01, 0.0, "flat", 160, 60, 97, 0, "cal.sweep_20_120hz");
     }
 
     private void wakeForTests() {
@@ -659,7 +697,11 @@ public final class AudioOutputEngine {
                 } else if (dominantKind == 3 && dominantImpulse != null) {
                     String dk = (dominantImpulse.debugKey == null) ? "" : dominantImpulse.debugKey;
                     domLabel = dk.isBlank() ? "impulse" : dk;
-                    domFreq = dominantImpulse.freqHz;
+                    if (Math.abs(dominantImpulse.endFreqHz - dominantImpulse.startFreqHz) > 0.01) {
+                        domFreq = (dominantImpulse.startFreqHz + dominantImpulse.endFreqHz) * 0.5;
+                    } else {
+                        domFreq = dominantImpulse.freqHz;
+                    }
                     domGain = dominantImpulse.gain;
                 } else {
                     domLabel = "none";
@@ -776,7 +818,9 @@ public final class AudioOutputEngine {
                                 voiceMul = DUCK_FACTOR;
                             }
 
-                            double step = (2.0 * Math.PI * v.freqHz) / SAMPLE_RATE;
+                            double overallProgress = (total <= 1) ? 1.0 : clamp(sampleIndex / (double) (total - 1), 0.0, 1.0);
+                            double freqHz = v.startFreqHz + ((v.endFreqHz - v.startFreqHz) * overallProgress);
+                            double step = (2.0 * Math.PI * freqHz) / SAMPLE_RATE;
                             double sine = Math.sin(v.phase);
 
                             // Low-pass the noise component to keep impulses tactile and less "snappy".
@@ -1223,6 +1267,10 @@ public final class AudioOutputEngine {
         double env;
 
         switch (p) {
+            case "flat" -> {
+                // Constant sustain (tone-friendly). Attack/release above prevents clicks.
+                env = 1.0;
+            }
             case "fade_out" -> {
                 // Strong at the start, fades to 0 over the duration.
                 env = Math.pow(1.0 - overallProgress, 1.15);
@@ -1274,6 +1322,8 @@ public final class AudioOutputEngine {
         int delaySamplesLeft;
 
         double freqHz;
+        double startFreqHz;
+        double endFreqHz;
         double gain;
         double noiseMix;
         String pattern;

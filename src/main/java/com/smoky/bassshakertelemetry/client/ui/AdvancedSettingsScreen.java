@@ -156,6 +156,23 @@ public final class AdvancedSettingsScreen extends Screen {
             .build();
         settingsList.addSettingEntry(new ButtonOnlyEntry(demoButton));
 
+        settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.config.calibration"));
+
+        settingsList.addSettingEntry(new ButtonOnlyEntry(Button.builder(
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_tone_30hz")),
+            b -> AudioOutputEngine.get().testCalibrationTone30Hz()
+        ).bounds(0, 0, contentWidth - 12, rowH).build()));
+
+        settingsList.addSettingEntry(new ButtonOnlyEntry(Button.builder(
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_tone_60hz")),
+            b -> AudioOutputEngine.get().testCalibrationTone60Hz()
+        ).bounds(0, 0, contentWidth - 12, rowH).build()));
+
+        settingsList.addSettingEntry(new ButtonOnlyEntry(Button.builder(
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_sweep_20_120hz")),
+            b -> AudioOutputEngine.get().testCalibrationSweep()
+        ).bounds(0, 0, contentWidth - 12, rowH).build()));
+
         this.addRenderableWidget(settingsList);
 
         int buttonW = (contentWidth - 10) / 2;
