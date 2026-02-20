@@ -1,5 +1,8 @@
 package com.smoky.bassshakertelemetry.audio;
 
+import com.smoky.bassshakertelemetry.audio.backend.AudioOutputDevice;
+import com.smoky.bassshakertelemetry.audio.backend.BackendSelector;
+import com.smoky.bassshakertelemetry.audio.backend.HapticAudioBackend;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import com.smoky.bassshakertelemetry.telemetryout.TelemetryOut;
 import org.apache.logging.log4j.LogManager;
@@ -7,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.sound.sampled.*;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -230,6 +234,7 @@ public final class AudioOutputEngine {
         delaySamples = Math.max(0, delaySamples);
 
         String dk = (debugKey == null) ? "" : debugKey.trim();
+        HapticBus bus = busForDebugKey(dk);
 
         synchronized (impulseLock) {
             // Coalesce/extend a very similar active voice to avoid stacking identical pulses.
@@ -280,6 +285,7 @@ public final class AudioOutputEngine {
             voice.phase = 0.0;
             voice.noiseState = 0.0;
             voice.priority = pri;
+            voice.bus = bus;
             voice.createdNanos = System.nanoTime();
             impulses.add(voice);
 
@@ -304,6 +310,32 @@ public final class AudioOutputEngine {
             return "";
         }
         return String.format(java.util.Locale.ROOT, "dominant=%s pri=%d freq=%.1fHz gain=%.2f", label, pri, debugDominantFreqHz, debugDominantGain01);
+    }
+
+    private static HapticBus busForDebugKey(String debugKey) {
+        if (debugKey == null) {
+            return HapticBus.MODDED;
+        }
+        String dk = debugKey.trim().toLowerCase(java.util.Locale.ROOT);
+        if (dk.isEmpty()) {
+            return HapticBus.MODDED;
+        }
+        if (dk.contains("ui") || dk.startsWith("ui/") || dk.startsWith("menu")) {
+            return HapticBus.UI;
+        }
+        if (dk.contains("damage") || dk.contains("warden") || dk.contains("danger") || dk.contains("hurt")) {
+            return HapticBus.DANGER;
+        }
+        if (dk.contains("biome") || dk.contains("ambient") || dk.contains("env") || dk.contains("weather")) {
+            return HapticBus.ENVIRONMENTAL;
+        }
+        if (dk.contains("road") || dk.contains("move") || dk.contains("walk") || dk.contains("run")) {
+            return HapticBus.CONTINUOUS;
+        }
+        if (dk.contains("impact") || dk.contains("hit") || dk.contains("mine") || dk.contains("swing")) {
+            return HapticBus.IMPACT;
+        }
+        return HapticBus.MODDED;
     }
 
     public void triggerBiomeChime() {
@@ -515,7 +547,7 @@ public final class AudioOutputEngine {
     }
 
     private void runLoop() {
-        SourceDataLine line = null;
+        AudioOutputDevice device = null;
         long startedNs = System.nanoTime();
         boolean loggedNoTelemetryHint = false;
         try {
@@ -544,23 +576,15 @@ public final class AudioOutputEngine {
                 boolean hasFreshTelemetry = telemetryLive && ((nowNs - lastTelemetryNanos) <= staleNs);
 
                 // If we've been stale for a long time, close the device to avoid rumble in menus.
-                if (!hasFreshTelemetry && line != null && (nowNs - lastTelemetryNanos) > sleepNs) {
+                if (!hasFreshTelemetry && device != null && (nowNs - lastTelemetryNanos) > sleepNs) {
                     try {
-                        line.stop();
+                        device.stopFlushClose();
                     } catch (Exception ignored) {
                     }
-                    try {
-                        line.flush();
-                    } catch (Exception ignored) {
-                    }
-                    try {
-                        line.close();
-                    } catch (Exception ignored) {
-                    }
-                    line = null;
+                    device = null;
                 }
 
-                if (line == null) {
+                if (device == null) {
                     if (!hasFreshTelemetry) {
                         if (!loggedNoTelemetryHint && (System.nanoTime() - startedNs) > 2_000_000_000L) {
                             loggedNoTelemetryHint = true;
@@ -573,8 +597,9 @@ public final class AudioOutputEngine {
                         continue;
                     }
 
-                    line = openLinePreferred();
-                    if (line == null) {
+                    HapticAudioBackend backend = BackendSelector.select(cfg);
+                    device = backend.open(preferredFormat(), cfg);
+                    if (device == null) {
                         LOGGER.error("[BST] Failed to open any audio line; will retry in 1s");
                         try {
                             Thread.sleep(1000);
@@ -583,11 +608,7 @@ public final class AudioOutputEngine {
                         continue;
                     }
 
-                    try {
-                        bufferChannels = Math.max(1, line.getFormat().getChannels());
-                    } catch (Exception ignored) {
-                        bufferChannels = 2;
-                    }
+                    bufferChannels = Math.max(1, device.channels());
                     if (bufferChannels != 2 && bufferChannels != 8) {
                         bufferChannels = 2;
                     }
@@ -599,14 +620,14 @@ public final class AudioOutputEngine {
                     }
 
                     try {
-                        line.start();
+                        device.start();
                     } catch (Exception e) {
-                        LOGGER.error("[BST] Failed to start audio line ({}); will retry", e.toString());
+                        LOGGER.error("[BST] Failed to start audio device ({}); will retry", e.toString());
                         try {
-                            line.close();
+                            device.stopFlushClose();
                         } catch (Exception ignored) {
                         }
-                        line = null;
+                        device = null;
                         try {
                             Thread.sleep(500);
                         } catch (InterruptedException ignored) {
@@ -643,6 +664,7 @@ public final class AudioOutputEngine {
                 int dominantPriority = -1;
                 double dominantStrength = -1.0;
                 ImpulseVoice dominantImpulse = null;
+                EnumMap<HapticBus, ImpulseVoice> dominantImpulseByBus = new EnumMap<>(HapticBus.class);
 
                 // Road: low priority continuous.
                 boolean roadActiveForDominance = cfg.roadTextureEnabled && cfg.roadTextureGain > 0.0001 && Math.abs(localSpeed) > 0.09;
@@ -663,7 +685,7 @@ public final class AudioOutputEngine {
                     }
                 }
 
-                // Impulses: choose a single dominant voice based on profile priority.
+                // Impulses: choose a dominant voice per bus (multi-bus foundation).
                 synchronized (impulseLock) {
                     for (int vi = impulses.size() - 1; vi >= 0; vi--) {
                         ImpulseVoice v = impulses.get(vi);
@@ -673,21 +695,27 @@ public final class AudioOutputEngine {
                         if (v.samplesLeft <= 0 || v.gain <= 0.00001) {
                             continue;
                         }
-                        if (dominantImpulse == null
-                                || v.priority > dominantImpulse.priority
-                                || (v.priority == dominantImpulse.priority && v.gain > dominantImpulse.gain)
-                                || (v.priority == dominantImpulse.priority && v.gain == dominantImpulse.gain && v.createdNanos > dominantImpulse.createdNanos)) {
-                            dominantImpulse = v;
+
+                        HapticBus bus = (v.bus == null) ? HapticBus.MODDED : v.bus;
+                        ImpulseVoice dom = dominantImpulseByBus.get(bus);
+                        if (dom == null
+                                || v.priority > dom.priority
+                                || (v.priority == dom.priority && v.gain > dom.gain)
+                                || (v.priority == dom.priority && v.gain == dom.gain && v.createdNanos > dom.createdNanos)) {
+                            dominantImpulseByBus.put(bus, v);
                         }
                     }
                 }
-                if (dominantImpulse != null) {
-                    int pri = dominantImpulse.priority;
-                    double strength = dominantImpulse.gain;
-                    if (pri > dominantPriority || (pri == dominantPriority && strength > dominantStrength)) {
-                        dominantKind = 3;
-                        dominantPriority = pri;
-                        dominantStrength = strength;
+                // For debug display: pick the overall best impulse across buses.
+                for (ImpulseVoice v : dominantImpulseByBus.values()) {
+                    if (v == null) {
+                        continue;
+                    }
+                    if (dominantImpulse == null
+                            || v.priority > dominantImpulse.priority
+                            || (v.priority == dominantImpulse.priority && v.gain > dominantImpulse.gain)
+                            || (v.priority == dominantImpulse.priority && v.gain == dominantImpulse.gain && v.createdNanos > dominantImpulse.createdNanos)) {
+                        dominantImpulse = v;
                     }
                 }
 
@@ -713,37 +741,55 @@ public final class AudioOutputEngine {
                     }
                 }
 
+                boolean anyImpulseActive = !dominantImpulseByBus.isEmpty();
+
+                // Debug-only dominant: allow impulses to win, without affecting mixing.
+                int debugKind = dominantKind;
+                int debugPriority = dominantPriority;
+                double debugStrength = dominantStrength;
+                ImpulseVoice debugImpulse = null;
+                if (dominantImpulse != null) {
+                    int pri = dominantImpulse.priority;
+                    double strength = dominantImpulse.gain;
+                    if (pri > debugPriority || (pri == debugPriority && strength > debugStrength)) {
+                        debugKind = 3;
+                        debugPriority = pri;
+                        debugStrength = strength;
+                        debugImpulse = dominantImpulse;
+                    }
+                }
+
                 // Update dominant debug snapshot (only when it changes).
                 String domLabel;
                 double domFreq = 0.0;
                 double domGain = 0.0;
-                if (dominantKind == 1) {
+                if (debugKind == 1) {
                     domLabel = "road";
                     domGain = dominantStrength;
-                } else if (dominantKind == 2) {
+                } else if (debugKind == 2) {
                     domLabel = "damage";
                     domGain = dominantStrength;
-                } else if (dominantKind == 4) {
+                } else if (debugKind == 4) {
                     domLabel = "accel_bump";
                     domGain = dominantStrength;
-                } else if (dominantKind == 5) {
+                } else if (debugKind == 5) {
                     domLabel = "biome_chime";
                     domGain = dominantStrength;
-                } else if (dominantKind == 3 && dominantImpulse != null) {
-                    String dk = (dominantImpulse.debugKey == null) ? "" : dominantImpulse.debugKey;
+                } else if (debugKind == 3 && debugImpulse != null) {
+                    String dk = (debugImpulse.debugKey == null) ? "" : debugImpulse.debugKey;
                     domLabel = dk.isBlank() ? "impulse" : dk;
-                    if (Math.abs(dominantImpulse.endFreqHz - dominantImpulse.startFreqHz) > 0.01) {
-                        domFreq = (dominantImpulse.startFreqHz + dominantImpulse.endFreqHz) * 0.5;
+                    if (Math.abs(debugImpulse.endFreqHz - debugImpulse.startFreqHz) > 0.01) {
+                        domFreq = (debugImpulse.startFreqHz + debugImpulse.endFreqHz) * 0.5;
                     } else {
-                        domFreq = dominantImpulse.freqHz;
+                        domFreq = debugImpulse.freqHz;
                     }
-                    domGain = dominantImpulse.gain;
+                    domGain = debugImpulse.gain;
                 } else {
                     domLabel = "none";
                 }
 
                 boolean differsFromPublished = !domLabel.equals(debugDominantLabel)
-                        || dominantPriority != debugDominantPriority
+                    || debugPriority != debugDominantPriority
                         || Math.abs(domFreq - debugDominantFreqHz) > 0.05
                         || Math.abs(domGain - debugDominantGain01) > 0.01;
 
@@ -752,13 +798,13 @@ public final class AudioOutputEngine {
                     pendingDominantSinceNs = 0L;
                 } else {
                     boolean matchesPending = domLabel.equals(pendingDominantLabel)
-                            && dominantPriority == pendingDominantPriority
+                            && debugPriority == pendingDominantPriority
                             && Math.abs(domFreq - pendingDominantFreqHz) <= 0.05
                             && Math.abs(domGain - pendingDominantGain01) <= 0.01;
 
                     if (!matchesPending) {
                         pendingDominantLabel = domLabel;
-                        pendingDominantPriority = dominantPriority;
+                        pendingDominantPriority = debugPriority;
                         pendingDominantFreqHz = domFreq;
                         pendingDominantGain01 = domGain;
                         pendingDominantSinceNs = nowNs;
@@ -772,7 +818,7 @@ public final class AudioOutputEngine {
                     }
                 }
 
-                double roadMul = (dominantKind == 0 || dominantKind == 1) ? 1.0 : DUCK_FACTOR;
+                double roadMul = (dominantKind == 0 || dominantKind == 1) ? (anyImpulseActive ? DUCK_FACTOR : 1.0) : DUCK_FACTOR;
                 double damageMul = (dominantKind == 2) ? 1.0 : DUCK_FACTOR;
                 double bumpMul = (dominantKind == 4) ? 1.0 : DUCK_FACTOR;
                 double chimeMul = (dominantKind == 5) ? 1.0 : DUCK_FACTOR;
@@ -847,11 +893,9 @@ public final class AudioOutputEngine {
                             );
 
                             double voiceMul;
-                            if (dominantKind == 3 && v == dominantImpulse) {
-                                voiceMul = 1.0;
-                            } else {
-                                voiceMul = DUCK_FACTOR;
-                            }
+                            HapticBus bus = (v.bus == null) ? HapticBus.MODDED : v.bus;
+                            ImpulseVoice dom = dominantImpulseByBus.get(bus);
+                            voiceMul = (dom != null && v == dom) ? 1.0 : DUCK_FACTOR;
 
                             double overallProgress = (total <= 1) ? 1.0 : clamp(sampleIndex / (double) (total - 1), 0.0, 1.0);
                             double freqHz = v.startFreqHz + ((v.endFreqHz - v.startFreqHz) * overallProgress);
@@ -972,38 +1016,22 @@ public final class AudioOutputEngine {
                 }
 
                 try {
-                    line.write(buffer, 0, buffer.length);
+                    device.write(buffer, 0, buffer.length);
                 } catch (Exception e) {
                     LOGGER.warn("[BST] Audio write failed ({}); reopening device", e.toString());
                     try {
-                        line.stop();
+                        device.stopFlushClose();
                     } catch (Exception ignored) {
                     }
-                    try {
-                        line.flush();
-                    } catch (Exception ignored) {
-                    }
-                    try {
-                        line.close();
-                    } catch (Exception ignored) {
-                    }
-                    line = null;
+                    device = null;
                 }
             }
         } catch (Exception e) {
             LOGGER.error("[BST] Audio thread crashed", e);
         } finally {
-            if (line != null) {
+            if (device != null) {
                 try {
-                    line.stop();
-                } catch (Exception ignored) {
-                }
-                try {
-                    line.flush();
-                } catch (Exception ignored) {
-                }
-                try {
-                    line.close();
+                    device.stopFlushClose();
                 } catch (Exception ignored) {
                 }
             }
@@ -1035,6 +1063,7 @@ public final class AudioOutputEngine {
         }
     }
 
+    @SuppressWarnings("unused")
     private SourceDataLine openLinePreferred() {
         AudioFormat preferred = preferredFormat();
         SourceDataLine line = openLineWithFormat(preferred);
@@ -1387,6 +1416,7 @@ public final class AudioOutputEngine {
         double noiseState;
 
         int priority;
+        HapticBus bus;
         long createdNanos;
     }
 

@@ -18,9 +18,10 @@
 - Safety: output headroom + soft limiter (tanh) to reduce clipping
 - Tone shaping: optional Output EQ (single band) is available in Advanced settings → Audio
 - Auto-level: optional Smart Volume (slow AGC) is available in Advanced settings → Audio
-- Gating: automatically fades out and eventually closes the audio line when no live telemetry (e.g., menus / pause)
-- Priority & ducking (mono): when multiple effects overlap, one dominant vibration wins; others are ducked so impacts stay readable
-- Latency tuning: optional JavaSound output buffer size selection (larger buffers are often more stable but add latency)
+- Gating: automatically fades out and eventually closes the audio device when no live telemetry (e.g., menus / pause)
+- Priority & ducking (multi-bus): within each internal bus (see `HapticBus`), one dominant vibration wins and same-bus sources are ducked; continuous road texture is ducked while higher-priority events are active
+- Audio backend selection: `audioBackend` config key (currently only `javasound` is implemented; other ids are reserved)
+- Latency tuning: optional JavaSound output buffer size selection (JavaSound backend only; larger buffers are often more stable but add latency)
 - Latency test: an in-game latency test pulse toggle is available in Advanced settings → Audio
 - Calibration tools: quick test tones + a frequency sweep (plus a Stop/Silence button) are available in Advanced settings → Audio
 - Debug overlay: optional developer overlay showing the last vibration source/key, priority, frequency, gain, and recent suppression.

@@ -54,6 +54,10 @@ On disk:
 - Main config: `config/bassshakertelemetry.json`
 - Vibration profiles: `config/bassshakertelemetry_vibration_profiles.json`
 
+Advanced keys in `bassshakertelemetry.json` include:
+
+- `audioBackend` (currently `javasound`; other ids are reserved for future backends)
+
 Profiles are the source of truth for per-event tuning (frequency, intensity, duration, noise mix, pattern), plus:
 
 - `priority` (0..100)

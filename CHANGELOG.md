@@ -31,6 +31,8 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ### Changed
 - Network protocol version bumped (client/server must match mod version).
+- Audio output now goes through a backend abstraction selected by `audioBackend` (Phase 1 foundation; currently only `javasound` is implemented).
+- Impulse ducking is now per-bus (see `HapticBus`); impulses are no longer globally ducked by other one-shot effects, while road texture still ducks under active events.
 
 ## [0.1.23] - 2026-02-16
 

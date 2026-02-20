@@ -257,6 +257,10 @@ public final class BstConfig {
         // Soft-limiter drive. Higher = more saturation and less peak clipping.
         public double limiterDrive = 2.5;
 
+        // Audio backend selection (Phase 1 foundation). Currently: "javasound".
+        // Other ids are reserved for future backends.
+        public String audioBackend = "javasound";
+
         // Output tone shaping (simple single-band EQ)
         public boolean outputEqEnabled = false;
         public int outputEqFreqHz = 45;
