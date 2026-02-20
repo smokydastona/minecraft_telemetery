@@ -257,6 +257,10 @@ public final class BstConfig {
         public int outputEqFreqHz = 45;
         public int outputEqGainDb = 0;
 
+        // Smart Volume (slow auto-level)
+        public boolean smartVolumeEnabled = false;
+        public int smartVolumeTargetPct = 65;
+
         public int damageBurstMs = 90;
         public double damageBurstGain = 0.8;
 

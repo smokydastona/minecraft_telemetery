@@ -57,6 +57,10 @@ public final class AdvancedSettingsScreen extends Screen {
     private IntSlider outputEqFreqSlider;
     private IntSlider outputEqGainSlider;
 
+    private Button smartVolumeButton;
+    private boolean smartVolumeEnabled;
+    private IntSlider smartVolumeTargetSlider;
+
     private static final int[] BUFFER_CHOICES_MS = new int[]{0, 10, 20, 30, 40, 60, 80, 100, 150, 200};
 
     public AdvancedSettingsScreen(Screen parent) {
@@ -174,6 +178,14 @@ public final class AdvancedSettingsScreen extends Screen {
         settingsList.addSettingEntry(new SliderOnlyEntry(outputEqFreqSlider));
         settingsList.addSettingEntry(new SliderOnlyEntry(outputEqGainSlider));
 
+        smartVolumeEnabled = BstConfig.get().smartVolumeEnabled;
+        smartVolumeButton = Button.builder(Objects.requireNonNull(smartVolumeLabel()), b -> toggleSmartVolume())
+            .bounds(0, 0, contentWidth - 12, rowH)
+            .build();
+        settingsList.addSettingEntry(new ButtonOnlyEntry(smartVolumeButton));
+        smartVolumeTargetSlider = new IntSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.smart_volume_target", BstConfig.get().smartVolumeTargetPct, 10, 90, "%");
+        settingsList.addSettingEntry(new SliderOnlyEntry(smartVolumeTargetSlider));
+
         settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.config.calibration"));
 
         settingsList.addSettingEntry(new ButtonOnlyEntry(Button.builder(
@@ -236,6 +248,9 @@ public final class AdvancedSettingsScreen extends Screen {
         data.outputEqEnabled = outputEqEnabled;
         if (outputEqFreqSlider != null) data.outputEqFreqHz = outputEqFreqSlider.getIntValue();
         if (outputEqGainSlider != null) data.outputEqGainDb = outputEqGainSlider.getIntValue();
+
+        data.smartVolumeEnabled = smartVolumeEnabled;
+        if (smartVolumeTargetSlider != null) data.smartVolumeTargetPct = smartVolumeTargetSlider.getIntValue();
 
         data.debugOverlayEnabled = debugOverlayEnabled;
 
@@ -312,6 +327,19 @@ public final class AdvancedSettingsScreen extends Screen {
         return outputEqEnabled
                 ? Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.output_eq_on"))
                 : Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.output_eq_off"));
+    }
+
+    private void toggleSmartVolume() {
+        smartVolumeEnabled = !smartVolumeEnabled;
+        if (smartVolumeButton != null) {
+            smartVolumeButton.setMessage(Objects.requireNonNull(smartVolumeLabel()));
+        }
+    }
+
+    private Component smartVolumeLabel() {
+        return smartVolumeEnabled
+                ? Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.smart_volume_on"))
+                : Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.smart_volume_off"));
     }
 
     private void stopDemo() {

@@ -17,6 +17,7 @@
 - Smoothing: 1-pole smoothing on continuous amplitude to avoid clicks
 - Safety: output headroom + soft limiter (tanh) to reduce clipping
 - Tone shaping: optional Output EQ (single band) is available in Advanced settings → Audio
+- Auto-level: optional Smart Volume (slow AGC) is available in Advanced settings → Audio
 - Gating: automatically fades out and eventually closes the audio line when no live telemetry (e.g., menus / pause)
 - Priority & ducking (mono): when multiple effects overlap, one dominant vibration wins; others are ducked so impacts stay readable
 - Latency tuning: optional JavaSound output buffer size selection (larger buffers are often more stable but add latency)

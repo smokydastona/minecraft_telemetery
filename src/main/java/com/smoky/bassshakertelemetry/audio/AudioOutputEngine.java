@@ -516,6 +516,7 @@ public final class AudioOutputEngine {
             int bufferChannels = 2;
 
             OutputEq outputEq = new OutputEq();
+            SmartVolume smartVolume = new SmartVolume();
 
             // Per-frame accumulation (reused).
             double[] ch = new double[8];
@@ -890,9 +891,18 @@ public final class AudioOutputEngine {
                         biomeLeft--;
                     }
 
+                    // Smart Volume (AGC): update once per-frame and apply uniformly.
+                    if (cfg.smartVolumeEnabled) {
+                        smartVolume.updateTarget(cfg.smartVolumeTargetPct);
+                        smartVolume.observeFramePeak(ch, bufferChannels);
+                    } else {
+                        smartVolume.resetIfDisabled();
+                    }
+                    double sv = smartVolume.currentGain();
+
                     // Per-channel limiter + convert to int16.
                     for (int c = 0; c < bufferChannels; c++) {
-                            double s = ch[c];
+                        double s = ch[c] * sv;
                             if (cfg.outputEqEnabled && cfg.outputEqGainDb != 0) {
                                 outputEq.updateIfNeeded(cfg.outputEqFreqHz, cfg.outputEqGainDb, bufferChannels);
                                 s = outputEq.process(c, s);
@@ -1452,6 +1462,81 @@ public final class AudioOutputEngine {
             for (int i = 0; i < 8; i++) {
                 x1[i] = x2[i] = y1[i] = y2[i] = 0.0;
             }
+        }
+    }
+
+    private static final class SmartVolume {
+        // Keep this intentionally slow and bounded so it doesn't fight the priority/ducking mixer.
+        private static final double MAX_BOOST_DB = 12.0;
+        private static final double MAX_CUT_DB = 12.0;
+
+        // Detector time constants.
+        private static final double DETECT_ATTACK_S = 0.025;
+        private static final double DETECT_RELEASE_S = 0.250;
+
+        // Gain smoothing time constants.
+        private static final double GAIN_DOWN_S = 0.180;
+        private static final double GAIN_UP_S = 0.900;
+
+        private boolean active;
+        private double target = 0.65;
+        private double env = 0.0;
+        private double gain = 1.0;
+
+        void updateTarget(int targetPct) {
+            int pct = clampInt(targetPct, 10, 90);
+            this.target = pct / 100.0;
+            this.active = true;
+        }
+
+        void observeFramePeak(double[] frameChannels, int channelCount) {
+            if (frameChannels == null) {
+                return;
+            }
+            int n = (channelCount == 8) ? 8 : 2;
+            double peak = 0.0;
+            for (int i = 0; i < n && i < frameChannels.length; i++) {
+                double a = Math.abs(frameChannels[i]);
+                if (a > peak) {
+                    peak = a;
+                }
+            }
+
+            double aAtk = coeffFromTime(DETECT_ATTACK_S);
+            double aRel = coeffFromTime(DETECT_RELEASE_S);
+            if (peak > env) {
+                env = (aAtk * env) + ((1.0 - aAtk) * peak);
+            } else {
+                env = (aRel * env) + ((1.0 - aRel) * peak);
+            }
+
+            double e = Math.max(1e-6, env);
+            double desired = target / e;
+
+            double minGain = Math.pow(10.0, (-MAX_CUT_DB) / 20.0);
+            double maxGain = Math.pow(10.0, (MAX_BOOST_DB) / 20.0);
+            desired = clamp(desired, minGain, maxGain);
+
+            double a = coeffFromTime(desired < gain ? GAIN_DOWN_S : GAIN_UP_S);
+            gain = (a * gain) + ((1.0 - a) * desired);
+        }
+
+        double currentGain() {
+            return active ? gain : 1.0;
+        }
+
+        void resetIfDisabled() {
+            if (!active) {
+                return;
+            }
+            active = false;
+            env = 0.0;
+            gain = 1.0;
+        }
+
+        private static double coeffFromTime(double seconds) {
+            double s = Math.max(0.001, seconds);
+            return Math.exp(-1.0 / (SAMPLE_RATE * s));
         }
     }
 }
