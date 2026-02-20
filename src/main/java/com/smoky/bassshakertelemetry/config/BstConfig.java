@@ -272,6 +272,7 @@ public final class BstConfig {
         public int webSocketPort = 7117;
         public boolean webSocketSendTelemetry = true;
         public boolean webSocketSendHapticEvents = true;
+        public boolean webSocketSendUnifiedEvents = true;
 
         public int damageBurstMs = 90;
         public double damageBurstGain = 0.8;

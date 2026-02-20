@@ -22,6 +22,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - New impulse pattern: `flat` (sustained tone-friendly envelope).
 - Public Mod Integration API (`com.smoky.bassshakertelemetry.api.HapticApi`) so other mods can emit haptic events.
 - Optional WebSocket telemetry output (client-only): broadcasts JSON telemetry + haptic events for external tools/hardware.
+- WebSocket unified event packets (`type":"event"`) now support real IDs + source/position/metadata via a lightweight context system.
 - Directional damage haptics when a source position is known.
 - Directional flight wind impulses while gliding (profile key: `flight.wind`).
 - Mounted haptics: hoof pulses on ground mounts (profile key: `mount.hoof`) and flying mounts swap to `flight.wind` while airborne.

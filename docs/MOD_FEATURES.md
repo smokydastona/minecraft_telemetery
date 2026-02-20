@@ -127,6 +127,7 @@ Config keys:
 - `webSocketPort` (int, default `7117`)
 - `webSocketSendTelemetry` (boolean, default `true`)
 - `webSocketSendHapticEvents` (boolean, default `true`)
+- `webSocketSendUnifiedEvents` (boolean, default `true`)
 
 Packet formats (one JSON object per message):
 
@@ -134,6 +135,9 @@ Packet formats (one JSON object per message):
 	- `{"type":"telemetry","t":<epoch_ms>,"speed":<double>,"accel":<double>,"elytra":<bool>}`
 - Haptic events (emitted when a new impulse voice is created):
 	- `{"type":"haptic","t":<epoch_ms>,"key":"...","f0":<double>,"f1":<double>,"ms":<int>,"gain":<double>,"noise":<double>,"pattern":"...","pulsePeriodMs":<int>,"pulseWidthMs":<int>,"priority":<int>,"delayMs":<int>}`
+- Unified events (emitted alongside `haptic`, best-effort categorization):
+	- `{"type":"event","t":<epoch_ms>,"id":"...","kind":"impact|continuous|environmental|ui|danger|modded","intensity":<double>,"source":"network|sound|local|api|bst",...}`
+	- May include `pos:[x,y,z]` and `meta:{...}` when available (e.g., network-relayed authoritative events and sound-inferred events).
 
 ## Vibration profiles (JSON)
 

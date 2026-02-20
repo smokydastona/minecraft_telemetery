@@ -1,6 +1,11 @@
 package com.smoky.bassshakertelemetry.telemetryout;
 
+import com.smoky.bassshakertelemetry.api.HapticEventType;
+import com.smoky.bassshakertelemetry.api.HapticPosition;
+import com.smoky.bassshakertelemetry.api.HapticUnifiedEvent;
+
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -61,6 +66,134 @@ public final class TelemetryOut {
                 elytra ? "true" : "false"
         );
         emitRawJson(msg);
+    }
+
+    /**
+     * Emits a high-level middleware-style event.
+     *
+     * <p>These are intended to remain relatively stable across versions compared to low-level synthesis fields.
+     */
+    public static void emitEvent(HapticUnifiedEvent event) {
+        if (event == null) {
+            return;
+        }
+
+        long t = System.currentTimeMillis();
+        String id = escapeJson(event.id());
+        HapticEventType type = (event.type() == null) ? HapticEventType.IMPACT : event.type();
+        String kind = escapeJson(type.wireName());
+        String source = escapeJson(event.source());
+        String instrument = escapeJson(event.instrument());
+        double intensity01 = clamp01(event.intensity01());
+
+        StringBuilder sb = new StringBuilder(160);
+        sb.append("{\"type\":\"event\",\"t\":").append(t)
+                .append(",\"id\":\"").append(id).append("\"")
+                .append(",\"kind\":\"").append(kind).append("\"")
+                .append(",\"intensity\":").append(String.format(Locale.ROOT, "%.4f", intensity01));
+
+        if (!source.isEmpty()) {
+            sb.append(",\"source\":\"").append(source).append("\"");
+        }
+
+        HapticPosition pos = event.position();
+        if (pos != null) {
+            sb.append(",\"pos\":[")
+                    .append(String.format(Locale.ROOT, "%.4f", pos.x())).append(',')
+                    .append(String.format(Locale.ROOT, "%.4f", pos.y())).append(',')
+                    .append(String.format(Locale.ROOT, "%.4f", pos.z()))
+                    .append(']');
+        }
+
+        if (!instrument.isEmpty()) {
+            sb.append(",\"instrument\":\"").append(instrument).append("\"");
+        }
+
+        Map<String, String> meta = event.metadata();
+        if (meta != null && !meta.isEmpty()) {
+            sb.append(",\"meta\":{");
+            boolean first = true;
+            for (var e : meta.entrySet()) {
+                if (e.getKey() == null || e.getKey().isBlank()) {
+                    continue;
+                }
+                if (!first) {
+                    sb.append(',');
+                }
+                first = false;
+                sb.append('"').append(escapeJson(e.getKey())).append('"')
+                        .append(':')
+                        .append('"').append(escapeJson(e.getValue())).append('"');
+            }
+            sb.append('}');
+        }
+
+        sb.append('}');
+        emitRawJson(sb.toString());
+    }
+
+    /**
+     * Convenience helper to emit a high-level event from an internal haptic key.
+     *
+     * <p>This does not change audio behavior; it only adds an additional JSON packet for integrations.
+     */
+    public static void emitEventFromHapticKey(String debugKey, double intensity01) {
+        String k = (debugKey == null) ? "" : debugKey;
+
+        HapticUnifiedEvent ctx = HapticEventContext.current();
+        if (ctx != null) {
+            emitEvent(new HapticUnifiedEvent(
+                    ctx.id(),
+                    ctx.type(),
+                    ctx.source(),
+                    ctx.position(),
+                    intensity01,
+                    ctx.instrument(),
+                    ctx.metadata()
+            ));
+            return;
+        }
+
+        if (k.isBlank()) {
+            // No meaningful ID available.
+            return;
+        }
+
+        String id = "bst:" + k;
+        emitEvent(new HapticUnifiedEvent(id, classifyTypeFromKey(k), "bst", null, intensity01, "", Map.of()));
+    }
+
+    public static HapticEventType classifyTypeFromKey(String key) {
+        if (key == null || key.isBlank()) {
+            return HapticEventType.IMPACT;
+        }
+
+        String k = key.toLowerCase(Locale.ROOT);
+
+        if (k.startsWith("cal.") || k.startsWith("ui.") || k.startsWith("config.")) {
+            return HapticEventType.UI;
+        }
+        if (k.startsWith("warden.") || k.startsWith("danger.")) {
+            return HapticEventType.DANGER;
+        }
+        if (k.startsWith("movement.") || k.startsWith("flight.") || k.startsWith("wind.")) {
+            return HapticEventType.CONTINUOUS;
+        }
+        if (k.startsWith("biome.") || k.startsWith("env.") || k.startsWith("sound.")) {
+            return HapticEventType.ENVIRONMENTAL;
+        }
+        if (k.startsWith("api") || k.startsWith("modded.")) {
+            return HapticEventType.MODDED;
+        }
+
+        // Most remaining built-ins are short "hits".
+        return HapticEventType.IMPACT;
+    }
+
+    private static double clamp01(double v) {
+        if (v < 0.0) return 0.0;
+        if (v > 1.0) return 1.0;
+        return v;
     }
 
     private static String escapeJson(String s) {

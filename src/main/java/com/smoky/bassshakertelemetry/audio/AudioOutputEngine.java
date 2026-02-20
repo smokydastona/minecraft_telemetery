@@ -291,6 +291,9 @@ public final class AudioOutputEngine {
 
         if (BstConfig.get().webSocketEnabled && BstConfig.get().webSocketSendHapticEvents) {
             TelemetryOut.emitHaptic(dk, f0, f1, ms, g, n, pat, pulsePeriodMs, pulseWidthMs, pri, delayMs);
+            if (BstConfig.get().webSocketSendUnifiedEvents) {
+                TelemetryOut.emitEventFromHapticKey(dk, g);
+            }
         }
     }
 

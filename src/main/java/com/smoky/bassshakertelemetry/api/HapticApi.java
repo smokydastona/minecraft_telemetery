@@ -2,8 +2,11 @@ package com.smoky.bassshakertelemetry.api;
 
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.config.BstConfig;
+import com.smoky.bassshakertelemetry.telemetryout.HapticEventContext;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
+
+import java.util.Map;
 
 /**
  * Public integration API for other mods.
@@ -46,35 +49,61 @@ public final class HapticApi {
             // Let external callers blend in a bit of noise if desired.
             double noiseMix01 = clamp01(event.noiseMix01());
 
-            if (Double.compare(event.startFreqHz(), event.endFreqHz()) == 0) {
-                AudioOutputEngine.get().triggerImpulse(
-                        event.startFreqHz(),
-                        durationMs,
-                        intensity01,
-                        noiseMix01,
-                        pattern,
-                        pulsePeriodMs,
-                        pulseWidthMs,
-                        priority,
-                        delayMs,
-                        debugKey
-                );
-            } else {
-                AudioOutputEngine.get().triggerSweepImpulse(
-                        event.startFreqHz(),
-                        event.endFreqHz(),
-                        durationMs,
-                        intensity01,
-                        noiseMix01,
-                        pattern,
-                        pulsePeriodMs,
-                        pulseWidthMs,
-                        priority,
-                        delayMs,
-                        debugKey
-                );
-            }
+            HapticUnifiedEvent unified = new HapticUnifiedEvent(
+                    toUnifiedId(debugKey),
+                    HapticEventType.MODDED,
+                    "api",
+                    null,
+                    intensity01,
+                    "",
+                    Map.of(
+                            "key", debugKey,
+                            "pattern", pattern
+                    )
+            );
+
+            HapticEventContext.withEventContext(unified, () -> {
+                if (Double.compare(event.startFreqHz(), event.endFreqHz()) == 0) {
+                    AudioOutputEngine.get().triggerImpulse(
+                            event.startFreqHz(),
+                            durationMs,
+                            intensity01,
+                            noiseMix01,
+                            pattern,
+                            pulsePeriodMs,
+                            pulseWidthMs,
+                            priority,
+                            delayMs,
+                            debugKey
+                    );
+                } else {
+                    AudioOutputEngine.get().triggerSweepImpulse(
+                            event.startFreqHz(),
+                            event.endFreqHz(),
+                            durationMs,
+                            intensity01,
+                            noiseMix01,
+                            pattern,
+                            pulsePeriodMs,
+                            pulseWidthMs,
+                            priority,
+                            delayMs,
+                            debugKey
+                    );
+                }
+            });
         });
+    }
+
+    private static String toUnifiedId(String key) {
+        if (key == null || key.isBlank()) {
+            return "modded:api";
+        }
+        String k = key.trim();
+        if (k.indexOf(':') >= 0) {
+            return k;
+        }
+        return "modded:" + k;
     }
 
     public static void sendImpulse(String key, double freqHz, int durationMs, double intensity01) {

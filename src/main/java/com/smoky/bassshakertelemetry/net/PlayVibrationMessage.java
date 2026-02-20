@@ -68,7 +68,8 @@ public record PlayVibrationMessage(String key, float scale01, float distanceScal
                         resolved.pulsePeriodMs(),
                         resolved.pulseWidthMs(),
                         resolved.priority(),
-                        0
+                        0,
+                        (msg.key == null) ? "" : msg.key
                 );
             }
         });

@@ -98,7 +98,8 @@ public final class WebSocketTelemetryController {
         return "ws=127.0.0.1:" + lastPort
                 + " clients=" + lastClientCount
                 + " telem=" + (cfg.webSocketSendTelemetry ? "1" : "0")
-                + " hapt=" + (cfg.webSocketSendHapticEvents ? "1" : "0");
+            + " hapt=" + (cfg.webSocketSendHapticEvents ? "1" : "0")
+            + " evt=" + (cfg.webSocketSendUnifiedEvents ? "1" : "0");
     }
 
     private void stopServerIfRunning() {

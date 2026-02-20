@@ -1,7 +1,12 @@
 package com.smoky.bassshakertelemetry.client;
 
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
+import com.smoky.bassshakertelemetry.api.HapticEventType;
+import com.smoky.bassshakertelemetry.api.HapticPosition;
+import com.smoky.bassshakertelemetry.api.HapticUnifiedEvent;
 import com.smoky.bassshakertelemetry.config.BstVibrationProfiles;
+import com.smoky.bassshakertelemetry.telemetryout.HapticEventContext;
+import com.smoky.bassshakertelemetry.telemetryout.TelemetryOut;
 import net.minecraft.client.Minecraft;
 
 import java.util.ArrayList;
@@ -61,18 +66,32 @@ public final class VibrationIngress {
                 baseGain01
         );
 
-        AudioOutputEngine.get().triggerImpulse(
-                encoded.frequencyHz(),
-                resolved.durationMs(),
-                encoded.gain01(),
-                resolved.noiseMix01(),
-                resolved.pattern(),
-                resolved.pulsePeriodMs(),
-                resolved.pulseWidthMs(),
-                resolved.priority(),
-            encoded.delayMs(),
-            (key == null) ? "" : key
+        String k = (key == null) ? "" : key;
+        var unified = new HapticUnifiedEvent(
+            toMinecraftUnifiedId(k),
+            TelemetryOut.classifyTypeFromKey(k),
+            "network",
+            hasSource ? new HapticPosition(sourceX, sourceY, sourceZ) : null,
+            encoded.gain01(),
+            "",
+            java.util.Map.of(
+                "key", k,
+                "priority", Integer.toString(resolved.priority())
+            )
         );
+
+        HapticEventContext.withEventContext(unified, () -> AudioOutputEngine.get().triggerImpulse(
+            encoded.frequencyHz(),
+            resolved.durationMs(),
+            encoded.gain01(),
+            resolved.noiseMix01(),
+            resolved.pattern(),
+            resolved.pulsePeriodMs(),
+            resolved.pulseWidthMs(),
+            resolved.priority(),
+            encoded.delayMs(),
+            k
+        ));
 
         setLastEvent(SourceType.NETWORK, (key == null || key.isBlank()) ? "<network>" : key, resolved.priority(), encoded.frequencyHz(), encoded.gain01());
     }
@@ -131,18 +150,33 @@ public final class VibrationIngress {
                 gain01
         );
 
-        AudioOutputEngine.get().triggerImpulse(
-                encoded.frequencyHz(),
-                durationMs,
-                encoded.gain01(),
-                noiseMix01,
-                "single",
-                160,
-                60,
-                priority,
-            encoded.delayMs(),
-            (bucket == null) ? "" : bucket
+        String b = (bucket == null) ? "" : bucket;
+        HapticEventType kind = classifySoundBucket(b);
+        var unified = new HapticUnifiedEvent(
+            toMinecraftSoundBucketId(b),
+            kind,
+            "sound",
+            new HapticPosition(sourceX, sourceY, sourceZ),
+            encoded.gain01(),
+            "",
+            java.util.Map.of(
+                "bucket", b,
+                "priority", Integer.toString(priority)
+            )
         );
+
+        HapticEventContext.withEventContext(unified, () -> AudioOutputEngine.get().triggerImpulse(
+            encoded.frequencyHz(),
+            durationMs,
+            encoded.gain01(),
+            noiseMix01,
+            "single",
+            160,
+            60,
+            priority,
+            encoded.delayMs(),
+            b
+        ));
 
         setLastEvent(SourceType.SOUND, (bucket == null || bucket.isBlank()) ? "<sound>" : bucket, priority, encoded.frequencyHz(), encoded.gain01());
     }
@@ -173,6 +207,7 @@ public final class VibrationIngress {
                 pat = "soft_single";
             }
         }
+        final String patFinal = pat;
 
         var store = BstVibrationProfiles.get();
         var player = Minecraft.getInstance().player;
@@ -188,18 +223,32 @@ public final class VibrationIngress {
                 gain01
         );
 
-        AudioOutputEngine.get().triggerImpulse(
-                encoded.frequencyHz(),
-                durationMs,
-                encoded.gain01(),
-                noiseMix01,
-            pat,
-                160,
-                60,
-                priority,
-                encoded.delayMs(),
-                (keyOrBucket == null) ? "" : keyOrBucket
+        String k = (keyOrBucket == null) ? "" : keyOrBucket;
+        var unified = new HapticUnifiedEvent(
+            toMinecraftUnifiedId(k),
+            TelemetryOut.classifyTypeFromKey(k),
+            "local",
+            hasSource ? new HapticPosition(sourceX, sourceY, sourceZ) : null,
+            encoded.gain01(),
+            "",
+            java.util.Map.of(
+                "key", k,
+                "priority", Integer.toString(priority)
+            )
         );
+
+        HapticEventContext.withEventContext(unified, () -> AudioOutputEngine.get().triggerImpulse(
+            encoded.frequencyHz(),
+            durationMs,
+            encoded.gain01(),
+            noiseMix01,
+            patFinal,
+            160,
+            60,
+            priority,
+            encoded.delayMs(),
+            k
+        ));
 
         setLastEvent(SourceType.LOCAL, (keyOrBucket == null || keyOrBucket.isBlank()) ? "<local>" : keyOrBucket, priority, encoded.frequencyHz(), encoded.gain01());
     }
@@ -257,6 +306,42 @@ public final class VibrationIngress {
             }
             suppressions.add(new Suppression(bucket, priority, until, x, y, z, radiusBlocks));
         }
+    }
+
+    private static String toMinecraftUnifiedId(String key) {
+        if (key == null || key.isBlank()) {
+            return "minecraft:unknown";
+        }
+        String k = key.trim();
+        if (k.indexOf(':') >= 0) {
+            return k;
+        }
+        return "minecraft:" + k.replace('.', '_');
+    }
+
+    private static String toMinecraftSoundBucketId(String bucket) {
+        if (bucket == null || bucket.isBlank()) {
+            return "minecraft:sound_bucket";
+        }
+        String b = bucket.trim();
+        if (b.indexOf(':') >= 0) {
+            return b;
+        }
+        return "minecraft:sound_bucket_" + b.replace('.', '_');
+    }
+
+    private static HapticEventType classifySoundBucket(String bucket) {
+        if (bucket == null || bucket.isBlank()) {
+            return HapticEventType.ENVIRONMENTAL;
+        }
+        String b = bucket.trim().toLowerCase(java.util.Locale.ROOT);
+        if (b.equals("attack") || b.equals("hurt") || b.equals("explosion") || b.equals("block_break")) {
+            return HapticEventType.IMPACT;
+        }
+        if (b.equals("step") || b.equals("swim") || b.equals("wind")) {
+            return HapticEventType.CONTINUOUS;
+        }
+        return HapticEventType.ENVIRONMENTAL;
     }
 
     private static void setLastEvent(SourceType sourceType, String keyOrBucket, int priority, double frequencyHz, double gain01) {
