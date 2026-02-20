@@ -414,7 +414,7 @@ public final class HapticInstrumentEditorScreen extends Screen {
             }
             case "direction" -> {
                 p.put("useProfileEncoding", 1.0);
-                p.put("band", "center");
+                p.put("band", "auto");
                 p.put("timeOffsetMs", 0.0);
                 p.put("intensityMul", 1.0);
                 p.put("mix", 1.0);

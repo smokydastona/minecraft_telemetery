@@ -54,6 +54,16 @@ public final class VibrationIngress {
 
         var store = BstVibrationProfiles.get();
         var player = Minecraft.getInstance().player;
+
+        String directionBand = DirectionalEncoding.chooseBandName(
+            store,
+            player,
+            resolved.directional(),
+            hasSource,
+            sourceX,
+            sourceZ
+        );
+
         var encoded = DirectionalEncoding.apply(
                 store,
                 player,
@@ -65,6 +75,9 @@ public final class VibrationIngress {
                 resolved.frequencyHz(),
                 baseGain01
         );
+
+        String instrumentId0 = (resolved.instrumentId() == null) ? "" : resolved.instrumentId().trim();
+        boolean usesInstrument = !instrumentId0.isBlank();
 
         String k = (key == null) ? "" : key;
         var unified = new HapticUnifiedEvent(
@@ -80,19 +93,20 @@ public final class VibrationIngress {
             )
         );
 
-        HapticEventContext.withEventContext(unified, () -> {
-            String instrumentId = (resolved.instrumentId() == null) ? "" : resolved.instrumentId().trim();
-            if (!instrumentId.isBlank()) {
+        HapticEventContext.withEventContext(unified, () -> HapticEventContext.withDirectionBand(directionBand, () -> {
+            if (usesInstrument) {
+                // For DSP-backed instruments, do not apply the legacy DirectionalEncoding bias here.
+                // Instead, the DSP `direction` node can use the thread-local band hint (band=auto).
                 AudioOutputEngine.get().triggerInstrumentImpulse(
-                        instrumentId,
-                        encoded.frequencyHz(),
+                        instrumentId0,
+                        resolved.frequencyHz(),
                         resolved.durationMs(),
-                        encoded.gain01(),
+                        clamp(baseGain01, 0.0, 1.0),
                         resolved.pattern(),
                         resolved.pulsePeriodMs(),
                         resolved.pulseWidthMs(),
                         resolved.priority(),
-                        encoded.delayMs(),
+                        0,
                         k
                 );
             } else {
@@ -109,9 +123,17 @@ public final class VibrationIngress {
                         k
                 );
             }
-        });
+        }));
 
-        setLastEvent(SourceType.NETWORK, (key == null || key.isBlank()) ? "<network>" : key, resolved.priority(), encoded.frequencyHz(), encoded.gain01());
+        double dbgFreq = usesInstrument ? resolved.frequencyHz() : encoded.frequencyHz();
+        double dbgGain = usesInstrument ? clamp(baseGain01, 0.0, 1.0) : encoded.gain01();
+        setLastEvent(SourceType.NETWORK, (key == null || key.isBlank()) ? "<network>" : key, resolved.priority(), dbgFreq, dbgGain);
+    }
+
+    private static double clamp(double v, double lo, double hi) {
+        if (v < lo) return lo;
+        if (v > hi) return hi;
+        return v;
     }
 
     public static boolean shouldSuppressSoundBucket(String bucket, double x, double y, double z, int incomingPriority) {

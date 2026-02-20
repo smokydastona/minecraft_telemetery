@@ -18,7 +18,7 @@ import com.smoky.bassshakertelemetry.config.BstVibrationProfiles;
  *
  * Params:
  * - useProfileEncoding (boolean)
- * - band (center|front|rear|left|right)
+ * - band (auto|center|front|rear|left|right)
  * - timeOffsetMs (number, used when useProfileEncoding=false)
  * - intensityMul (number, used when useProfileEncoding=false)
  * - mix (0..1): 0 = passthrough, 1 = fully delayed
@@ -42,7 +42,11 @@ public final class DirectionEncoderNode implements DspNode {
         double in = g.input(ctx, def, "in");
 
         boolean useProfile = g.paramInt(def, "useProfileEncoding", 1) != 0;
-        String bandName = g.paramString(def, "band", "center").toLowerCase(java.util.Locale.ROOT);
+        String bandName = g.paramString(def, "band", "auto").toLowerCase(java.util.Locale.ROOT);
+        if (bandName.isBlank() || bandName.equals("auto")) {
+            String hint = (ctx == null) ? null : ctx.directionBand;
+            bandName = (hint == null || hint.isBlank()) ? "center" : hint.trim().toLowerCase(java.util.Locale.ROOT);
+        }
 
         int timeOffsetMs;
         double intensityMul;

@@ -16,12 +16,19 @@ public final class DspContext {
 
     public int sampleIndex;
 
+    /**
+     * Best-effort direction band hint for the current event.
+     * Expected values: center|front|rear|left|right.
+     */
+    public String directionBand;
+
     public DspContext(long seed, double startFreqHz, double endFreqHz, int totalSamples) {
         this.random = new Random(seed);
         this.startFreqHz = startFreqHz;
         this.endFreqHz = endFreqHz;
         this.totalSamples = Math.max(1, totalSamples);
         this.sampleIndex = 0;
+        this.directionBand = "center";
     }
 
     public void retune(double startFreqHz, double endFreqHz) {

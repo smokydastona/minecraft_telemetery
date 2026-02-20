@@ -302,7 +302,8 @@ public final class BstHapticInstruments {
                     nodes.add(node("mix", "mixer", Map.of("a", "env", "b", "noise"), Map.of("mode", "mix", "gainA", 1.0, "gainB", 1.0)));
                     nodes.add(node("lpf", "filter", Map.of("in", "mix"), Map.of("mode", "lpf", "cutoffHz", 70.0, "q", 0.8)));
                     nodes.add(node("lim", "compressor", Map.of("in", "lpf"), Map.of("threshold", 0.75, "ratio", 6.0, "attackMs", 6, "releaseMs", 90)));
-                    return new DspGraph(nodes, "lim");
+                    nodes.add(node("dir", "direction", Map.of("in", "lim"), Map.of("useProfileEncoding", 1, "band", "auto", "mix", 1.0)));
+                    return new DspGraph(nodes, "dir");
                 }
                 case "rumble_low" -> {
                     nodes.add(node("osc", "harmonic", Map.of(), Map.of("harmonics", 2, "rolloff", 0.35)));
@@ -314,13 +315,15 @@ public final class BstHapticInstruments {
                     nodes.add(node("osc", "harmonic", Map.of(), Map.of("harmonics", 1, "rolloff", 0.5)));
                     nodes.add(node("env", "envelope", Map.of("in", "osc"), Map.of("attackMs", 6, "decayMs", 35, "sustainLevel01", 0.15, "releaseMs", 55)));
                     nodes.add(node("notch", "filter", Map.of("in", "env"), Map.of("mode", "notch", "cutoffHz", 90.0, "q", 0.9)));
-                    return new DspGraph(nodes, "notch");
+                    nodes.add(node("dir", "direction", Map.of("in", "notch"), Map.of("useProfileEncoding", 1, "band", "auto", "mix", 1.0)));
+                    return new DspGraph(nodes, "dir");
                 }
                 case "wind_elytra" -> {
                     nodes.add(node("noise", "noise", Map.of(), Map.of("color", "brown", "amp", 0.9)));
                     nodes.add(node("hpf", "filter", Map.of("in", "noise"), Map.of("mode", "hpf", "cutoffHz", 18.0, "q", 0.8)));
                     nodes.add(node("env", "envelope", Map.of("in", "hpf"), Map.of("attackMs", 30, "decayMs", 50, "sustainLevel01", 0.8, "releaseMs", 90)));
-                    return new DspGraph(nodes, "env");
+                    nodes.add(node("dir", "direction", Map.of("in", "env"), Map.of("useProfileEncoding", 1, "band", "auto", "mix", 1.0)));
+                    return new DspGraph(nodes, "dir");
                 }
                 case "magic_pulse" -> {
                     nodes.add(node("osc", "harmonic", Map.of("fm", "rand"), Map.of("harmonics", 3, "rolloff", 0.4, "fmDepthHz", 10.0)));

@@ -163,6 +163,10 @@ Available DSP node types (Phase 2 MVP):
 
 - `harmonic`, `noise`, `envelope`, `filter`, `randomizer`, `compressor`, `direction`, `mixer`, `constant`
 
+Notes:
+
+- The `direction` node supports `band: "auto"` (default in the editor) which uses the current event's source direction when available. If no source position is known, it falls back to `center`.
+
 The editor also shows a lightweight per-node output preview value (visual debugging).
 
 This file controls per-event frequency/intensity/duration (and optional pattern/falloff flags) so you can tune chair feel without recompiling.
@@ -187,6 +191,8 @@ Profiles also support:
 - `priority` (0..100): higher wins; only one effect is dominant at a time
 - `directional` (boolean): whether to apply the above encoding when source position is available
 - `instrument` (string, optional): references a DSP-backed haptic instrument id (example: `"impact_heavy"`)
+
+When a profile uses an `instrument`, the legacy DirectionalEncoding bias (frequency/time/gain) is not applied at the trigger site. To get directional feel for instruments, include a `direction` node in the instrument graph (recommended: `useProfileEncoding: true` and `band: "auto"`).
 
 ### Patterns
 

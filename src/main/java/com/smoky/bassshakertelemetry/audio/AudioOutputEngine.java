@@ -8,6 +8,7 @@ import com.smoky.bassshakertelemetry.audio.dsp.DspGraphInstance;
 import com.smoky.bassshakertelemetry.audio.dsp.DspNodeFactory;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import com.smoky.bassshakertelemetry.config.BstHapticInstruments;
+import com.smoky.bassshakertelemetry.telemetryout.HapticEventContext;
 import com.smoky.bassshakertelemetry.telemetryout.TelemetryOut;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -335,6 +336,7 @@ public final class AudioOutputEngine {
                 ^ (((long) dk.toLowerCase(java.util.Locale.ROOT).hashCode()) << 1)
                 ^ (((long) instId.toLowerCase(java.util.Locale.ROOT).hashCode()) << 17);
         DspContext ctx = new DspContext(seed, f0, f1, samples);
+        ctx.directionBand = HapticEventContext.currentDirectionBand();
         DspGraphInstance graph = inst.graph.instantiate(DSP_FACTORY);
 
         enqueueImpulseVoice(f0, f1, samples, g, 0.0, pat, pulsePeriodSamples, pulseWidthSamples, pri, delaySamples, dk, bus, instId, graph, ctx);

@@ -17,6 +17,8 @@ The mod also supports an optional **Sound Scape (7.1)** mode that routes haptic 
 	- `timeOffsetMs` (small micro-delay)
 	- `intensityMul` (optional gain multiplier)
 
+For DSP-backed `instrument` playback, directional feel is handled inside the instrument graph via the `direction` node (recommended: `useProfileEncoding: true` and `band: "auto"`).
+
 ## Signal sources (high level)
 
 - **Telemetry-driven layers** (optional): road texture (speed), accel bump, biome chime, elytra state.

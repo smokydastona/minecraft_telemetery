@@ -32,8 +32,10 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Vibration profiles now support optional `instrument` ids to play DSP-backed instrument impulses.
 - Phase 2: in-game haptic instrument graph editor (MVP) under Advanced settings.
 - Phase 2 DSP: added `direction` encoder node and a lightweight per-node preview value in the graph editor (visual debugging).
+- Phase 2 DSP: `direction` node supports `band: "auto"` to follow event source direction when available.
 
 ### Changed
+- Default directional instruments (`impact_heavy`, `heartbeat_warden`, `wind_elytra`) now include a `direction` node with `band: "auto"`.
 - Network protocol version bumped (client/server must match mod version).
 - Audio output now goes through a backend abstraction selected by `audioBackend` (Phase 1 foundation; currently only `javasound` is implemented).
 - Impulse ducking is now per-bus (see `HapticBus`); impulses are no longer globally ducked by other one-shot effects, while road texture still ducks under active events.

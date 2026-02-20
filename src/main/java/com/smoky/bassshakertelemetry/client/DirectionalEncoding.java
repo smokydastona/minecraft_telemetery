@@ -15,6 +15,21 @@ public final class DirectionalEncoding {
     public record Encoded(double frequencyHz, double gain01, int delayMs) {
     }
 
+    /**
+     * Returns the best-effort direction band name for the given source/player context.
+     *
+     * <p>Possible values: {@code center|front|rear|left|right}.
+     */
+    public static String chooseBandName(BstVibrationProfiles.Store store, Player player, boolean directional, boolean hasSource, double sourceX, double sourceZ) {
+        if (store == null) {
+            return "center";
+        }
+        if (!directional || !hasSource || player == null) {
+            return "center";
+        }
+        return chooseBandName(store.encoding, player, sourceX, sourceZ);
+    }
+
     public static Encoded apply(BstVibrationProfiles.Store store, Player player, boolean directional, boolean hasSource, double sourceX, double sourceY, double sourceZ, double baseFrequencyHz, double baseGain01) {
         if (store == null) {
             return new Encoded(baseFrequencyHz, clamp(baseGain01, 0.0, 1.0), 0);
@@ -36,6 +51,29 @@ public final class DirectionalEncoding {
         }
 
         return new Encoded(freqHz, gain01, delayMs);
+    }
+
+    private static String chooseBandName(BstVibrationProfiles.Encoding encoding, Player player, double sourceX, double sourceZ) {
+        double dx = sourceX - player.getX();
+        double dz = sourceZ - player.getZ();
+        double mag2 = (dx * dx) + (dz * dz);
+        if (mag2 < 0.0004) {
+            return "center";
+        }
+
+        double yawRad = Math.toRadians(player.getYRot());
+        double fx = -Math.sin(yawRad);
+        double fz = Math.cos(yawRad);
+        double rx = Math.cos(yawRad);
+        double rz = Math.sin(yawRad);
+
+        double dotF = (dx * fx) + (dz * fz);
+        double dotR = (dx * rx) + (dz * rz);
+
+        if (Math.abs(dotF) >= Math.abs(dotR)) {
+            return (dotF >= 0.0) ? "front" : "rear";
+        }
+        return (dotR >= 0.0) ? "right" : "left";
     }
 
     private static BstVibrationProfiles.Encoding.Band chooseBand(BstVibrationProfiles.Encoding encoding, Player player, double sourceX, double sourceZ) {
