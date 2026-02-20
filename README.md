@@ -40,7 +40,7 @@ In-game:
 
 - Minecraft main menu → **Mods** → **Bass Shaker Telemetry** → **Config**
 - Output device selection, master volume, per-effect toggles and volume sliders.
-- Advanced settings includes an optional output buffer size selector, a latency test pulse, and calibration tones/sweep.
+- Advanced settings includes an optional output buffer size selector, a latency test pulse, calibration tones/sweep, and a haptic instrument graph editor (Phase 2).
 - Each effect slider includes a **Test** button.
 - **Sound Scape (7.1)**: category routing + group management for mapping haptics across multiple output channels. If no multichannel device is available, the UI restricts routing choices to stereo.
 	- Includes an optional per-effect overrides editor (debug key → target).
@@ -53,6 +53,7 @@ On disk:
 
 - Main config: `config/bassshakertelemetry.json`
 - Vibration profiles: `config/bassshakertelemetry_vibration_profiles.json`
+- Haptic instruments (Phase 2 DSP patches): `config/bassshakertelemetry_haptic_instruments.json`
 
 Advanced keys in `bassshakertelemetry.json` include:
 
@@ -62,6 +63,7 @@ Profiles are the source of truth for per-event tuning (frequency, intensity, dur
 
 - `priority` (0..100)
 - `directional` (boolean)
+- `instrument` (string, optional): references a reusable haptic instrument from `bassshakertelemetry_haptic_instruments.json`
 - root-level `encoding` bands
 
 For the full feature reference, see `docs/MOD_FEATURES.md`.

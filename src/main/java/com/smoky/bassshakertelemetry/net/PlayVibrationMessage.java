@@ -59,18 +59,34 @@ public record PlayVibrationMessage(String key, float scale01, float distanceScal
 
             // Apply directional encoding (client-only) without introducing client-only imports on the server.
             if (!tryClientPlayback(msg.key, resolved, gain, msg.hasSource, msg.sourceX, msg.sourceY, msg.sourceZ)) {
-                AudioOutputEngine.get().triggerImpulse(
-                        resolved.frequencyHz(),
-                        resolved.durationMs(),
-                        gain,
-                        resolved.noiseMix01(),
-                        resolved.pattern(),
-                        resolved.pulsePeriodMs(),
-                        resolved.pulseWidthMs(),
-                        resolved.priority(),
-                        0,
-                        (msg.key == null) ? "" : msg.key
-                );
+                String instrumentId = (resolved.instrumentId() == null) ? "" : resolved.instrumentId().trim();
+                if (!instrumentId.isBlank()) {
+                    AudioOutputEngine.get().triggerInstrumentImpulse(
+                            instrumentId,
+                            resolved.frequencyHz(),
+                            resolved.durationMs(),
+                            gain,
+                            resolved.pattern(),
+                            resolved.pulsePeriodMs(),
+                            resolved.pulseWidthMs(),
+                            resolved.priority(),
+                            0,
+                            (msg.key == null) ? "" : msg.key
+                    );
+                } else {
+                    AudioOutputEngine.get().triggerImpulse(
+                            resolved.frequencyHz(),
+                            resolved.durationMs(),
+                            gain,
+                            resolved.noiseMix01(),
+                            resolved.pattern(),
+                            resolved.pulsePeriodMs(),
+                            resolved.pulseWidthMs(),
+                            resolved.priority(),
+                            0,
+                            (msg.key == null) ? "" : msg.key
+                    );
+                }
             }
         });
         ctx.setPacketHandled(true);

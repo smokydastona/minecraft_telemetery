@@ -3,6 +3,7 @@ package com.smoky.bassshakertelemetry;
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.client.ClientInit;
 import com.smoky.bassshakertelemetry.config.BstConfig;
+import com.smoky.bassshakertelemetry.config.BstHapticInstruments;
 import com.smoky.bassshakertelemetry.config.BstVibrationProfiles;
 import com.smoky.bassshakertelemetry.net.BstNet;
 import com.smoky.bassshakertelemetry.server.ServerHapticsRelay;
@@ -21,6 +22,7 @@ public final class BassShakerTelemetryMod {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::commonSetup);
         BstConfig.load();
         BstVibrationProfiles.load();
+        BstHapticInstruments.load();
 
         MinecraftForge.EVENT_BUS.register(new ServerHapticsRelay());
 

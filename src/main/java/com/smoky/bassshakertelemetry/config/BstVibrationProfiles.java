@@ -101,10 +101,12 @@ public final class BstVibrationProfiles {
 
             intensity = clamp(intensity, 0.0, global.maxIntensity);
 
+            String instrumentId = (p.instrument == null) ? "" : p.instrument.trim();
+
             int periodMs = (p.pulsePeriodMs > 0) ? p.pulsePeriodMs : 160;
             int widthMs = (p.pulseWidthMs > 0) ? p.pulseWidthMs : 60;
             int pri = clampInt(p.priority, 0, 100);
-            return new Resolved(freq, dur, intensity, clamp(p.noiseMix, 0.0, 1.0), p.pattern, periodMs, widthMs, p.directional, pri);
+            return new Resolved(freq, dur, intensity, clamp(p.noiseMix, 0.0, 1.0), p.pattern, periodMs, widthMs, p.directional, pri, instrumentId);
         }
 
         public static Store fromJson(JsonObject root) {
@@ -488,6 +490,12 @@ public final class BstVibrationProfiles {
         public String pattern;
         public String falloff;
 
+        /**
+         * Optional Phase 2 instrument id ("haptic soundfont"). When set, playback can use a DSP graph instead
+         * of the legacy sine/noise impulse.
+         */
+        public String instrument;
+
         public int pulsePeriodMs;
         public int pulseWidthMs;
 
@@ -505,6 +513,7 @@ public final class BstVibrationProfiles {
             this.noiseMix = noiseMix;
             this.pattern = pattern;
             this.falloff = falloff;
+            this.instrument = "";
             this.pulsePeriodMs = pulsePeriodMs;
             this.pulseWidthMs = pulseWidthMs;
             this.directional = directional;
@@ -520,6 +529,7 @@ public final class BstVibrationProfiles {
                 int d = obj.get("duration").getAsInt();
                 String pattern = obj.has("pattern") ? obj.get("pattern").getAsString() : "single";
                 String falloff = obj.has("falloff") ? obj.get("falloff").getAsString() : "none";
+                String instrumentId = obj.has("instrument") ? obj.get("instrument").getAsString() : "";
                 double noise = obj.has("noiseMix") ? obj.get("noiseMix").getAsDouble() : 0.25;
                 int period = obj.has("pulsePeriodMs") ? obj.get("pulsePeriodMs").getAsInt() : 160;
                 int width = obj.has("pulseWidthMs") ? obj.get("pulseWidthMs").getAsInt() : 60;
@@ -527,13 +537,15 @@ public final class BstVibrationProfiles {
                 int priority = obj.has("priority") ? obj.get("priority").getAsInt() : 5;
                 boolean sbd = obj.has("scaleByDamage") && obj.get("scaleByDamage").getAsBoolean();
                 boolean sbf = obj.has("scaleByFallDistance") && obj.get("scaleByFallDistance").getAsBoolean();
-                return new Profile(f, i, d, noise, pattern, falloff, period, width, directional, priority, sbd, sbf);
+                Profile p = new Profile(f, i, d, noise, pattern, falloff, period, width, directional, priority, sbd, sbf);
+                p.instrument = (instrumentId == null) ? "" : instrumentId;
+                return p;
             } catch (Exception ignored) {
                 return null;
             }
         }
     }
 
-    public record Resolved(double frequencyHz, int durationMs, double intensity01, double noiseMix01, String pattern, int pulsePeriodMs, int pulseWidthMs, boolean directional, int priority) {
+    public record Resolved(double frequencyHz, int durationMs, double intensity01, double noiseMix01, String pattern, int pulsePeriodMs, int pulseWidthMs, boolean directional, int priority, String instrumentId) {
     }
 }

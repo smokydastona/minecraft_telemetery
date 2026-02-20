@@ -144,6 +144,21 @@ Packet formats (one JSON object per message):
 
 Tunable vibration profiles are saved at `config/bassshakertelemetry_vibration_profiles.json`.
 
+Phase 2 (Expressive Haptics) also adds a reusable instrument library at `config/bassshakertelemetry_haptic_instruments.json`.
+
+An in-game graph editor is available at:
+
+- Config → Advanced settings → Haptic instruments → Open instrument graph editor
+
+Editor controls (MVP):
+
+- Drag nodes to reposition.
+- Click an output port, then click an input port to connect.
+- Select a node (click its body), then use **Set output** to pick the graph output node.
+- **Save** writes back to `bassshakertelemetry_haptic_instruments.json`; **Reload** re-reads from disk.
+- **Copy JSON** copies the selected instrument JSON to the clipboard.
+- **Test** plays the selected instrument using its defaults.
+
 This file controls per-event frequency/intensity/duration (and optional pattern/falloff flags) so you can tune chair feel without recompiling.
 
 ### Encoded-mono directional encoding
@@ -165,6 +180,7 @@ Profiles also support:
 
 - `priority` (0..100): higher wins; only one effect is dominant at a time
 - `directional` (boolean): whether to apply the above encoding when source position is available
+- `instrument` (string, optional): references a DSP-backed haptic instrument id (example: `"impact_heavy"`)
 
 ### Patterns
 

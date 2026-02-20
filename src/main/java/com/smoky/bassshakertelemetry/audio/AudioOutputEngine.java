@@ -3,7 +3,11 @@ package com.smoky.bassshakertelemetry.audio;
 import com.smoky.bassshakertelemetry.audio.backend.AudioOutputDevice;
 import com.smoky.bassshakertelemetry.audio.backend.BackendSelector;
 import com.smoky.bassshakertelemetry.audio.backend.HapticAudioBackend;
+import com.smoky.bassshakertelemetry.audio.dsp.DspContext;
+import com.smoky.bassshakertelemetry.audio.dsp.DspGraphInstance;
+import com.smoky.bassshakertelemetry.audio.dsp.DspNodeFactory;
 import com.smoky.bassshakertelemetry.config.BstConfig;
+import com.smoky.bassshakertelemetry.config.BstHapticInstruments;
 import com.smoky.bassshakertelemetry.telemetryout.TelemetryOut;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,6 +32,8 @@ public final class AudioOutputEngine {
      * Lower-priority sources get ducked.
      */
     private static final double DUCK_FACTOR = 0.30;
+
+    private static final DspNodeFactory DSP_FACTORY = new DspNodeFactory();
 
         // 48kHz PCM output.
     private static final float SAMPLE_RATE = 48_000f;
@@ -204,6 +210,41 @@ public final class AudioOutputEngine {
     }
 
     /**
+     * Phase 2: Trigger a DSP-backed "instrument" impulse.
+     *
+     * <p>If the instrument id isn't found, this falls back to the legacy impulse path.
+     */
+    public void triggerInstrumentImpulse(String instrumentId,
+                                         double freqHz,
+                                         int durationMs,
+                                         double gain01,
+                                         String pattern,
+                                         int pulsePeriodMs,
+                                         int pulseWidthMs,
+                                         int priority,
+                                         int delayMs,
+                                         String debugKey) {
+        triggerInstrumentInternal(instrumentId, freqHz, freqHz, durationMs, gain01, pattern, pulsePeriodMs, pulseWidthMs, priority, delayMs, debugKey);
+    }
+
+    /**
+     * Phase 2: Trigger a DSP-backed instrument impulse with a frequency sweep.
+     */
+    public void triggerInstrumentSweepImpulse(String instrumentId,
+                                              double startFreqHz,
+                                              double endFreqHz,
+                                              int durationMs,
+                                              double gain01,
+                                              String pattern,
+                                              int pulsePeriodMs,
+                                              int pulseWidthMs,
+                                              int priority,
+                                              int delayMs,
+                                              String debugKey) {
+        triggerInstrumentInternal(instrumentId, startFreqHz, endFreqHz, durationMs, gain01, pattern, pulsePeriodMs, pulseWidthMs, priority, delayMs, debugKey);
+    }
+
+    /**
      * Frequency sweep impulse: linearly moves from startFreqHz to endFreqHz over the impulse duration.
      * Uses the same envelope/pattern system as {@link #triggerImpulse(double, int, double, double, String, int, int, int, int, String)}.
      */
@@ -236,20 +277,113 @@ public final class AudioOutputEngine {
         String dk = (debugKey == null) ? "" : debugKey.trim();
         HapticBus bus = busForDebugKey(dk);
 
+        enqueueImpulseVoice(f0, f1, samples, g, n, pat, pulsePeriodSamples, pulseWidthSamples, pri, delaySamples, dk, bus, "", null, null);
+
+        if (BstConfig.get().webSocketEnabled && BstConfig.get().webSocketSendHapticEvents) {
+            TelemetryOut.emitHaptic(dk, f0, f1, ms, g, n, pat, pulsePeriodMs, pulseWidthMs, pri, delayMs);
+            if (BstConfig.get().webSocketSendUnifiedEvents) {
+                TelemetryOut.emitEventFromHapticKey(dk, g);
+            }
+        }
+    }
+
+    private void triggerInstrumentInternal(String instrumentId,
+                                           double startFreqHz,
+                                           double endFreqHz,
+                                           int durationMs,
+                                           double gain01,
+                                           String pattern,
+                                           int pulsePeriodMs,
+                                           int pulseWidthMs,
+                                           int priority,
+                                           int delayMs,
+                                           String debugKey) {
+        String instId = (instrumentId == null) ? "" : instrumentId.trim();
+        if (instId.isEmpty()) {
+            triggerImpulseInternal(startFreqHz, endFreqHz, durationMs, gain01, 0.0, pattern, pulsePeriodMs, pulseWidthMs, priority, delayMs, debugKey);
+            return;
+        }
+
+        BstHapticInstruments.Instrument inst = BstHapticInstruments.get().get(instId);
+        if (inst == null || inst.graph == null) {
+            triggerImpulseInternal(startFreqHz, endFreqHz, durationMs, gain01, 0.0, pattern, pulsePeriodMs, pulseWidthMs, priority, delayMs, debugKey);
+            return;
+        }
+
+        int ms = Math.max(10, durationMs);
+        int samples = (int) ((ms / 1000.0) * SAMPLE_RATE);
+        samples = Math.max(1, samples);
+
+        double f0 = clamp(startFreqHz, 10.0, 120.0);
+        double f1 = clamp(endFreqHz, 10.0, 120.0);
+        double g = clamp(gain01, 0.0, 1.0);
+        String pat = (pattern == null || pattern.isBlank()) ? "single" : pattern;
+
+        int periodS = (int) ((Math.max(20, pulsePeriodMs) / 1000.0) * SAMPLE_RATE);
+        int widthS = (int) ((Math.max(10, pulseWidthMs) / 1000.0) * SAMPLE_RATE);
+        int pulsePeriodSamples = Math.max(1, periodS);
+        int pulseWidthSamples = Math.max(1, Math.min(Math.max(1, widthS), pulsePeriodSamples));
+
+        int pri = clampInt(priority, 0, 100);
+        int delaySamples = (int) ((Math.max(0, delayMs) / 1000.0) * SAMPLE_RATE);
+        delaySamples = Math.max(0, delaySamples);
+
+        String dk = (debugKey == null) ? "" : debugKey.trim();
+        HapticBus bus = busForDebugKey(dk);
+
+        long seed = System.nanoTime()
+                ^ (((long) dk.toLowerCase(java.util.Locale.ROOT).hashCode()) << 1)
+                ^ (((long) instId.toLowerCase(java.util.Locale.ROOT).hashCode()) << 17);
+        DspContext ctx = new DspContext(seed, f0, f1, samples);
+        DspGraphInstance graph = inst.graph.instantiate(DSP_FACTORY);
+
+        enqueueImpulseVoice(f0, f1, samples, g, 0.0, pat, pulsePeriodSamples, pulseWidthSamples, pri, delaySamples, dk, bus, instId, graph, ctx);
+
+        if (BstConfig.get().webSocketEnabled && BstConfig.get().webSocketSendHapticEvents) {
+            // Legacy haptic packet format doesn't include instrument id yet; emit with noiseMix=0.
+            TelemetryOut.emitHaptic(dk, f0, f1, ms, g, 0.0, pat, pulsePeriodMs, pulseWidthMs, pri, delayMs);
+            if (BstConfig.get().webSocketSendUnifiedEvents) {
+                TelemetryOut.emitEventFromHapticKey(dk, g);
+            }
+        }
+    }
+
+    private void enqueueImpulseVoice(double f0,
+                                     double f1,
+                                     int samples,
+                                     double gain01,
+                                     double noiseMix01,
+                                     String pattern,
+                                     int pulsePeriodSamples,
+                                     int pulseWidthSamples,
+                                     int priority,
+                                     int delaySamples,
+                                     String debugKey,
+                                     HapticBus bus,
+                                     String instrumentId,
+                                     DspGraphInstance dspGraph,
+                                     DspContext dspContext) {
         synchronized (impulseLock) {
+            String dk = (debugKey == null) ? "" : debugKey;
+            String inst = (instrumentId == null) ? "" : instrumentId;
+
             // Coalesce/extend a very similar active voice to avoid stacking identical pulses.
             for (ImpulseVoice v : impulses) {
                 String vdk = (v.debugKey == null) ? "" : v.debugKey;
                 if (!dk.equalsIgnoreCase(vdk)) {
                     continue;
                 }
-                if (v.priority != pri) {
+                String vInst = (v.instrumentId == null) ? "" : v.instrumentId;
+                if (!inst.equalsIgnoreCase(vInst)) {
+                    continue;
+                }
+                if (v.priority != priority) {
                     continue;
                 }
                 if (v.delaySamplesLeft != delaySamples) {
                     continue;
                 }
-                if (!pat.equalsIgnoreCase(v.pattern)) {
+                if (!pattern.equalsIgnoreCase(v.pattern)) {
                     continue;
                 }
                 if (Math.abs(v.startFreqHz - f0) > 0.75) {
@@ -261,11 +395,15 @@ public final class AudioOutputEngine {
 
                 v.totalSamples = Math.max(v.totalSamples, samples);
                 v.samplesLeft = Math.max(v.samplesLeft, samples);
-                v.gain = Math.max(v.gain, g);
-                v.noiseMix = n;
+                v.gain = Math.max(v.gain, gain01);
+                v.noiseMix = noiseMix01;
                 v.pulsePeriodSamples = pulsePeriodSamples;
                 v.pulseWidthSamples = pulseWidthSamples;
                 v.createdNanos = System.nanoTime();
+                if (v.dspContext != null) {
+                    v.dspContext.retune(v.startFreqHz, v.endFreqHz);
+                    v.dspContext.resize(v.totalSamples);
+                }
                 return;
             }
 
@@ -276,29 +414,25 @@ public final class AudioOutputEngine {
             voice.freqHz = f0;
             voice.startFreqHz = f0;
             voice.endFreqHz = f1;
-            voice.gain = g;
-            voice.noiseMix = n;
-            voice.pattern = pat;
+            voice.gain = gain01;
+            voice.noiseMix = noiseMix01;
+            voice.pattern = pattern;
             voice.debugKey = dk;
+            voice.instrumentId = inst;
             voice.pulsePeriodSamples = pulsePeriodSamples;
             voice.pulseWidthSamples = pulseWidthSamples;
             voice.phase = 0.0;
             voice.noiseState = 0.0;
-            voice.priority = pri;
+            voice.priority = priority;
             voice.bus = bus;
             voice.createdNanos = System.nanoTime();
+            voice.dspGraph = dspGraph;
+            voice.dspContext = dspContext;
             impulses.add(voice);
 
             // Hard cap to avoid unbounded growth in pathological cases.
             while (impulses.size() > 24) {
                 impulses.remove(0);
-            }
-        }
-
-        if (BstConfig.get().webSocketEnabled && BstConfig.get().webSocketSendHapticEvents) {
-            TelemetryOut.emitHaptic(dk, f0, f1, ms, g, n, pat, pulsePeriodMs, pulseWidthMs, pri, delayMs);
-            if (BstConfig.get().webSocketSendUnifiedEvents) {
-                TelemetryOut.emitEventFromHapticKey(dk, g);
             }
         }
     }
@@ -417,17 +551,32 @@ public final class AudioOutputEngine {
         }
 
         String pat = (resolved.pattern() == null || resolved.pattern().isBlank()) ? "punch" : resolved.pattern();
-        triggerImpulse(resolved.frequencyHz(), resolved.durationMs(), gain01, resolved.noiseMix01(), pat, resolved.pulsePeriodMs(), resolved.pulseWidthMs(), resolved.priority(), 0, "mount.hoof");
-        triggerImpulse(clamp(resolved.frequencyHz() - 4.0, store.global.minFrequency, store.global.maxFrequency),
-                Math.max(25, (int) Math.round(resolved.durationMs() * 0.70)),
-                clamp(gain01 * 0.65, 0.0, 1.0),
-                clamp(resolved.noiseMix01() + 0.10, 0.0, 0.90),
-                pat,
-                resolved.pulsePeriodMs(),
-                resolved.pulseWidthMs(),
-                Math.max(0, resolved.priority() - 1),
-                32,
-                "mount.hoof_tail");
+        String inst = (resolved.instrumentId() == null) ? "" : resolved.instrumentId().trim();
+        if (!inst.isBlank()) {
+            triggerInstrumentImpulse(inst, resolved.frequencyHz(), resolved.durationMs(), gain01, pat, resolved.pulsePeriodMs(), resolved.pulseWidthMs(), resolved.priority(), 0, "mount.hoof");
+            triggerInstrumentImpulse(inst,
+                    clamp(resolved.frequencyHz() - 4.0, store.global.minFrequency, store.global.maxFrequency),
+                    Math.max(25, (int) Math.round(resolved.durationMs() * 0.70)),
+                    clamp(gain01 * 0.65, 0.0, 1.0),
+                    pat,
+                    resolved.pulsePeriodMs(),
+                    resolved.pulseWidthMs(),
+                    Math.max(0, resolved.priority() - 1),
+                    32,
+                    "mount.hoof_tail");
+        } else {
+            triggerImpulse(resolved.frequencyHz(), resolved.durationMs(), gain01, resolved.noiseMix01(), pat, resolved.pulsePeriodMs(), resolved.pulseWidthMs(), resolved.priority(), 0, "mount.hoof");
+            triggerImpulse(clamp(resolved.frequencyHz() - 4.0, store.global.minFrequency, store.global.maxFrequency),
+                    Math.max(25, (int) Math.round(resolved.durationMs() * 0.70)),
+                    clamp(gain01 * 0.65, 0.0, 1.0),
+                    clamp(resolved.noiseMix01() + 0.10, 0.0, 0.90),
+                    pat,
+                    resolved.pulsePeriodMs(),
+                    resolved.pulseWidthMs(),
+                    Math.max(0, resolved.priority() - 1),
+                    32,
+                    "mount.hoof_tail");
+        }
     }
 
     public void testMiningSwing() {
@@ -899,24 +1048,32 @@ public final class AudioOutputEngine {
 
                             double overallProgress = (total <= 1) ? 1.0 : clamp(sampleIndex / (double) (total - 1), 0.0, 1.0);
                             double freqHz = v.startFreqHz + ((v.endFreqHz - v.startFreqHz) * overallProgress);
-                            double step = (2.0 * Math.PI * freqHz) / SAMPLE_RATE;
-                            double sine = Math.sin(v.phase);
+                            double w;
+                            if (v.dspGraph != null && v.dspContext != null) {
+                                v.dspContext.retune(v.startFreqHz, v.endFreqHz);
+                                v.dspContext.resize(total);
+                                v.dspContext.sampleIndex = sampleIndex;
+                                w = v.dspGraph.out(v.dspContext);
+                            } else {
+                                double step = (2.0 * Math.PI * freqHz) / SAMPLE_RATE;
+                                double sine = Math.sin(v.phase);
 
-                            // Low-pass the noise component to keep impulses tactile and less "snappy".
-                            double fc = 65.0;
-                            double a = 1.0 - Math.exp(-(2.0 * Math.PI * fc) / SAMPLE_RATE);
-                            double white = (random.nextDouble() * 2.0) - 1.0;
-                            v.noiseState += (white - v.noiseState) * a;
+                                // Low-pass the noise component to keep impulses tactile and less "snappy".
+                                double fc = 65.0;
+                                double a = 1.0 - Math.exp(-(2.0 * Math.PI * fc) / SAMPLE_RATE);
+                                double white = (random.nextDouble() * 2.0) - 1.0;
+                                v.noiseState += (white - v.noiseState) * a;
 
-                            double w = (sine * (1.0 - v.noiseMix)) + (v.noiseState * v.noiseMix);
+                                w = (sine * (1.0 - v.noiseMix)) + (v.noiseState * v.noiseMix);
+
+                                v.phase += step;
+                                if (v.phase > (2.0 * Math.PI)) {
+                                    v.phase -= (2.0 * Math.PI);
+                                }
+                            }
                             double voice = w * v.gain * env * voiceMul;
                             int mask = router.maskForEffectKey(v.debugKey);
                             addToChannels(ch, bufferChannels, mask, voice);
-
-                            v.phase += step;
-                            if (v.phase > (2.0 * Math.PI)) {
-                                v.phase -= (2.0 * Math.PI);
-                            }
 
                             v.samplesLeft--;
                         }
@@ -1409,11 +1566,15 @@ public final class AudioOutputEngine {
         double noiseMix;
         String pattern;
         String debugKey;
+        String instrumentId;
         int pulsePeriodSamples;
         int pulseWidthSamples;
 
         double phase;
         double noiseState;
+
+        DspGraphInstance dspGraph;
+        DspContext dspContext;
 
         int priority;
         HapticBus bus;

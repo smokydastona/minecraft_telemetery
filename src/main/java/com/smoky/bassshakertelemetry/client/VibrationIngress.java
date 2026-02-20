@@ -80,18 +80,36 @@ public final class VibrationIngress {
             )
         );
 
-        HapticEventContext.withEventContext(unified, () -> AudioOutputEngine.get().triggerImpulse(
-            encoded.frequencyHz(),
-            resolved.durationMs(),
-            encoded.gain01(),
-            resolved.noiseMix01(),
-            resolved.pattern(),
-            resolved.pulsePeriodMs(),
-            resolved.pulseWidthMs(),
-            resolved.priority(),
-            encoded.delayMs(),
-            k
-        ));
+        HapticEventContext.withEventContext(unified, () -> {
+            String instrumentId = (resolved.instrumentId() == null) ? "" : resolved.instrumentId().trim();
+            if (!instrumentId.isBlank()) {
+                AudioOutputEngine.get().triggerInstrumentImpulse(
+                        instrumentId,
+                        encoded.frequencyHz(),
+                        resolved.durationMs(),
+                        encoded.gain01(),
+                        resolved.pattern(),
+                        resolved.pulsePeriodMs(),
+                        resolved.pulseWidthMs(),
+                        resolved.priority(),
+                        encoded.delayMs(),
+                        k
+                );
+            } else {
+                AudioOutputEngine.get().triggerImpulse(
+                        encoded.frequencyHz(),
+                        resolved.durationMs(),
+                        encoded.gain01(),
+                        resolved.noiseMix01(),
+                        resolved.pattern(),
+                        resolved.pulsePeriodMs(),
+                        resolved.pulseWidthMs(),
+                        resolved.priority(),
+                        encoded.delayMs(),
+                        k
+                );
+            }
+        });
 
         setLastEvent(SourceType.NETWORK, (key == null || key.isBlank()) ? "<network>" : key, resolved.priority(), encoded.frequencyHz(), encoded.gain01());
     }
