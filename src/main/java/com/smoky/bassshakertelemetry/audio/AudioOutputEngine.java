@@ -425,6 +425,30 @@ public final class AudioOutputEngine {
         triggerSweepImpulse(20.0, 120.0, 6500, gain01, 0.0, "flat", 160, 60, 97, 0, "cal.sweep_20_120hz");
     }
 
+    /**
+     * Stops any currently playing calibration tones/sweeps.
+     * This targets only impulses with debugKey prefix "cal." and leaves normal gameplay haptics untouched.
+     */
+    public void stopCalibration() {
+        int fadeSamples = (int) (SAMPLE_RATE * 0.030); // 30ms quick fade to avoid clicks
+        fadeSamples = Math.max(1, fadeSamples);
+
+        synchronized (impulseLock) {
+            for (ImpulseVoice v : impulses) {
+                if (v == null) continue;
+                String dk = (v.debugKey == null) ? "" : v.debugKey.trim().toLowerCase(java.util.Locale.ROOT);
+                if (!dk.startsWith("cal.")) {
+                    continue;
+                }
+                // If the voice is still delayed, start it immediately and fade it out.
+                v.delaySamplesLeft = 0;
+                if (v.samplesLeft > fadeSamples) {
+                    v.samplesLeft = fadeSamples;
+                }
+            }
+        }
+    }
+
     private void wakeForTests() {
         // Tests should be able to open/play even when the player isn't in-world.
         telemetryLive = true;

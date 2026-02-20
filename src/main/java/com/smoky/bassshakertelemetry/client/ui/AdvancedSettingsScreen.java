@@ -173,6 +173,11 @@ public final class AdvancedSettingsScreen extends Screen {
             b -> AudioOutputEngine.get().testCalibrationSweep()
         ).bounds(0, 0, contentWidth - 12, rowH).build()));
 
+        settingsList.addSettingEntry(new ButtonOnlyEntry(Button.builder(
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_stop")),
+            b -> AudioOutputEngine.get().stopCalibration()
+        ).bounds(0, 0, contentWidth - 12, rowH).build()));
+
         this.addRenderableWidget(settingsList);
 
         int buttonW = (contentWidth - 10) / 2;

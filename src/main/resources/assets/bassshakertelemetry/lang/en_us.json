@@ -25,6 +25,7 @@
   "bassshakertelemetry.config.cal_tone_30hz": "Play 30 Hz test tone",
   "bassshakertelemetry.config.cal_tone_60hz": "Play 60 Hz test tone",
   "bassshakertelemetry.config.cal_sweep_20_120hz": "Play 20→120 Hz sweep",
+  "bassshakertelemetry.config.cal_stop": "Stop calibration (silence)",
   "bassshakertelemetry.config.test": "Test",
   "bassshakertelemetry.config.road_gain": "Road texture volume",
   "bassshakertelemetry.config.damage_gain": "Damage burst volume",

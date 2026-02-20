@@ -20,7 +20,7 @@
 - Priority & ducking (mono): when multiple effects overlap, one dominant vibration wins; others are ducked so impacts stay readable
 - Latency tuning: optional JavaSound output buffer size selection (larger buffers are often more stable but add latency)
 - Latency test: an in-game latency test pulse toggle is available in Advanced settings → Audio
-- Calibration tools: quick test tones + a frequency sweep are available in Advanced settings → Audio
+- Calibration tools: quick test tones + a frequency sweep (plus a Stop/Silence button) are available in Advanced settings → Audio
 - Debug overlay: optional developer overlay showing the last vibration source/key, priority, frequency, gain, and recent suppression.
 - Demo sequence: a simple built-in demo runner is available in Advanced settings → Audio for repeatable tuning.
 
