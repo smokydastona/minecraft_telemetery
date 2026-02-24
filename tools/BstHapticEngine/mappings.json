@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "when": { "type": "haptic", "keyPrefix": "damage." },
+      "effect": { "mode": "usePacket", "bus": "impacts", "gain": 1.0, "routing": "all" }
+    },
+    {
+      "when": { "type": "haptic", "keyPrefix": "flight.wind" },
+      "effect": { "mode": "usePacket", "bus": "movement", "gain": 1.0, "routing": "leftRightFromAzimuth" }
+    },
+    {
+      "when": { "type": "event", "kind": "continuous" },
+      "effect": { "mode": "telemetryWind", "bus": "movement", "gain": 0.35, "routing": "leftRightFromAzimuth" }
+    }
+  ],
+  "fallback": { "haptic": { "mode": "usePacket", "bus": "impacts", "gain": 1.0, "routing": "all" } }
+}

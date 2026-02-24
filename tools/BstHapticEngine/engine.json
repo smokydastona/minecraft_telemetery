@@ -1,0 +1,23 @@
+{
+  "wsUrl": "ws://127.0.0.1:7117/",
+  "sampleRate": 48000,
+  "channels": 2,
+  "blockSize": 512,
+  "targetBufferedBlocks": 3,
+  "masterGain": 1.0,
+  "output": {
+    "deviceNameContains": "CABLE Input",
+    "sharedMode": true,
+    "wasapiBufferMs": 30
+  },
+  "latency": {
+    "delayMs": 0
+  },
+  "buses": {
+    "impacts": { "gain": 1.0 },
+    "movement": { "gain": 1.0 },
+    "weapons": { "gain": 1.0 },
+    "environment": { "gain": 1.0 },
+    "vehicles": { "gain": 1.0 }
+  }
+}
