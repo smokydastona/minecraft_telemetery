@@ -172,6 +172,12 @@ public final class BstConfig {
             d.webSocketPort = 7117;
         }
 
+        // --- Accessibility HUD (client-only) ---
+        d.accessibilityHudCueMs = clampInt(d.accessibilityHudCueMs, 250, 10_000);
+        d.accessibilityHudMaxLines = clampInt(d.accessibilityHudMaxLines, 1, 10);
+        d.accessibilityLowHealthThresholdPct = clampInt(d.accessibilityLowHealthThresholdPct, 1, 99);
+        d.accessibilityLowHealthCooldownMs = clampInt(d.accessibilityLowHealthCooldownMs, 250, 60_000);
+
         return d;
     }
 
@@ -264,6 +270,14 @@ public final class BstConfig {
 
         // Developer tools
         public boolean debugOverlayEnabled = false;
+
+        // Accessibility HUD (client-only)
+        public boolean accessibilityHudEnabled = false;
+        public boolean accessibilityHudCuesEnabled = true;
+        public int accessibilityHudCueMs = 1600;
+        public int accessibilityHudMaxLines = 4;
+        public int accessibilityLowHealthThresholdPct = 25;
+        public int accessibilityLowHealthCooldownMs = 2500;
 
         // Telemetry-to-signal mapping toggles
         public boolean damageBurstEnabled = true;

@@ -1,10 +1,13 @@
 package com.smoky.bassshakertelemetry.client;
 
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
+import com.smoky.bassshakertelemetry.client.accessibility.HudCueManager;
+import com.smoky.bassshakertelemetry.client.accessibility.HudCueType;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import com.smoky.bassshakertelemetry.config.BstVibrationProfiles;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
@@ -76,6 +79,11 @@ public final class WardenHeartbeatHapticsHandler {
         String p = path.toLowerCase();
         if (!(p.contains("warden") && p.contains("heartbeat"))) {
             return;
+        }
+
+        if (cfg.accessibilityHudEnabled && cfg.accessibilityHudCuesEnabled
+                && HudCueManager.get().canFire(HudCueType.WARDEN_HEARTBEAT, 650)) {
+            HudCueManager.get().push(HudCueType.WARDEN_HEARTBEAT, Component.translatable("bassshakertelemetry.cue.warden_heartbeat"));
         }
 
         // De-dupe in case the sound system dispatches multiple instances very close together.

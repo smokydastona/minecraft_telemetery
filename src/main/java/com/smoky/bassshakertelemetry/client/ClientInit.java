@@ -1,5 +1,7 @@
 package com.smoky.bassshakertelemetry.client;
 
+import com.smoky.bassshakertelemetry.client.accessibility.HudCueOverlayHandler;
+import com.smoky.bassshakertelemetry.client.accessibility.HudCueTickHandler;
 import com.smoky.bassshakertelemetry.client.integration.WebSocketTelemetryController;
 import com.smoky.bassshakertelemetry.client.ui.TelemetryConfigScreen;
 import net.minecraft.client.Minecraft;
@@ -22,6 +24,9 @@ public final class ClientInit {
             MinecraftForge.EVENT_BUS.register(new WardenHeartbeatHapticsHandler());
         MinecraftForge.EVENT_BUS.register(new MiningSwingHapticsHandler());
         MinecraftForge.EVENT_BUS.register(new DebugOverlayHandler());
+
+        MinecraftForge.EVENT_BUS.register(new HudCueTickHandler());
+        MinecraftForge.EVENT_BUS.register(new HudCueOverlayHandler());
 
         MinecraftForge.EVENT_BUS.register(new WebSocketTelemetryController());
 

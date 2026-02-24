@@ -72,6 +72,11 @@ Spatial (Phase 3):
 
 Timing knobs are available under **Advanced settings → Timing** (durations/cooldowns/periods).
 
+Accessibility HUD:
+
+- Optional on-screen cue list for key danger events (damage, explosions, thunder, boss cues, Warden heartbeat) plus a low-health warning.
+- Toggle: Config screen → **Accessibility HUD**.
+
 ## Build / artifacts
 
 This repo is intended to produce test JARs via GitHub Actions on `git push`.
@@ -156,6 +161,17 @@ Packet formats (one JSON object per message):
 - Unified events (emitted alongside `haptic`, best-effort categorization):
 	- `{"type":"event","t":<epoch_ms>,"id":"...","kind":"impact|continuous|environmental|ui|danger|modded","intensity":<double>,"source":"network|sound|local|api|bst",...}`
 	- May include `pos:[x,y,z]` and `meta:{...}` when available (e.g., network-relayed authoritative events and sound-inferred events).
+
+### Accessibility HUD (client-only)
+
+Config keys:
+
+- `accessibilityHudEnabled` (boolean, default `false`)
+- `accessibilityHudCuesEnabled` (boolean, default `true`)
+- `accessibilityHudCueMs` (int, default `1600`)
+- `accessibilityHudMaxLines` (int, default `4`)
+- `accessibilityLowHealthThresholdPct` (int, default `25`)
+- `accessibilityLowHealthCooldownMs` (int, default `2500`)
 
 ## Vibration profiles (JSON)
 

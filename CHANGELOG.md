@@ -41,6 +41,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Spatial calibration wizard screen with per-channel test tones/sweep/latency pulse and calibration sliders.
 - Spatial calibration wizard: burst test button, RMS auto-trim helper, per-channel comfort limit, and a guided Back/Next flow with one-click comfort capture.
 - Minimal spatial debugger screen showing last event, azimuth/distance, and engine status.
+- Accessibility HUD: optional on-screen cue list for key danger events (damage, explosions, thunder, boss cues, Warden heartbeat) plus a low-health warning.
 
 ### Changed
 - Default directional instruments (`impact_heavy`, `heartbeat_warden`, `wind_elytra`) now include a `direction` node with `band: "auto"`.

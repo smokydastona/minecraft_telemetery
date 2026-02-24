@@ -1,9 +1,12 @@
 package com.smoky.bassshakertelemetry.client;
 
+import com.smoky.bassshakertelemetry.client.accessibility.HudCueManager;
+import com.smoky.bassshakertelemetry.client.accessibility.HudCueType;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import com.smoky.bassshakertelemetry.config.BstVibrationProfiles;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
@@ -100,6 +103,18 @@ public final class SoundHapticsHandler {
 
         if (!rateLimit(impulse.bucketKey, cfg.soundHapticsCooldownMs)) {
             return;
+        }
+
+        // Accessibility HUD cues: keep these high-salience only to avoid spam.
+        if (cfg.accessibilityHudEnabled && cfg.accessibilityHudCuesEnabled) {
+            if ("explosion".equals(impulse.bucketKey) && HudCueManager.get().canFire(HudCueType.EXPLOSION, 350)) {
+                HudCueManager.get().push(HudCueType.EXPLOSION, Component.translatable("bassshakertelemetry.cue.explosion"));
+            } else if ("thunder".equals(impulse.bucketKey) && HudCueManager.get().canFire(HudCueType.THUNDER, 900)) {
+                HudCueManager.get().push(HudCueType.THUNDER, Component.translatable("bassshakertelemetry.cue.thunder"));
+            } else if (("warden".equals(impulse.bucketKey) || impulse.bucketKey.startsWith("dragon"))
+                    && HudCueManager.get().canFire(HudCueType.BOSS, 900)) {
+                HudCueManager.get().push(HudCueType.BOSS, Component.translatable("bassshakertelemetry.cue.boss"));
+            }
         }
 
         VibrationIngress.playSoundImpulse(

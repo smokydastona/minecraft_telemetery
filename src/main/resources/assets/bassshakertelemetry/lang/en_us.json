@@ -10,6 +10,7 @@
   "bassshakertelemetry.config.road_enabled": "Road texture",
   "bassshakertelemetry.config.sound_enabled": "Sound haptics",
   "bassshakertelemetry.config.gameplay_enabled": "Gameplay haptics",
+  "bassshakertelemetry.config.accessibility_hud": "Accessibility HUD",
   "bassshakertelemetry.config.effect_volumes": "Effect volumes",
   "bassshakertelemetry.config.timing": "Timing",
   "bassshakertelemetry.config.audio": "Audio",
@@ -140,5 +141,12 @@
   "bassshakertelemetry.soundscape.route.footsteps": "Footsteps",
   "bassshakertelemetry.soundscape.route.mounted": "Mounted / Flight",
   "bassshakertelemetry.soundscape.route.mining": "Mining swing",
-  "bassshakertelemetry.soundscape.route.custom": "Custom/Other"
+  "bassshakertelemetry.soundscape.route.custom": "Custom/Other",
+
+  "bassshakertelemetry.cue.damage": "Damage (%s)",
+  "bassshakertelemetry.cue.explosion": "Explosion",
+  "bassshakertelemetry.cue.thunder": "Thunder",
+  "bassshakertelemetry.cue.boss": "Boss nearby",
+  "bassshakertelemetry.cue.warden_heartbeat": "Warden heartbeat",
+  "bassshakertelemetry.cue.low_health": "LOW HEALTH"
 }

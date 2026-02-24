@@ -25,6 +25,7 @@ public final class TelemetryConfigScreen extends Screen {
     private CycleButton<Boolean> roadToggle;
     private CycleButton<Boolean> soundToggle;
     private CycleButton<Boolean> gameplayToggle;
+    private CycleButton<Boolean> accessibilityHudToggle;
     private VolumeSlider volumeSlider;
 
     public TelemetryConfigScreen(Screen parent) {
@@ -130,6 +131,10 @@ public final class TelemetryConfigScreen extends Screen {
             .create(leftX, y + rowH + rowGap, contentWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.gameplay_enabled")));
         this.addRenderableWidget(gameplayToggle);
 
+        accessibilityHudToggle = CycleButton.onOffBuilder(BstConfig.get().accessibilityHudEnabled)
+            .create(leftX, y + ((rowH + rowGap) * 2), contentWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.accessibility_hud")));
+        this.addRenderableWidget(accessibilityHudToggle);
+
         this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), b -> onDone())
                 .bounds(leftX, this.height - 28, (contentWidth - 10) / 2, 20)
                 .build());
@@ -148,6 +153,7 @@ public final class TelemetryConfigScreen extends Screen {
         data.roadTextureEnabled = roadToggle.getValue();
         data.soundHapticsEnabled = soundToggle.getValue();
         data.gameplayHapticsEnabled = gameplayToggle.getValue();
+        data.accessibilityHudEnabled = accessibilityHudToggle.getValue();
         BstConfig.set(data);
 
         AudioOutputEngine.get().startOrRestart();

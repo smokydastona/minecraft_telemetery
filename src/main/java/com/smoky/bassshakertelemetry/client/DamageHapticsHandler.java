@@ -1,9 +1,12 @@
 package com.smoky.bassshakertelemetry.client;
 
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
+import com.smoky.bassshakertelemetry.client.accessibility.HudCueManager;
+import com.smoky.bassshakertelemetry.client.accessibility.HudCueType;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import com.smoky.bassshakertelemetry.config.BstVibrationProfiles;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -49,6 +52,11 @@ public final class DamageHapticsHandler {
         if (!(amount > 0.0f)) {
             return;
         }
+
+        HudCueManager.get().push(
+            HudCueType.DAMAGE,
+            Component.translatable("bassshakertelemetry.cue.damage", String.format(java.util.Locale.ROOT, "%.1f", amount))
+        );
 
         // Simple de-dupe in case multiple hooks fire in quick succession.
         long now = System.nanoTime();
