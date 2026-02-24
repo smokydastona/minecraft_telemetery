@@ -2,6 +2,7 @@ package com.smoky.bassshakertelemetry.client.accessibility;
 
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,6 +23,10 @@ public final class HudCueManager {
     }
 
     public void push(HudCueType type, Component text) {
+        push(type, text, null);
+    }
+
+    public void push(HudCueType type, Component text, Vec3 sourcePos) {
         BstConfig.Data cfg = BstConfig.get();
         if (!cfg.enabled || !cfg.accessibilityHudEnabled || !cfg.accessibilityHudCuesEnabled) {
             return;
@@ -30,7 +35,7 @@ public final class HudCueManager {
         long nowMs = System.currentTimeMillis();
         int ttlMs = Math.max(250, cfg.accessibilityHudCueMs);
 
-        cues.add(new Cue(type, text, nowMs + ttlMs));
+        cues.add(new Cue(type, text, sourcePos, nowMs + ttlMs));
         pruneAndTrim(nowMs, cfg.accessibilityHudMaxLines);
     }
 
@@ -57,7 +62,7 @@ public final class HudCueManager {
         ArrayList<CueLine> out = new ArrayList<>(cues.size());
         for (int i = 0; i < cues.size(); i++) {
             Cue c = cues.get(i);
-            out.add(new CueLine(c.type, c.text));
+            out.add(new CueLine(c.type, c.text, c.sourcePos));
         }
         return out;
     }
@@ -78,9 +83,9 @@ public final class HudCueManager {
         }
     }
 
-    private record Cue(HudCueType type, Component text, long expiresAtMs) {
+    private record Cue(HudCueType type, Component text, Vec3 sourcePos, long expiresAtMs) {
     }
 
-    public record CueLine(HudCueType type, Component text) {
+    public record CueLine(HudCueType type, Component text, Vec3 sourcePos) {
     }
 }

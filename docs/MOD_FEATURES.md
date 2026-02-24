@@ -75,6 +75,7 @@ Timing knobs are available under **Advanced settings → Timing** (durations/coo
 Accessibility HUD:
 
 - Optional on-screen cue list for key danger events (damage, explosions, thunder, boss cues, Warden heartbeat) plus a low-health warning.
+- When an event has a world position, the cue includes an 8-way arrow (←→↑↓↖↗↘↙) showing the event direction relative to your current facing; it updates live as you turn.
 - Toggle: Config screen → **Accessibility HUD**.
 
 ## Build / artifacts

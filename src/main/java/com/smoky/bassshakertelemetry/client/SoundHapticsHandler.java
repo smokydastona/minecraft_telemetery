@@ -108,12 +108,24 @@ public final class SoundHapticsHandler {
         // Accessibility HUD cues: keep these high-salience only to avoid spam.
         if (cfg.accessibilityHudEnabled && cfg.accessibilityHudCuesEnabled) {
             if ("explosion".equals(impulse.bucketKey) && HudCueManager.get().canFire(HudCueType.EXPLOSION, 350)) {
-                HudCueManager.get().push(HudCueType.EXPLOSION, Component.translatable("bassshakertelemetry.cue.explosion"));
+                HudCueManager.get().push(
+                        HudCueType.EXPLOSION,
+                        Component.translatable("bassshakertelemetry.cue.explosion"),
+                        new Vec3(sound.getX(), sound.getY(), sound.getZ())
+                );
             } else if ("thunder".equals(impulse.bucketKey) && HudCueManager.get().canFire(HudCueType.THUNDER, 900)) {
-                HudCueManager.get().push(HudCueType.THUNDER, Component.translatable("bassshakertelemetry.cue.thunder"));
+                HudCueManager.get().push(
+                        HudCueType.THUNDER,
+                        Component.translatable("bassshakertelemetry.cue.thunder"),
+                        new Vec3(sound.getX(), sound.getY(), sound.getZ())
+                );
             } else if (("warden".equals(impulse.bucketKey) || impulse.bucketKey.startsWith("dragon"))
                     && HudCueManager.get().canFire(HudCueType.BOSS, 900)) {
-                HudCueManager.get().push(HudCueType.BOSS, Component.translatable("bassshakertelemetry.cue.boss"));
+                HudCueManager.get().push(
+                        HudCueType.BOSS,
+                        Component.translatable("bassshakertelemetry.cue.boss"),
+                        new Vec3(sound.getX(), sound.getY(), sound.getZ())
+                );
             }
         }
 

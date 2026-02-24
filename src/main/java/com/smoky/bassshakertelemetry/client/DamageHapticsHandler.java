@@ -53,9 +53,19 @@ public final class DamageHapticsHandler {
             return;
         }
 
+        Vec3 cuePos = null;
+        try {
+            SourcePos srcPos = resolveDamageSourcePos(event.getSource());
+            if (srcPos.hasSource) {
+                cuePos = new Vec3(srcPos.x, srcPos.y, srcPos.z);
+            }
+        } catch (Exception ignored) {
+        }
+
         HudCueManager.get().push(
-            HudCueType.DAMAGE,
-            Component.translatable("bassshakertelemetry.cue.damage", String.format(java.util.Locale.ROOT, "%.1f", amount))
+                HudCueType.DAMAGE,
+                Component.translatable("bassshakertelemetry.cue.damage", String.format(java.util.Locale.ROOT, "%.1f", amount)),
+                cuePos
         );
 
         // Simple de-dupe in case multiple hooks fire in quick succession.

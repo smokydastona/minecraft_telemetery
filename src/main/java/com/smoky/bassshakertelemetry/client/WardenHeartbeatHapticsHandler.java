@@ -83,7 +83,11 @@ public final class WardenHeartbeatHapticsHandler {
 
         if (cfg.accessibilityHudEnabled && cfg.accessibilityHudCuesEnabled
                 && HudCueManager.get().canFire(HudCueType.WARDEN_HEARTBEAT, 650)) {
-            HudCueManager.get().push(HudCueType.WARDEN_HEARTBEAT, Component.translatable("bassshakertelemetry.cue.warden_heartbeat"));
+            HudCueManager.get().push(
+                    HudCueType.WARDEN_HEARTBEAT,
+                    Component.translatable("bassshakertelemetry.cue.warden_heartbeat"),
+                    new Vec3(sound.getX(), sound.getY(), sound.getZ())
+            );
         }
 
         // De-dupe in case the sound system dispatches multiple instances very close together.
