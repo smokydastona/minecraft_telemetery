@@ -37,6 +37,10 @@ public final class AudioOutputEngine {
 
     private static final DspNodeFactory DSP_FACTORY = new DspNodeFactory();
 
+    // Stereo spatial feel tuning.
+    // <1 widens (more L/R at mid angles), >1 narrows.
+    private static final double STEREO_SPATIAL_PAN_GAMMA = 0.75;
+
         // 48kHz PCM output.
     private static final float SAMPLE_RATE = 48_000f;
     private static final int BYTES_PER_SAMPLE = 2; // 16-bit
@@ -512,13 +516,15 @@ public final class AudioOutputEngine {
         String dk = (debugKey == null) ? "" : debugKey.trim();
         HapticBus bus = busForDebugKey(dk);
 
+        String directionBand = HapticEventContext.currentDirectionBand();
+        boolean spatialDesired = directionBand != null && !"center".equals(directionBand);
         double azimuthDeg = HapticEventContext.currentAzimuthDeg();
         double distanceM = HapticEventContext.currentDistanceMeters();
 
         int forcedMask = forcedMaskFromDebugKey(dk);
         recordDebugEvent(dk, bus, f0, f1, ms, g, pri, delayMs, forcedMask, azimuthDeg, distanceM);
 
-        enqueueImpulseVoice(f0, f1, samples, g, n, pat, pulsePeriodSamples, pulseWidthSamples, pri, delaySamples, dk, bus, "", null, null, azimuthDeg, distanceM);
+        enqueueImpulseVoice(f0, f1, samples, g, n, pat, pulsePeriodSamples, pulseWidthSamples, pri, delaySamples, dk, bus, "", null, null, azimuthDeg, distanceM, spatialDesired);
 
         if (BstConfig.get().webSocketEnabled && BstConfig.get().webSocketSendHapticEvents) {
             TelemetryOut.emitHaptic(dk, f0, f1, ms, g, n, pat, pulsePeriodMs, pulseWidthMs, pri, delayMs);
@@ -579,13 +585,14 @@ public final class AudioOutputEngine {
         ctx.directionBand = HapticEventContext.currentDirectionBand();
         DspGraphInstance graph = inst.graph.instantiate(DSP_FACTORY);
 
+        boolean spatialDesired = ctx.directionBand != null && !"center".equals(ctx.directionBand);
         double azimuthDeg = HapticEventContext.currentAzimuthDeg();
         double distanceM = HapticEventContext.currentDistanceMeters();
 
         int forcedMask = forcedMaskFromDebugKey(dk);
         recordDebugEvent(dk, bus, f0, f1, ms, g, pri, delayMs, forcedMask, azimuthDeg, distanceM);
 
-        enqueueImpulseVoice(f0, f1, samples, g, 0.0, pat, pulsePeriodSamples, pulseWidthSamples, pri, delaySamples, dk, bus, instId, graph, ctx, azimuthDeg, distanceM);
+        enqueueImpulseVoice(f0, f1, samples, g, 0.0, pat, pulsePeriodSamples, pulseWidthSamples, pri, delaySamples, dk, bus, instId, graph, ctx, azimuthDeg, distanceM, spatialDesired);
 
         if (BstConfig.get().webSocketEnabled && BstConfig.get().webSocketSendHapticEvents) {
             // Legacy haptic packet format doesn't include instrument id yet; emit with noiseMix=0.
@@ -612,7 +619,8 @@ public final class AudioOutputEngine {
                                      DspGraphInstance dspGraph,
                                      DspContext dspContext,
                                      double azimuthDeg,
-                                     double distanceM) {
+                                     double distanceM,
+                                     boolean spatialDesired) {
         synchronized (impulseLock) {
             String dk = (debugKey == null) ? "" : debugKey;
             String inst = (instrumentId == null) ? "" : instrumentId;
@@ -648,6 +656,10 @@ public final class AudioOutputEngine {
                     continue;
                 }
 
+                if (v.spatialDesired != spatialDesired) {
+                    continue;
+                }
+
                 // Spatial: avoid coalescing events from clearly different directions/distances.
                 if (Math.abs(v.spatialAzimuthDeg - azimuthDeg) > 12.0) {
                     continue;
@@ -668,6 +680,7 @@ public final class AudioOutputEngine {
                     v.dspContext.resize(v.totalSamples);
                 }
                 // Refresh spatial gains (config may have changed).
+                v.spatialDesired = spatialDesired;
                 initVoiceSpatial(v, BstConfig.get(), azimuthDeg, distanceM);
                 return;
             }
@@ -694,6 +707,7 @@ public final class AudioOutputEngine {
             voice.dspGraph = dspGraph;
             voice.dspContext = dspContext;
             voice.forcedMask = forcedMask;
+            voice.spatialDesired = spatialDesired;
             initVoiceSpatial(voice, BstConfig.get(), azimuthDeg, distanceM);
             impulses.add(voice);
 
@@ -1769,7 +1783,7 @@ public final class AudioOutputEngine {
         v.spatialAzimuthDeg = az;
         v.spatialDistanceM = dist;
 
-        boolean spatialEnabled = cfg != null && cfg.soundScapeEnabled && cfg.soundScapeSpatialEnabled;
+        boolean spatialEnabled = cfg != null && cfg.soundScapeSpatialEnabled && (cfg.soundScapeEnabled || v.spatialDesired);
         v.spatialEnabled = spatialEnabled;
 
         // Reset cached masked gains whenever base changes.
@@ -1788,8 +1802,17 @@ public final class AudioOutputEngine {
         curve = clamp(curve, 0.25, 1.0);
         float distMul = (float) (1.0 + ((curve - 1.0) * strength));
 
-        // Stereo (fallback): equal-power left/right pan using azimuth.
-        double pan = clamp(az / 90.0, -1.0, 1.0); // -1 left .. +1 right
+        // Stereo: equal-power left/right pan using azimuth.
+        // Use sin(az) so rear quadrants don't clamp to hard-left/hard-right.
+        // Then apply a gentle shaping curve for stronger directional feel.
+        double pan = Math.sin(Math.toRadians(az)); // -1 left .. +1 right
+        pan = clamp(pan, -1.0, 1.0);
+        double g = STEREO_SPATIAL_PAN_GAMMA;
+        if (!Double.isFinite(g) || g <= 0.01) {
+            g = 1.0;
+        }
+        double ap = Math.abs(pan);
+        pan = Math.copySign(Math.pow(ap, g), pan);
         double theta = (pan + 1.0) * (Math.PI / 4.0);
         v.basePan2L = (float) (Math.cos(theta) * distMul);
         v.basePan2R = (float) (Math.sin(theta) * distMul);
@@ -2244,6 +2267,8 @@ public final class AudioOutputEngine {
         long createdNanos;
 
         // --- Phase 3: Spatial panning ---
+        /** True when the caller provided a non-center direction hint for this voice. */
+        boolean spatialDesired;
         boolean spatialEnabled;
         double spatialAzimuthDeg;
         double spatialDistanceM;

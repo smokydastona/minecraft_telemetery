@@ -45,6 +45,9 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ### Changed
 - Default directional instruments (`impact_heavy`, `heartbeat_warden`, `wind_elytra`) now include a `direction` node with `band: "auto"`.
+- Directional impulses now support azimuth-based stereo panning when Spatial is enabled, even if Sound Scape routing is not enabled.
+- Encoded-mono directional encoding now blends between adjacent direction bands (smoother diagonals; less snapping).
+- Tuned stereo Spatial panning curve for a wider/stronger left-right feel.
 - Network protocol version bumped (client/server must match mod version).
 - Audio output now goes through a backend abstraction selected by `audioBackend` (Phase 1 foundation; currently only `javasound` is implemented).
 - Impulse ducking is now per-bus (see `HapticBus`); impulses are no longer globally ducked by other one-shot effects, while road texture still ducks under active events.

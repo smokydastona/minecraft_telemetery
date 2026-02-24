@@ -9,7 +9,7 @@ The mod also supports an optional **Sound Scape (7.1)** mode that routes haptic 
 ## What it does
 
 - **Tactile audio output**: 48kHz 16‑bit PCM, routed to a selectable output device.
-	- Default: stereo output (mono mix duplicated to L/R for compatibility).
+	- Default: stereo output (mono mix duplicated to L/R for compatibility; directional impulses can optionally pan L/R when Spatial is enabled).
 	- Optional: 7.1 (8ch) output in **Sound Scape** mode, with category/group routing.
 - **Priority & ducking (non-optional)**: when multiple effects overlap, one dominant vibration wins; others are ducked to keep impacts clear.
 - **Encoded-mono direction**: when a source position is known and a profile is `directional: true`, the mod selects `front/rear/left/right` encoding bands and applies:

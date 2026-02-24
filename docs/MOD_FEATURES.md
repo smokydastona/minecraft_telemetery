@@ -12,7 +12,7 @@
 
 - Sample rate: 48 kHz
 - Format:
-	- Default: 16-bit PCM stereo (mono mix duplicated to L/R)
+	- Default: 16-bit PCM stereo (mono mix duplicated to L/R; directional impulses can optionally pan L/R when Spatial is enabled)
 	- Optional: 16-bit PCM 7.1 (8-channel interleaved) when **Sound Scape** is enabled
 - Smoothing: 1-pole smoothing on continuous amplitude to avoid clicks
 - Safety: output headroom + soft limiter (tanh) to reduce clipping
@@ -63,7 +63,7 @@ Sound Scape routing:
 Spatial (Phase 3):
 
 - Advanced settings → **Spatial** provides Sound Scape spatial controls:
-	- `soundScapeSpatialEnabled`: enables true multichannel panning (azimuth-based) for impulses when Sound Scape is active.
+	- `soundScapeSpatialEnabled`: enables azimuth-based panning for directional impulses (stereo), and true multichannel panning when Sound Scape is active.
 	- `soundScapeSpatialDistanceAttenStrength`: distance attenuation strength (0..1).
 	- **Edit bus routing** opens a per-bus routing editor for `soundScapeBusRouting`.
 	- Per-channel calibration wizard for `soundScapeCalibration` (gain trim + simple single-band EQ per channel), with burst test, RMS auto-trim helper, and a per-channel comfort limit with a capture button.
@@ -207,7 +207,7 @@ This file controls per-event frequency/intensity/duration (and optional pattern/
 
 ### Encoded-mono directional encoding
 
-Some profiles can be marked `directional: true`. When a source position is known (e.g., server-relayed explosions/block breaks/hits), the mod encodes direction into the *mono* waveform using a root-level `encoding` object in the profiles JSON:
+Some profiles can be marked `directional: true`. When a source position is known (e.g., server-relayed explosions/block breaks/hits), the mod encodes direction into the *mono* waveform using a root-level `encoding` object in the profiles JSON. Diagonal directions blend between adjacent bands for smoother transitions:
 
 - `encoding.center/front/rear/left/right.frequencyBiasHz`: small Hz offset applied to the profile’s base frequency
 - `encoding.*.timeOffsetMs`: small micro-delay (ms) applied at trigger time
