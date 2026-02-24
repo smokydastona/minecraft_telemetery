@@ -30,56 +30,82 @@ public final class JavaSoundBackend implements HapticAudioBackend {
     }
 
     private SourceDataLine openLinePreferred(AudioFormat preferred, BstConfig.Data cfg) {
-        SourceDataLine line = openLineWithFormat(preferred, cfg);
+        String preferredDevice = (cfg == null) ? null : cfg.outputDeviceName;
+
+        // If a specific device is selected, treat it as authoritative:
+        // try the requested format on that device, then fall back to stereo *on that same device*.
+        if (preferredDevice != null && !preferredDevice.isBlank()) {
+            SourceDataLine line = openPreferredDeviceLineWithFormat(preferred, cfg, preferredDevice);
+            if (line != null) {
+                return line;
+            }
+
+            if (preferred.getChannels() != 2) {
+                AudioFormat stereo = stereoFormatFor(preferred);
+                LOGGER.warn("[BST] Preferred device '{}' does not support {}ch; trying stereo on preferred device", preferredDevice, preferred.getChannels());
+                line = openPreferredDeviceLineWithFormat(stereo, cfg, preferredDevice);
+                if (line != null) {
+                    return line;
+                }
+            }
+
+            // If the user explicitly picked a device but we cannot open it at all,
+            // fall back to default as a last resort so the mod still works.
+            LOGGER.warn("[BST] Unable to open preferred device '{}' - falling back to default device", preferredDevice);
+        }
+
+        // No preferred device (or it failed): use system default.
+        SourceDataLine line = openDefaultDeviceLineWithFormat(preferred, cfg);
         if (line != null) {
             return line;
         }
 
-        // Fallback: if we asked for 8ch but couldn't open, try stereo.
         if (preferred.getChannels() != 2) {
-            LOGGER.warn("[BST] Falling back to stereo output (device does not support 8-channel output)");
-            AudioFormat stereo = new AudioFormat(
-                    AudioFormat.Encoding.PCM_SIGNED,
-                    preferred.getSampleRate(),
-                    16,
-                    2,
-                    2 * 2,
-                    preferred.getSampleRate(),
-                    false
-            );
-            return openLineWithFormat(stereo, cfg);
+            AudioFormat stereo = stereoFormatFor(preferred);
+            LOGGER.warn("[BST] Falling back to stereo output on default device (could not open {}ch)", preferred.getChannels());
+            return openDefaultDeviceLineWithFormat(stereo, cfg);
         }
 
         return null;
     }
 
-    private SourceDataLine openLineWithFormat(AudioFormat format, BstConfig.Data cfg) {
+    private static AudioFormat stereoFormatFor(AudioFormat basis) {
+        return new AudioFormat(
+                AudioFormat.Encoding.PCM_SIGNED,
+                basis.getSampleRate(),
+                16,
+                2,
+                2 * 2,
+                basis.getSampleRate(),
+                false
+        );
+    }
+
+    private SourceDataLine openPreferredDeviceLineWithFormat(AudioFormat format, BstConfig.Data cfg, String preferredDeviceId) {
         DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, format);
-
-        String preferred = (cfg == null) ? null : cfg.outputDeviceName;
         int bufferMs = clampInt((cfg == null) ? 0 : cfg.javaSoundBufferMs, 0, 500);
+        int requestedBytes = requestedBufferBytes(format, bufferMs);
 
-        int frameSize = format.getFrameSize();
-        int requestedFrames = (bufferMs <= 0) ? 0 : (int) Math.round((bufferMs / 1000.0) * SAMPLE_RATE);
-        requestedFrames = clampInt(requestedFrames, 0, ((int) SAMPLE_RATE) * 2);
-        int requestedBytes = (requestedFrames <= 0) ? 0 : Math.max(frameSize, requestedFrames * frameSize);
-
-        if (preferred != null && !preferred.isBlank()) {
-            try {
-                Mixer.Info mixerInfo = AudioDeviceUtil.findMixerByName(preferred, format);
-                if (mixerInfo != null) {
-                    Mixer mixer = AudioSystem.getMixer(mixerInfo);
-                    SourceDataLine line = (SourceDataLine) mixer.getLine(lineInfo);
-                    openLine(line, format, requestedBytes);
-                    logOpenedLine(line, preferred, bufferMs, format);
-                    return line;
-                } else {
-                    LOGGER.warn("[BST] Preferred device not found or unsupported: '{}'", preferred);
-                }
-            } catch (Exception e) {
-                LOGGER.warn("[BST] Failed to open preferred audio device: '{}'", preferred, e);
+        try {
+            Mixer.Info mixerInfo = AudioDeviceUtil.findMixerByName(preferredDeviceId, format);
+            if (mixerInfo == null) {
+                return null;
             }
+            Mixer mixer = AudioSystem.getMixer(mixerInfo);
+            SourceDataLine line = (SourceDataLine) mixer.getLine(lineInfo);
+            openLine(line, format, requestedBytes);
+            logOpenedLine(line, preferredDeviceId, bufferMs, format);
+            return line;
+        } catch (Exception e) {
+            LOGGER.warn("[BST] Failed to open preferred audio device: '{}'", preferredDeviceId, e);
+            return null;
         }
+    }
+
+    private SourceDataLine openDefaultDeviceLineWithFormat(AudioFormat format, BstConfig.Data cfg) {
+        DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, format);
+        int bufferMs = clampInt((cfg == null) ? 0 : cfg.javaSoundBufferMs, 0, 500);
+        int requestedBytes = requestedBufferBytes(format, bufferMs);
 
         try {
             SourceDataLine line = (SourceDataLine) AudioSystem.getLine(lineInfo);
@@ -90,6 +116,13 @@ public final class JavaSoundBackend implements HapticAudioBackend {
             LOGGER.error("[BST] Failed to open default audio device", e);
             return null;
         }
+    }
+
+    private static int requestedBufferBytes(AudioFormat format, int bufferMs) {
+        int frameSize = format.getFrameSize();
+        int requestedFrames = (bufferMs <= 0) ? 0 : (int) Math.round((bufferMs / 1000.0) * SAMPLE_RATE);
+        requestedFrames = clampInt(requestedFrames, 0, ((int) SAMPLE_RATE) * 2);
+        return (requestedFrames <= 0) ? 0 : Math.max(frameSize, requestedFrames * frameSize);
     }
 
     private static void openLine(SourceDataLine line, AudioFormat format, int requestedBytes) throws LineUnavailableException {

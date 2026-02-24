@@ -343,6 +343,16 @@ public final class AudioOutputEngine {
     }
 
     /**
+     * Explicit stereo format for device selection UI.
+     * <p>
+     * Device selection should not be gated by whether the device supports 7.1;
+     * Sound Scape availability is checked separately.
+     */
+    public AudioFormat formatStereo() {
+        return FORMAT_STEREO;
+    }
+
+    /**
      * Explicit 7.1 format for probing device support.
      */
     public AudioFormat format7_1() {

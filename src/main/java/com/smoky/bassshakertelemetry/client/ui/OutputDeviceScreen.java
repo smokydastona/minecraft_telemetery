@@ -50,11 +50,11 @@ public final class OutputDeviceScreen extends Screen {
 
         List<String> deviceNames = new ArrayList<>();
         deviceNames.add("<Default>");
-        deviceNames.addAll(AudioDeviceUtil.listOutputDeviceNames(AudioOutputEngine.get().format()));
+        deviceNames.addAll(AudioDeviceUtil.listOutputDeviceNames(AudioOutputEngine.get().formatStereo()));
         this.devices = deviceNames;
 
         String current = BstConfig.get().outputDeviceName;
-        String currentDisplay = AudioDeviceUtil.resolveDisplayName(current, AudioOutputEngine.get().format());
+        String currentDisplay = AudioDeviceUtil.resolveDisplayName(current, AudioOutputEngine.get().formatStereo());
         if (!this.devices.contains(currentDisplay)) currentDisplay = "<Default>";
         this.selectedDevice = currentDisplay;
 

@@ -49,6 +49,10 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Impulse ducking is now per-bus (see `HapticBus`); impulses are no longer globally ducked by other one-shot effects, while road texture still ducks under active events.
 - Spatial debugger now shows per-channel meters, waveform, low-frequency spectrogram, recent event timeline, and a buffer/queued latency estimate.
 
+### Fixed
+- Output device selection now stays on the selected device when 7.1 (8ch) output can’t be opened (falls back to stereo on the same device instead of silently switching to the system default).
+- Output device selection UI is no longer gated by 7.1 support (devices won’t revert to `<Default>` just because Sound Scape is enabled).
+
 ## [0.1.23] - 2026-02-16
 
 ### Added

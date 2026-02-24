@@ -46,11 +46,11 @@ public final class TelemetryConfigScreen extends Screen {
 
         List<String> deviceList = new ArrayList<>();
         deviceList.add("<Default>");
-        deviceList.addAll(AudioDeviceUtil.listOutputDeviceNames(AudioOutputEngine.get().format()));
+        deviceList.addAll(AudioDeviceUtil.listOutputDeviceNames(AudioOutputEngine.get().formatStereo()));
         this.devices = deviceList;
 
         String current = BstConfig.get().outputDeviceName;
-        String currentDisplay = AudioDeviceUtil.resolveDisplayName(current, AudioOutputEngine.get().format());
+        String currentDisplay = AudioDeviceUtil.resolveDisplayName(current, AudioOutputEngine.get().formatStereo());
         if (!this.devices.contains(currentDisplay)) currentDisplay = "<Default>";
         this.selectedDevice = currentDisplay;
 
