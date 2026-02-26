@@ -1,0 +1,28 @@
+{
+  "background": "#05070A",
+  "panel": "#0B1018",
+  "primary": "#00E0FF",
+  "primary_hover": "#33ECFF",
+  "primary_pressed": "#00B0CC",
+  "accent": "#FF8800",
+  "danger": "#FF3355",
+
+  "radius": 4,
+  "padding": 6,
+
+  "slider": {
+    "track": "#202633",
+    "fill": "#00E0FF"
+  },
+
+  "toggle": {
+    "on": "#00E0FF",
+    "off": "#3A3F4D"
+  },
+
+  "cycle": {
+    "arrow_left": "bassshakertelemetry:textures/gui/neon/arrow_left.png",
+    "arrow_right": "bassshakertelemetry:textures/gui/neon/arrow_right.png",
+    "arrow_size": 12
+  }
+}

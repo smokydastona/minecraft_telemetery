@@ -1,0 +1,12 @@
+{
+  "brightness": {
+    "idle": 1.0,
+    "hover": 1.15,
+    "pressed": 0.9
+  },
+  "timing": {
+    "hover_speed": 0.25,
+    "press_speed": 0.18,
+    "idle_speed": 0.2
+  }
+}

@@ -2,9 +2,13 @@ package com.smoky.bassshakertelemetry.client.ui;
 
 import com.smoky.bassshakertelemetry.audio.AudioDeviceUtil;
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonButton;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonCycleButton;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonVolumeSlider;
 import com.smoky.bassshakertelemetry.config.BstConfig;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -20,13 +24,20 @@ public final class TelemetryConfigScreen extends Screen {
     private List<String> devices = List.of("<Default>");
     private String selectedDevice = "<Default>";
 
-    private CycleButton<Boolean> damageToggle;
-    private CycleButton<Boolean> biomeToggle;
-    private CycleButton<Boolean> roadToggle;
-    private CycleButton<Boolean> soundToggle;
-    private CycleButton<Boolean> gameplayToggle;
-    private CycleButton<Boolean> accessibilityHudToggle;
-    private VolumeSlider volumeSlider;
+    private boolean damageEnabled;
+    private boolean biomeEnabled;
+    private boolean roadEnabled;
+    private boolean soundEnabled;
+    private boolean gameplayEnabled;
+    private boolean accessibilityHudEnabled;
+
+    private NeonCycleButton<Boolean> damageToggle;
+    private NeonCycleButton<Boolean> biomeToggle;
+    private NeonCycleButton<Boolean> roadToggle;
+    private NeonCycleButton<Boolean> soundToggle;
+    private NeonCycleButton<Boolean> gameplayToggle;
+    private NeonCycleButton<Boolean> accessibilityHudToggle;
+    private NeonVolumeSlider volumeSlider;
 
     public TelemetryConfigScreen(Screen parent) {
         super(Component.translatable("bassshakertelemetry.config.title"));
@@ -37,6 +48,7 @@ public final class TelemetryConfigScreen extends Screen {
     @SuppressWarnings("null")
     protected void init() {
         super.init();
+        NeonStyle.initClient();
         int centerX = this.width / 2;
         var font = Objects.requireNonNull(this.font, "font");
 
@@ -55,6 +67,13 @@ public final class TelemetryConfigScreen extends Screen {
         if (!this.devices.contains(currentDisplay)) currentDisplay = "<Default>";
         this.selectedDevice = currentDisplay;
 
+        damageEnabled = BstConfig.get().damageBurstEnabled;
+        biomeEnabled = BstConfig.get().biomeChimeEnabled;
+        roadEnabled = BstConfig.get().roadTextureEnabled;
+        soundEnabled = BstConfig.get().soundHapticsEnabled;
+        gameplayEnabled = BstConfig.get().gameplayHapticsEnabled;
+        accessibilityHudEnabled = BstConfig.get().accessibilityHudEnabled;
+
         this.addRenderableWidget(new StringWidget(
             centerX - 100,
             20,
@@ -64,44 +83,62 @@ public final class TelemetryConfigScreen extends Screen {
             font
         ));
 
-        outputDeviceButton = Button.builder(deviceButtonLabel(), b -> {
+        outputDeviceButton = new NeonButton(
+                leftX,
+                50,
+                contentWidth,
+                rowH,
+                deviceButtonLabel(),
+                () -> {
                     if (this.minecraft != null) {
                         this.minecraft.setScreen(new OutputDeviceScreen(this));
                     }
-                })
-            .bounds(leftX, 50, contentWidth, rowH)
-            .build();
+                }
+        );
 
         this.addRenderableWidget(outputDeviceButton);
 
         int y = 50 + rowH + rowGap;
 
-        volumeSlider = new VolumeSlider(leftX, y, contentWidth, rowH, BstConfig.get().masterVolume);
+        volumeSlider = new NeonVolumeSlider(
+            leftX,
+            y,
+            contentWidth,
+            rowH,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.master_volume")),
+            BstConfig.get().masterVolume
+        );
         this.addRenderableWidget(volumeSlider);
 
         y += rowH + rowGap;
 
-        this.addRenderableWidget(Button.builder(
-                        Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.advanced")),
-                        b -> {
-                            if (this.minecraft != null) {
-                                this.minecraft.setScreen(new AdvancedSettingsScreen(this));
-                            }
-                        })
-                .bounds(leftX, y, contentWidth, rowH)
-                .build());
+        this.addRenderableWidget(new NeonButton(
+                leftX,
+                y,
+                contentWidth,
+                rowH,
+                Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.advanced")),
+                () -> {
+                    if (this.minecraft != null) {
+                        this.minecraft.setScreen(new AdvancedSettingsScreen(this));
+                    }
+                }
+        ));
 
         y += rowH + rowGap;
 
-        this.addRenderableWidget(Button.builder(
-                        Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.open")),
-                        b -> {
-                            if (this.minecraft != null) {
-                                this.minecraft.setScreen(new SoundScapeConfigScreen(this));
-                            }
-                        })
-                .bounds(leftX, y, contentWidth, rowH)
-                .build());
+        this.addRenderableWidget(new NeonButton(
+                leftX,
+                y,
+                contentWidth,
+                rowH,
+                Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.open")),
+                () -> {
+                    if (this.minecraft != null) {
+                        this.minecraft.setScreen(new SoundScapeConfigScreen(this));
+                    }
+                }
+        ));
 
         y += rowH + rowGap;
 
@@ -110,50 +147,131 @@ public final class TelemetryConfigScreen extends Screen {
         int colLeftX = leftX;
         int colRightX = leftX + colWidth + colGap;
 
-        damageToggle = CycleButton.onOffBuilder(BstConfig.get().damageBurstEnabled)
-            .create(colLeftX, y, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.damage_enabled")));
+        damageToggle = new NeonCycleButton<>(
+            colLeftX,
+            y,
+            colWidth,
+            rowH,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.damage_enabled")),
+            List.of(Boolean.TRUE, Boolean.FALSE),
+            damageEnabled,
+            v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
+            v -> damageEnabled = v
+        );
         this.addRenderableWidget(damageToggle);
 
-        biomeToggle = CycleButton.onOffBuilder(BstConfig.get().biomeChimeEnabled)
-            .create(colRightX, y, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.biome_enabled")));
+        biomeToggle = new NeonCycleButton<>(
+            colRightX,
+            y,
+            colWidth,
+            rowH,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.biome_enabled")),
+            List.of(Boolean.TRUE, Boolean.FALSE),
+            biomeEnabled,
+            v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
+            v -> biomeEnabled = v
+        );
         this.addRenderableWidget(biomeToggle);
 
-        roadToggle = CycleButton.onOffBuilder(BstConfig.get().roadTextureEnabled)
-            .create(colLeftX, y + rowH + rowGap, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.road_enabled")));
+        roadToggle = new NeonCycleButton<>(
+            colLeftX,
+            y + rowH + rowGap,
+            colWidth,
+            rowH,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.road_enabled")),
+            List.of(Boolean.TRUE, Boolean.FALSE),
+            roadEnabled,
+            v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
+            v -> roadEnabled = v
+        );
         this.addRenderableWidget(roadToggle);
 
         y += rowH + rowGap;
-        soundToggle = CycleButton.onOffBuilder(BstConfig.get().soundHapticsEnabled)
-            .create(colRightX, y, colWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.sound_enabled")));
+        soundToggle = new NeonCycleButton<>(
+            colRightX,
+            y,
+            colWidth,
+            rowH,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.sound_enabled")),
+            List.of(Boolean.TRUE, Boolean.FALSE),
+            soundEnabled,
+            v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
+            v -> soundEnabled = v
+        );
         this.addRenderableWidget(soundToggle);
 
-        gameplayToggle = CycleButton.onOffBuilder(BstConfig.get().gameplayHapticsEnabled)
-            .create(leftX, y + rowH + rowGap, contentWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.gameplay_enabled")));
+        gameplayToggle = new NeonCycleButton<>(
+            leftX,
+            y + rowH + rowGap,
+            contentWidth,
+            rowH,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.gameplay_enabled")),
+            List.of(Boolean.TRUE, Boolean.FALSE),
+            gameplayEnabled,
+            v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
+            v -> gameplayEnabled = v
+        );
         this.addRenderableWidget(gameplayToggle);
 
-        accessibilityHudToggle = CycleButton.onOffBuilder(BstConfig.get().accessibilityHudEnabled)
-            .create(leftX, y + ((rowH + rowGap) * 2), contentWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.accessibility_hud")));
+        accessibilityHudToggle = new NeonCycleButton<>(
+            leftX,
+            y + ((rowH + rowGap) * 2),
+            contentWidth,
+            rowH,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.accessibility_hud")),
+            List.of(Boolean.TRUE, Boolean.FALSE),
+            accessibilityHudEnabled,
+            v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
+            v -> accessibilityHudEnabled = v
+        );
         this.addRenderableWidget(accessibilityHudToggle);
 
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), b -> onDone())
-                .bounds(leftX, this.height - 28, (contentWidth - 10) / 2, 20)
-                .build());
+        this.addRenderableWidget(new NeonButton(
+            leftX,
+            this.height - 52,
+            contentWidth,
+            20,
+            Component.literal("Reload UI bundle"),
+            () -> {
+                boolean ok = NeonStyle.reloadFromDiskBundleIfPresent();
+                if (this.minecraft != null && this.minecraft.player != null) {
+                    this.minecraft.player.displayClientMessage(
+                        Component.literal(ok ? "UI bundle reloaded" : "UI bundle not found"),
+                        true
+                    );
+                }
+            }
+        ));
 
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), b -> onCancel())
-                .bounds(leftX + ((contentWidth - 10) / 2) + 10, this.height - 28, (contentWidth - 10) / 2, 20)
-                .build());
+        this.addRenderableWidget(new NeonButton(
+            leftX,
+            this.height - 28,
+            (contentWidth - 10) / 2,
+            20,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")),
+            this::onDone
+        ));
+
+        this.addRenderableWidget(new NeonButton(
+            leftX + ((contentWidth - 10) / 2) + 10,
+            this.height - 28,
+            (contentWidth - 10) / 2,
+            20,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")),
+            this::onCancel
+        ));
     }
 
     private void onDone() {
         BstConfig.Data data = BstConfig.get();
         data.outputDeviceName = "<Default>".equals(selectedDevice) ? "" : selectedDevice;
         data.masterVolume = volumeSlider.getValue();
-        data.damageBurstEnabled = damageToggle.getValue();
-        data.biomeChimeEnabled = biomeToggle.getValue();
-        data.roadTextureEnabled = roadToggle.getValue();
-        data.soundHapticsEnabled = soundToggle.getValue();
-        data.gameplayHapticsEnabled = gameplayToggle.getValue();
-        data.accessibilityHudEnabled = accessibilityHudToggle.getValue();
+        data.damageBurstEnabled = damageEnabled;
+        data.biomeChimeEnabled = biomeEnabled;
+        data.roadTextureEnabled = roadEnabled;
+        data.soundHapticsEnabled = soundEnabled;
+        data.gameplayHapticsEnabled = gameplayEnabled;
+        data.accessibilityHudEnabled = accessibilityHudEnabled;
         BstConfig.set(data);
 
         AudioOutputEngine.get().startOrRestart();
@@ -171,6 +289,42 @@ public final class TelemetryConfigScreen extends Screen {
     @Override
     public void onClose() {
         onCancel();
+    }
+
+    @Override
+    @SuppressWarnings("null")
+    public void renderBackground(GuiGraphics guiGraphics) {
+        guiGraphics.fill(0, 0, this.width, this.height, NeonStyle.get().background);
+    }
+
+    @Override
+    @SuppressWarnings("null")
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
+
+        var font = this.font;
+        if (font == null) return;
+
+        int contentWidth = Math.min(310, this.width - 40);
+        int leftX = (this.width / 2) - (contentWidth / 2);
+        int y = this.height - 74;
+
+        guiGraphics.drawString(
+            font,
+            uiBundleStatusLabel(),
+            leftX,
+            y,
+            NeonStyle.get().textDim,
+            false
+        );
+    }
+
+    private static Component uiBundleStatusLabel() {
+        return switch (NeonStyle.getActiveBundleSource()) {
+            case DISK_OVERRIDE -> Component.literal("UI Bundle: Disk (override)");
+            case DISK_REMOTE -> Component.literal("UI Bundle: Disk (remote)");
+            case BUILT_IN -> Component.literal("UI Bundle: Built-in");
+        };
     }
 
     @SuppressWarnings("null")
@@ -192,35 +346,4 @@ public final class TelemetryConfigScreen extends Screen {
         }
     }
 
-    private static final class VolumeSlider extends net.minecraft.client.gui.components.AbstractSliderButton {
-        VolumeSlider(int x, int y, int width, int height, double initial) {
-            super(x, y, width, height, Component.empty(), clamp01(initial));
-            updateMessage();
-        }
-
-        @Override
-        @SuppressWarnings("null")
-        protected void updateMessage() {
-            int pct = (int) Math.round(value * 100.0);
-            this.setMessage(
-                    Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.master_volume"))
-                            .append(": ")
-                            .append(Objects.requireNonNull(Component.literal(pct + "%")))
-            );
-        }
-
-        @Override
-        protected void applyValue() {
-        }
-
-        double getValue() {
-            return clamp01(this.value);
-        }
-
-        private static double clamp01(double v) {
-            if (v < 0.0) return 0.0;
-            if (v > 1.0) return 1.0;
-            return v;
-        }
-    }
 }

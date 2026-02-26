@@ -1,8 +1,12 @@
 package com.smoky.bassshakertelemetry.client.ui;
 
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonButton;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonToggleButton;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.StringWidget;
@@ -72,6 +76,7 @@ public final class AdvancedSettingsScreen extends Screen {
     @SuppressWarnings("null")
     protected void init() {
         super.init();
+        NeonStyle.initClient();
 
         int centerX = this.width / 2;
         int contentWidth = Math.min(310, this.width - 40);
@@ -139,38 +144,64 @@ public final class AdvancedSettingsScreen extends Screen {
         settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.config.audio"));
 
         bufferChoiceIndex = findBufferChoiceIndex(BstConfig.get().javaSoundBufferMs);
-        bufferButton = Button.builder(Objects.requireNonNull(bufferButtonLabel()), b -> cycleBufferChoice())
-            .bounds(0, 0, contentWidth - 12, rowH)
-            .build();
+        bufferButton = new NeonButton(
+            0,
+            0,
+            contentWidth - 12,
+            rowH,
+            Objects.requireNonNull(bufferButtonLabel()),
+            this::cycleBufferChoice
+        );
         settingsList.addSettingEntry(new ButtonOnlyEntry(bufferButton));
 
         latencyTestActive = false;
         latencyTestTicks = 0;
-        latencyTestButton = Button.builder(Objects.requireNonNull(latencyButtonLabel(false)), b -> toggleLatencyTest())
-            .bounds(0, 0, contentWidth - 12, rowH)
-            .build();
+        latencyTestButton = new NeonButton(
+            0,
+            0,
+            contentWidth - 12,
+            rowH,
+            Objects.requireNonNull(latencyButtonLabel(false)),
+            this::toggleLatencyTest
+        );
         settingsList.addSettingEntry(new ButtonOnlyEntry(latencyTestButton));
 
         debugOverlayEnabled = BstConfig.get().debugOverlayEnabled;
-        debugOverlayButton = Button.builder(Objects.requireNonNull(debugOverlayLabel()), b -> toggleDebugOverlay())
-            .bounds(0, 0, contentWidth - 12, rowH)
-            .build();
+        debugOverlayButton = new NeonToggleButton(
+            0,
+            0,
+            contentWidth - 12,
+            rowH,
+            Objects.requireNonNull(debugOverlayLabel()),
+            () -> debugOverlayEnabled,
+            this::toggleDebugOverlay
+        );
         settingsList.addSettingEntry(new ButtonOnlyEntry(debugOverlayButton));
 
         demoActive = false;
         demoStep = 0;
         demoNextNanos = 0L;
-        demoButton = Button.builder(Objects.requireNonNull(demoLabel()), b -> toggleDemo())
-            .bounds(0, 0, contentWidth - 12, rowH)
-            .build();
+        demoButton = new NeonButton(
+            0,
+            0,
+            contentWidth - 12,
+            rowH,
+            Objects.requireNonNull(demoLabel()),
+            this::toggleDemo
+        );
         settingsList.addSettingEntry(new ButtonOnlyEntry(demoButton));
 
         settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.config.tone_shaping"));
 
         outputEqEnabled = BstConfig.get().outputEqEnabled;
-        outputEqButton = Button.builder(Objects.requireNonNull(outputEqLabel()), b -> toggleOutputEq())
-            .bounds(0, 0, contentWidth - 12, rowH)
-            .build();
+        outputEqButton = new NeonButton(
+            0,
+            0,
+            contentWidth - 12,
+            rowH,
+            Objects.requireNonNull(outputEqLabel()),
+            this::toggleOutputEq
+        );
         settingsList.addSettingEntry(new ButtonOnlyEntry(outputEqButton));
 
         outputEqFreqSlider = new IntSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.output_eq_freq", BstConfig.get().outputEqFreqHz, 10, 120, "Hz");
@@ -179,65 +210,122 @@ public final class AdvancedSettingsScreen extends Screen {
         settingsList.addSettingEntry(new SliderOnlyEntry(outputEqGainSlider));
 
         smartVolumeEnabled = BstConfig.get().smartVolumeEnabled;
-        smartVolumeButton = Button.builder(Objects.requireNonNull(smartVolumeLabel()), b -> toggleSmartVolume())
-            .bounds(0, 0, contentWidth - 12, rowH)
-            .build();
+        smartVolumeButton = new NeonButton(
+            0,
+            0,
+            contentWidth - 12,
+            rowH,
+            Objects.requireNonNull(smartVolumeLabel()),
+            this::toggleSmartVolume
+        );
         settingsList.addSettingEntry(new ButtonOnlyEntry(smartVolumeButton));
         smartVolumeTargetSlider = new IntSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.smart_volume_target", BstConfig.get().smartVolumeTargetPct, 10, 90, "%");
         settingsList.addSettingEntry(new SliderOnlyEntry(smartVolumeTargetSlider));
 
         settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.config.calibration"));
 
-        settingsList.addSettingEntry(new ButtonOnlyEntry(Button.builder(
+        settingsList.addSettingEntry(new ButtonOnlyEntry(new NeonButton(
+            0,
+            0,
+            contentWidth - 12,
+            rowH,
             Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_tone_30hz")),
-            b -> AudioOutputEngine.get().testCalibrationTone30Hz()
-        ).bounds(0, 0, contentWidth - 12, rowH).build()));
+            () -> AudioOutputEngine.get().testCalibrationTone30Hz()
+        )));
 
-        settingsList.addSettingEntry(new ButtonOnlyEntry(Button.builder(
+        settingsList.addSettingEntry(new ButtonOnlyEntry(new NeonButton(
+            0,
+            0,
+            contentWidth - 12,
+            rowH,
             Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_tone_60hz")),
-            b -> AudioOutputEngine.get().testCalibrationTone60Hz()
-        ).bounds(0, 0, contentWidth - 12, rowH).build()));
+            () -> AudioOutputEngine.get().testCalibrationTone60Hz()
+        )));
 
-        settingsList.addSettingEntry(new ButtonOnlyEntry(Button.builder(
+        settingsList.addSettingEntry(new ButtonOnlyEntry(new NeonButton(
+            0,
+            0,
+            contentWidth - 12,
+            rowH,
             Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_sweep_20_120hz")),
-            b -> AudioOutputEngine.get().testCalibrationSweep()
-        ).bounds(0, 0, contentWidth - 12, rowH).build()));
+            () -> AudioOutputEngine.get().testCalibrationSweep()
+        )));
 
-        settingsList.addSettingEntry(new ButtonOnlyEntry(Button.builder(
+        settingsList.addSettingEntry(new ButtonOnlyEntry(new NeonButton(
+            0,
+            0,
+            contentWidth - 12,
+            rowH,
             Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_stop")),
-            b -> AudioOutputEngine.get().stopCalibration()
-        ).bounds(0, 0, contentWidth - 12, rowH).build()));
+            () -> AudioOutputEngine.get().stopCalibration()
+        )));
 
         settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.config.spatial"));
-        settingsList.addSettingEntry(new ButtonOnlyEntry(Button.builder(
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.spatial_open")),
-            b -> {
-                if (this.minecraft != null) {
-                    this.minecraft.setScreen(new SpatialConfigScreen(this));
+        settingsList.addSettingEntry(new ButtonOnlyEntry(new NeonButton(
+                0,
+                0,
+                contentWidth - 12,
+                rowH,
+                Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.spatial_open")),
+                () -> {
+                    if (this.minecraft != null) {
+                        this.minecraft.setScreen(new SpatialConfigScreen(this));
+                    }
                 }
-            }
-        ).bounds(0, 0, contentWidth - 12, rowH).build()));
+        )));
 
         settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.config.instruments"));
-        settingsList.addSettingEntry(new ButtonOnlyEntry(Button.builder(
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.instruments_open_editor")),
-            b -> {
-                if (this.minecraft != null) {
-                    this.minecraft.setScreen(new HapticInstrumentEditorScreen(this));
+        settingsList.addSettingEntry(new ButtonOnlyEntry(new NeonButton(
+                0,
+                0,
+                contentWidth - 12,
+                rowH,
+                Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.instruments_open_editor")),
+                () -> {
+                    if (this.minecraft != null) {
+                        this.minecraft.setScreen(new HapticInstrumentEditorScreen(this));
+                    }
                 }
-            }
-        ).bounds(0, 0, contentWidth - 12, rowH).build()));
+        )));
 
         this.addRenderableWidget(settingsList);
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), b -> onDone())
-                .bounds(leftX, this.height - 28, buttonW, 20)
-                .build());
 
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), b -> onCancel())
-                .bounds(leftX + buttonW + 10, this.height - 28, buttonW, 20)
-                .build());
+        this.addRenderableWidget(new NeonButton(
+            leftX,
+            this.height - 52,
+            contentWidth,
+            20,
+            Component.literal("Reload UI bundle"),
+            () -> {
+                boolean ok = NeonStyle.reloadFromDiskBundleIfPresent();
+                if (this.minecraft != null && this.minecraft.player != null) {
+                    this.minecraft.player.displayClientMessage(
+                        Component.literal(ok ? "UI bundle reloaded" : "UI bundle not found"),
+                        true
+                    );
+                }
+            }
+        ));
+
+        this.addRenderableWidget(new NeonButton(
+            leftX,
+            this.height - 28,
+            buttonW,
+            20,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")),
+            this::onDone
+        ));
+
+        this.addRenderableWidget(new NeonButton(
+            leftX + buttonW + 10,
+            this.height - 28,
+            buttonW,
+            20,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")),
+            this::onCancel
+        ));
     }
 
     private void onDone() {
@@ -293,6 +381,42 @@ public final class AdvancedSettingsScreen extends Screen {
     @Override
     public void onClose() {
         onCancel();
+    }
+
+    @Override
+    @SuppressWarnings("null")
+    public void renderBackground(GuiGraphics guiGraphics) {
+        guiGraphics.fill(0, 0, this.width, this.height, NeonStyle.get().background);
+    }
+
+    @Override
+    @SuppressWarnings("null")
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
+
+        var font = this.font;
+        if (font == null) return;
+
+        int contentWidth = Math.min(330, this.width - 40);
+        int leftX = (this.width / 2) - (contentWidth / 2);
+        int y = this.height - 74;
+
+        guiGraphics.drawString(
+            font,
+            uiBundleStatusLabel(),
+            leftX,
+            y,
+            NeonStyle.get().textDim,
+            false
+        );
+    }
+
+    private static Component uiBundleStatusLabel() {
+        return switch (NeonStyle.getActiveBundleSource()) {
+            case DISK_OVERRIDE -> Component.literal("UI Bundle: Disk (override)");
+            case DISK_REMOTE -> Component.literal("UI Bundle: Disk (remote)");
+            case BUILT_IN -> Component.literal("UI Bundle: Built-in");
+        };
     }
 
     @Override

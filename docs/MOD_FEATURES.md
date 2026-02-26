@@ -78,6 +78,25 @@ Accessibility HUD:
 - When an event has a world position, the cue includes an 8-way arrow (←→↑↓↖↗↘↙) showing the event direction relative to your current facing; it updates live as you turn.
 - Toggle: Config screen → **Accessibility HUD**.
 
+## UI bundle (Neon skin)
+
+The mod can load its Neon UI style/tokens/assets from one of three places:
+
+- **Built-in**: bundled resources inside the JAR.
+- **Disk override**: `config/bassshakertelemetry/ui_bundle/`.
+	- If present, this always wins (useful for local edits).
+- **Disk remote (auto-updated)**: `config/bassshakertelemetry/ui_bundle_remote/`.
+	- Default behavior is to auto-update this folder in the background on startup by downloading a ZIP asset from the router repo’s GitHub Releases.
+	- The router publishes a stable release asset named `bst_neon_ui_bundle.zip`.
+
+In-game, Neon screens include a **Reload UI bundle** button to re-read style/tokens/textures from disk without restarting.
+
+Relevant config keys (saved in `config/bassshakertelemetry.json`):
+
+- `uiBundleAutoUpdateEnabled` (boolean, default `true`)
+- `uiBundleAutoUpdateRepo` (string, default `smokydastona/cm6206-dual_input_bass-shaker`)
+- `uiBundleAutoUpdateAssetName` (string, default `bst_neon_ui_bundle.zip`)
+
 ## Build / artifacts
 
 This repo is intended to produce test JARs via GitHub Actions on `git push`.

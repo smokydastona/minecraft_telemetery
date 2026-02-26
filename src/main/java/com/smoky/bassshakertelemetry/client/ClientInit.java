@@ -4,6 +4,8 @@ import com.smoky.bassshakertelemetry.client.accessibility.HudCueOverlayHandler;
 import com.smoky.bassshakertelemetry.client.accessibility.HudCueTickHandler;
 import com.smoky.bassshakertelemetry.client.integration.WebSocketTelemetryController;
 import com.smoky.bassshakertelemetry.client.ui.TelemetryConfigScreen;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
+import com.smoky.bassshakertelemetry.client.ui.neon.UiBundleAutoUpdater;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.client.ConfigScreenHandler;
@@ -21,7 +23,7 @@ public final class ClientInit {
         MinecraftForge.EVENT_BUS.register(new GameplayHapticsHandler());
         MinecraftForge.EVENT_BUS.register(new MovementHapticsHandler());
         MinecraftForge.EVENT_BUS.register(new MountedHapticsHandler());
-            MinecraftForge.EVENT_BUS.register(new WardenHeartbeatHapticsHandler());
+        MinecraftForge.EVENT_BUS.register(new WardenHeartbeatHapticsHandler());
         MinecraftForge.EVENT_BUS.register(new MiningSwingHapticsHandler());
         MinecraftForge.EVENT_BUS.register(new DebugOverlayHandler());
 
@@ -34,6 +36,9 @@ public final class ClientInit {
                 ConfigScreenHandler.ConfigScreenFactory.class,
                 () -> new ConfigScreenHandler.ConfigScreenFactory(ClientInit::createConfigScreen)
         );
+
+        UiBundleAutoUpdater.startIfEnabled();
+        NeonStyle.initClient();
     }
 
     private static Screen createConfigScreen(Minecraft minecraft, Screen parent) {

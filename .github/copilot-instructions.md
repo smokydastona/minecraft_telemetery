@@ -1,5 +1,12 @@
 # Copilot Instructions — Bass Shaker Telemetry (Forge 1.20.1)
 
+## Stack context (multi-repo workspace)
+- This mod is one part of a 3-repo “SimHub-style” stack (driver + router + Minecraft mod).
+- Workspace-level overview + cross-repo contracts live in `../../.github/copilot-instructions.md`.
+- This mod can output:
+  - **Haptics audio** to a selected Windows playback device (current/common pipeline).
+  - **Optional WebSocket JSON telemetry** (default `127.0.0.1:7117`) that the Windows router can consume to synthesize haptics in-process.
+
 ## Project identity (keep these consistent)
 - Mod id: `bassshakertelemetry`
 - Mod name: `Bass Shaker Telemetry`

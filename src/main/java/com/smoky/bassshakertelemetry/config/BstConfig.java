@@ -172,6 +172,19 @@ public final class BstConfig {
             d.webSocketPort = 7117;
         }
 
+        // --- UI bundle auto-update (client-only) ---
+        if (d.uiBundleAutoUpdateRepo == null) {
+            d.uiBundleAutoUpdateRepo = "";
+        }
+        d.uiBundleAutoUpdateRepo = d.uiBundleAutoUpdateRepo.trim();
+
+        if (d.uiBundleAutoUpdateAssetName == null) {
+            d.uiBundleAutoUpdateAssetName = "";
+        }
+        d.uiBundleAutoUpdateAssetName = d.uiBundleAutoUpdateAssetName.trim();
+
+        d.uiBundleUpdateTimeoutMs = clampInt(d.uiBundleUpdateTimeoutMs, 500, 30_000);
+
         // --- Accessibility HUD (client-only) ---
         d.accessibilityHudCueMs = clampInt(d.accessibilityHudCueMs, 250, 10_000);
         d.accessibilityHudMaxLines = clampInt(d.accessibilityHudMaxLines, 1, 10);
@@ -270,6 +283,16 @@ public final class BstConfig {
 
         // Developer tools
         public boolean debugOverlayEnabled = false;
+
+        // UI bundle auto-update (client-only)
+        // Downloads into: config/bassshakertelemetry/ui_bundle_remote/
+        // Source: GitHub Releases (latest) of the router repo.
+        public boolean uiBundleAutoUpdateEnabled = true;
+        // Format: "owner/repo". Default points at the router app's repo.
+        public String uiBundleAutoUpdateRepo = "smokydastona/cm6206-dual_input_bass-shaker";
+        // Name of the release asset to download.
+        public String uiBundleAutoUpdateAssetName = "bst_neon_ui_bundle.zip";
+        public int uiBundleUpdateTimeoutMs = 3500;
 
         // Accessibility HUD (client-only)
         public boolean accessibilityHudEnabled = false;

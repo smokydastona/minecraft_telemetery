@@ -6,6 +6,10 @@ out/
 # Local tooling cache
 .tools/
 
+# .NET tooling build artifacts (tools/)
+tools/**/bin/
+tools/**/obj/
+
 # Java
 *.class
 hs_err_pid*
