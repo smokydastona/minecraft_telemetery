@@ -1,6 +1,5 @@
 package com.smoky.bassshakertelemetry.client.ui;
 
-import com.smoky.bassshakertelemetry.audio.AudioDeviceUtil;
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.client.ui.neon.NeonButton;
 import com.smoky.bassshakertelemetry.client.ui.neon.NeonCycleButton;
@@ -11,7 +10,6 @@ import com.smoky.bassshakertelemetry.client.ui.neon.schema.NeonUiSchema;
 import com.smoky.bassshakertelemetry.client.ui.neon.schema.NeonUiSchemaLoader;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -23,20 +21,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public final class SchemaTelemetryConfigScreen extends Screen {
-    private static final String SCREEN_ID = "telemetry_config";
+public final class SchemaSpatialConfigScreen extends Screen {
+    private static final String SCREEN_ID = "spatial_config";
 
     private final Screen parent;
-
-    private Button outputDeviceButton;
-    private List<String> devices = List.of("<Default>");
-    private String selectedDevice = "<Default>";
-
     private final Map<String, Object> state = new HashMap<>();
-    private NeonRangeSlider masterVolumeSlider;
 
-    public SchemaTelemetryConfigScreen(Screen parent) {
-        super(Component.translatable("bassshakertelemetry.config.title"));
+    public SchemaSpatialConfigScreen(Screen parent) {
+        super(Component.translatable("bassshakertelemetry.spatial.title"));
         this.parent = parent;
     }
 
@@ -48,9 +40,8 @@ public final class SchemaTelemetryConfigScreen extends Screen {
 
         NeonUiSchema.ScreenSchema schema = NeonUiSchemaLoader.loadActiveScreenOrNull(SCREEN_ID);
         if (schema == null || schema.root == null) {
-            // Fallback (should be rare, because ClientInit checks before constructing this screen).
             if (this.minecraft != null) {
-                this.minecraft.setScreen(new TelemetryConfigScreen(parent));
+                this.minecraft.setScreen(new SpatialConfigScreen(parent));
             }
             return;
         }
@@ -63,22 +54,21 @@ public final class SchemaTelemetryConfigScreen extends Screen {
         int rowH = 20;
         int rowGap = 6;
 
-        loadDevices();
         loadBoundState(schema.root);
 
         this.addRenderableWidget(new StringWidget(
-                centerX - 100,
+                centerX - 140,
                 20,
-                200,
+                280,
                 20,
-                Component.translatable(Objects.requireNonNullElse(schema.titleKey, "bassshakertelemetry.config.title")),
+                Component.translatable(Objects.requireNonNullElse(schema.titleKey, "bassshakertelemetry.spatial.title")),
                 font
         ));
 
-        // Layout + widget creation from schema root.
         int contentTop = 50;
         int contentBottom = this.height - 80;
         int contentHeight = Math.max(60, contentBottom - contentTop);
+
         layout(schema.root, leftX, contentTop, contentWidth, contentHeight, rowH, rowGap);
         addWidgetsFromNode(schema.root, rowH);
 
@@ -99,35 +89,25 @@ public final class SchemaTelemetryConfigScreen extends Screen {
                 }
         ));
 
+        int buttonW = (contentWidth - 10) / 2;
+
         this.addRenderableWidget(new NeonButton(
                 leftX,
                 this.height - 28,
-                (contentWidth - 10) / 2,
+                buttonW,
                 20,
                 Component.translatable("bassshakertelemetry.config.done"),
                 this::onDone
         ));
 
         this.addRenderableWidget(new NeonButton(
-                leftX + ((contentWidth - 10) / 2) + 10,
+                leftX + buttonW + 10,
                 this.height - 28,
-                (contentWidth - 10) / 2,
+                buttonW,
                 20,
                 Component.translatable("bassshakertelemetry.config.cancel"),
                 this::onCancel
         ));
-    }
-
-    private void loadDevices() {
-        List<String> deviceList = new ArrayList<>();
-        deviceList.add("<Default>");
-        deviceList.addAll(AudioDeviceUtil.listOutputDeviceNames(AudioOutputEngine.get().formatStereo()));
-        this.devices = deviceList;
-
-        String current = BstConfig.get().outputDeviceName;
-        String currentDisplay = AudioDeviceUtil.resolveDisplayName(current, AudioOutputEngine.get().formatStereo());
-        if (!this.devices.contains(currentDisplay)) currentDisplay = "<Default>";
-        this.selectedDevice = currentDisplay;
     }
 
     private void loadBoundState(NeonUiSchema.NeonUiNode node) {
@@ -137,8 +117,8 @@ public final class SchemaTelemetryConfigScreen extends Screen {
 
     private void collectBind(NeonUiSchema.NeonUiNode node, BstConfig.Data data) {
         if (node == null) return;
+
         String bind = null;
-        if (node instanceof NeonUiSchema.ButtonNode n) bind = n.bind;
         if (node instanceof NeonUiSchema.ToggleNode n) bind = n.bind;
         if (node instanceof NeonUiSchema.SliderNode n) bind = n.bind;
         if (node instanceof NeonUiSchema.CycleNode n) bind = n.bind;
@@ -178,14 +158,6 @@ public final class SchemaTelemetryConfigScreen extends Screen {
         if (this.minecraft == null) return;
 
         switch (action) {
-            case "openOutputDevice" -> this.minecraft.setScreen(new OutputDeviceScreen(this, this::setSelectedDevice));
-            case "openAdvanced" -> {
-                if (NeonUiSchemaLoader.hasActiveScreen("advanced_settings")) {
-                    this.minecraft.setScreen(new SchemaAdvancedSettingsScreen(this));
-                } else {
-                    this.minecraft.setScreen(new AdvancedSettingsScreen(this));
-                }
-            }
             case "openSoundscape" -> {
                 if (NeonUiSchemaLoader.hasActiveScreen("soundscape_config")) {
                     this.minecraft.setScreen(new SchemaSoundscapeConfigScreen(this));
@@ -193,6 +165,9 @@ public final class SchemaTelemetryConfigScreen extends Screen {
                     this.minecraft.setScreen(new SoundScapeConfigScreen(this));
                 }
             }
+            case "openSpatialBusRouting" -> this.minecraft.setScreen(new SpatialBusRoutingScreen(this));
+            case "openSpatialCalibration" -> this.minecraft.setScreen(new SpatialCalibrationScreen(this));
+            case "openSpatialDebugger" -> this.minecraft.setScreen(new SpatialDebuggerScreen(this));
             default -> {
             }
         }
@@ -200,11 +175,7 @@ public final class SchemaTelemetryConfigScreen extends Screen {
 
     private void onDone() {
         BstConfig.Data data = BstConfig.get();
-        data.outputDeviceName = "<Default>".equals(selectedDevice) ? "" : selectedDevice;
-
-        // Write back all schema bindings (except outputDeviceName which is handled above).
-        applyAllBinds(data, "outputDeviceName");
-
+        applyAllBinds(data);
         BstConfig.set(data);
 
         AudioOutputEngine.get().startOrRestart();
@@ -213,17 +184,13 @@ public final class SchemaTelemetryConfigScreen extends Screen {
         }
     }
 
-    private void applyAllBinds(BstConfig.Data data, String skipFieldName) {
+    private void applyAllBinds(BstConfig.Data data) {
         for (var e : state.entrySet()) {
-            String fieldName = e.getKey();
-            if (fieldName == null || fieldName.isBlank()) continue;
-            if (skipFieldName != null && skipFieldName.equals(fieldName)) continue;
-            applyBindIfPresent(data, fieldName);
+            applyBindIfPresent(data, e.getKey(), e.getValue());
         }
     }
 
-    private void applyBindIfPresent(BstConfig.Data data, String fieldName) {
-        Object v = state.get(fieldName);
+    private static void applyBindIfPresent(BstConfig.Data data, String fieldName, Object v) {
         if (v == null) return;
         try {
             Field f = BstConfig.Data.class.getField(fieldName);
@@ -368,27 +335,14 @@ public final class SchemaTelemetryConfigScreen extends Screen {
 
         if (node instanceof NeonUiSchema.ButtonNode n) {
             Component msg = resolveText(n.textKey, n.text);
-            // Special-case: output device button shows selected device.
-            if ("openOutputDevice".equals(n.action)) {
-                outputDeviceButton = new NeonButton(
-                        node.computedX,
-                        node.computedY,
-                        node.computedWidth,
-                        rowH,
-                        deviceButtonLabel(),
-                        () -> handleAction(n.action)
-                );
-                this.addRenderableWidget(outputDeviceButton);
-            } else {
-                this.addRenderableWidget(new NeonButton(
-                        node.computedX,
-                        node.computedY,
-                        node.computedWidth,
-                        rowH,
-                        msg,
-                        () -> handleAction(n.action)
-                ));
-            }
+            this.addRenderableWidget(new NeonButton(
+                    node.computedX,
+                    node.computedY,
+                    node.computedWidth,
+                    rowH,
+                    msg,
+                    () -> handleAction(n.action)
+            ));
             return;
         }
 
@@ -417,7 +371,7 @@ public final class SchemaTelemetryConfigScreen extends Screen {
             double initial = readDoubleBind(bind, BstConfig.get(), (n.value == null ? 0.0 : n.value));
             String fmt = n.format;
 
-            NeonRangeSlider slider = new NeonRangeSlider(
+            this.addRenderableWidget(new NeonRangeSlider(
                     node.computedX,
                     node.computedY,
                     node.computedWidth,
@@ -429,11 +383,7 @@ public final class SchemaTelemetryConfigScreen extends Screen {
                     fmt,
                     () -> state.get(bind) instanceof Number num ? num.doubleValue() : initial,
                     v -> state.put(bind, v)
-            );
-            if ("masterVolume".equals(bind)) {
-                masterVolumeSlider = slider;
-            }
-            this.addRenderableWidget(slider);
+            ));
             return;
         }
 
@@ -515,23 +465,5 @@ public final class SchemaTelemetryConfigScreen extends Screen {
             case DISK_REMOTE -> Component.literal("UI Bundle: Disk (remote)");
             case BUILT_IN -> Component.literal("UI Bundle: Built-in");
         };
-    }
-
-    private Component deviceButtonLabel() {
-        return Component.translatable("bassshakertelemetry.config.output_device")
-                .append(": ")
-                .append(Component.literal(Objects.requireNonNull(selectedDevice)));
-    }
-
-    void setSelectedDevice(String displayDeviceId) {
-        String v = Objects.requireNonNullElse(displayDeviceId, "<Default>");
-        if (!devices.contains(v)) {
-            v = "<Default>";
-        }
-        this.selectedDevice = v;
-
-        if (outputDeviceButton != null) {
-            outputDeviceButton.setMessage(deviceButtonLabel());
-        }
     }
 }

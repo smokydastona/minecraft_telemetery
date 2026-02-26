@@ -120,7 +120,11 @@ public final class TelemetryConfigScreen extends Screen {
                 Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.advanced")),
                 () -> {
                     if (this.minecraft != null) {
-                        this.minecraft.setScreen(new AdvancedSettingsScreen(this));
+                        if (com.smoky.bassshakertelemetry.client.ui.neon.schema.NeonUiSchemaLoader.hasActiveScreen("advanced_settings")) {
+                            this.minecraft.setScreen(new SchemaAdvancedSettingsScreen(this));
+                        } else {
+                            this.minecraft.setScreen(new AdvancedSettingsScreen(this));
+                        }
                     }
                 }
         ));

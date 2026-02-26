@@ -3,80 +3,381 @@
   "screens": {
     "telemetry_config": {
       "titleKey": "bassshakertelemetry.config.title",
-      "rows": [
-        {
-          "type": "device_button",
-          "id": "outputDevice",
-          "textKey": "bassshakertelemetry.config.output_device",
-          "action": "openOutputDevice"
-        },
-        {
-          "type": "slider",
-          "id": "masterVolume",
-          "textKey": "bassshakertelemetry.config.master_volume",
-          "bind": "masterVolume"
-        },
-        {
-          "type": "button",
-          "id": "advanced",
-          "textKey": "bassshakertelemetry.config.advanced",
-          "action": "openAdvanced"
-        },
-        {
-          "type": "button",
-          "id": "soundscape",
-          "textKey": "bassshakertelemetry.soundscape.open",
-          "action": "openSoundscape"
-        },
-        {
-          "type": "hstack",
-          "gap": 10,
-          "children": [
-            {
-              "type": "toggle",
-              "id": "damage",
-              "textKey": "bassshakertelemetry.config.damage_enabled",
-              "bind": "damageBurstEnabled"
-            },
-            {
-              "type": "toggle",
-              "id": "biome",
-              "textKey": "bassshakertelemetry.config.biome_enabled",
-              "bind": "biomeChimeEnabled"
-            }
-          ]
-        },
-        {
-          "type": "hstack",
-          "gap": 10,
-          "children": [
-            {
-              "type": "toggle",
-              "id": "road",
-              "textKey": "bassshakertelemetry.config.road_enabled",
-              "bind": "roadTextureEnabled"
-            },
-            {
-              "type": "toggle",
-              "id": "sound",
-              "textKey": "bassshakertelemetry.config.sound_enabled",
-              "bind": "soundHapticsEnabled"
-            }
-          ]
-        },
-        {
-          "type": "toggle",
-          "id": "gameplay",
-          "textKey": "bassshakertelemetry.config.gameplay_enabled",
-          "bind": "gameplayHapticsEnabled"
-        },
-        {
-          "type": "toggle",
-          "id": "accessibilityHud",
-          "textKey": "bassshakertelemetry.config.accessibility_hud",
-          "bind": "accessibilityHudEnabled"
-        }
-      ]
+      "root": {
+        "type": "panel",
+        "layout": "vertical",
+        "padding": 0,
+        "spacing": 6,
+        "children": [
+          {
+            "type": "button",
+            "id": "outputDevice",
+            "textKey": "bassshakertelemetry.config.output_device",
+            "action": "openOutputDevice",
+            "bind": "outputDeviceName"
+          },
+          {
+            "type": "slider",
+            "id": "masterVolume",
+            "textKey": "bassshakertelemetry.config.master_volume",
+            "bind": "masterVolume",
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.01,
+            "format": "percent"
+          },
+          {
+            "type": "button",
+            "id": "advanced",
+            "textKey": "bassshakertelemetry.config.advanced",
+            "action": "openAdvanced"
+          },
+          {
+            "type": "button",
+            "id": "soundscape",
+            "textKey": "bassshakertelemetry.soundscape.open",
+            "action": "openSoundscape"
+          },
+          {
+            "type": "panel",
+            "layout": "horizontal",
+            "spacing": 10,
+            "children": [
+              {
+                "type": "toggle",
+                "id": "damage",
+                "textKey": "bassshakertelemetry.config.damage_enabled",
+                "bind": "damageBurstEnabled"
+              },
+              {
+                "type": "toggle",
+                "id": "biome",
+                "textKey": "bassshakertelemetry.config.biome_enabled",
+                "bind": "biomeChimeEnabled"
+              }
+            ]
+          },
+          {
+            "type": "panel",
+            "layout": "horizontal",
+            "spacing": 10,
+            "children": [
+              {
+                "type": "toggle",
+                "id": "road",
+                "textKey": "bassshakertelemetry.config.road_enabled",
+                "bind": "roadTextureEnabled"
+              },
+              {
+                "type": "toggle",
+                "id": "sound",
+                "textKey": "bassshakertelemetry.config.sound_enabled",
+                "bind": "soundHapticsEnabled"
+              }
+            ]
+          },
+          {
+            "type": "toggle",
+            "id": "gameplay",
+            "textKey": "bassshakertelemetry.config.gameplay_enabled",
+            "bind": "gameplayHapticsEnabled"
+          },
+          {
+            "type": "toggle",
+            "id": "accessibilityHud",
+            "textKey": "bassshakertelemetry.config.accessibility_hud",
+            "bind": "accessibilityHudEnabled"
+          }
+        ]
+      }
+    },
+    "advanced_settings": {
+      "titleKey": "bassshakertelemetry.config.advanced_title",
+      "root": {
+        "type": "panel",
+        "layout": "vertical",
+        "padding": 0,
+        "spacing": 6,
+        "children": [
+          { "type": "label", "textKey": "bassshakertelemetry.config.effect_volumes" },
+
+          {
+            "type": "panel",
+            "layout": "horizontal",
+            "spacing": 6,
+            "children": [
+              { "type": "slider", "id": "roadGain", "textKey": "bassshakertelemetry.config.road_gain", "bind": "roadTextureGain", "min": 0.0, "max": 0.5, "step": 0.01, "format": "percentRange" },
+              { "type": "button", "id": "roadTest", "textKey": "bassshakertelemetry.config.test", "action": "testRoadTexture", "width": 64 }
+            ]
+          },
+          {
+            "type": "panel",
+            "layout": "horizontal",
+            "spacing": 6,
+            "children": [
+              { "type": "slider", "id": "damageGain", "textKey": "bassshakertelemetry.config.damage_gain", "bind": "damageBurstGain", "min": 0.0, "max": 1.0, "step": 0.01, "format": "percentRange" },
+              { "type": "button", "id": "damageTest", "textKey": "bassshakertelemetry.config.test", "action": "testDamageBurst", "width": 64 }
+            ]
+          },
+          {
+            "type": "panel",
+            "layout": "horizontal",
+            "spacing": 6,
+            "children": [
+              { "type": "slider", "id": "biomeGain", "textKey": "bassshakertelemetry.config.biome_gain", "bind": "biomeChimeGain", "min": 0.0, "max": 1.0, "step": 0.01, "format": "percentRange" },
+              { "type": "button", "id": "biomeTest", "textKey": "bassshakertelemetry.config.test", "action": "testBiomeChime", "width": 64 }
+            ]
+          },
+          {
+            "type": "panel",
+            "layout": "horizontal",
+            "spacing": 6,
+            "children": [
+              { "type": "slider", "id": "accelGain", "textKey": "bassshakertelemetry.config.accel_gain", "bind": "accelBumpGain", "min": 0.0, "max": 1.0, "step": 0.01, "format": "percentRange" },
+              { "type": "button", "id": "accelTest", "textKey": "bassshakertelemetry.config.test", "action": "testAccelBump", "width": 64 }
+            ]
+          },
+          {
+            "type": "panel",
+            "layout": "horizontal",
+            "spacing": 6,
+            "children": [
+              { "type": "slider", "id": "soundGain", "textKey": "bassshakertelemetry.config.sound_gain", "bind": "soundHapticsGain", "min": 0.0, "max": 2.0, "step": 0.01, "format": "percentRange" },
+              { "type": "button", "id": "soundTest", "textKey": "bassshakertelemetry.config.test", "action": "testSoundHaptics", "width": 64 }
+            ]
+          },
+          {
+            "type": "panel",
+            "layout": "horizontal",
+            "spacing": 6,
+            "children": [
+              { "type": "slider", "id": "gameplayGain", "textKey": "bassshakertelemetry.config.gameplay_gain", "bind": "gameplayHapticsGain", "min": 0.0, "max": 2.0, "step": 0.01, "format": "percentRange" },
+              { "type": "button", "id": "gameplayTest", "textKey": "bassshakertelemetry.config.test", "action": "testGameplayHaptics", "width": 64 }
+            ]
+          },
+          {
+            "type": "panel",
+            "layout": "horizontal",
+            "spacing": 6,
+            "children": [
+              { "type": "slider", "id": "footstepGain", "textKey": "bassshakertelemetry.config.footstep_gain", "bind": "footstepHapticsGain", "min": 0.0, "max": 1.0, "step": 0.01, "format": "percentRange" },
+              { "type": "button", "id": "footstepTest", "textKey": "bassshakertelemetry.config.test", "action": "testFootsteps", "width": 64 }
+            ]
+          },
+          {
+            "type": "panel",
+            "layout": "horizontal",
+            "spacing": 6,
+            "children": [
+              { "type": "slider", "id": "mountedGain", "textKey": "bassshakertelemetry.config.mounted_gain", "bind": "mountedHapticsGain", "min": 0.0, "max": 1.0, "step": 0.01, "format": "percentRange" },
+              { "type": "button", "id": "mountedTest", "textKey": "bassshakertelemetry.config.test", "action": "testMountedHooves", "width": 64 }
+            ]
+          },
+          {
+            "type": "panel",
+            "layout": "horizontal",
+            "spacing": 6,
+            "children": [
+              { "type": "slider", "id": "miningSwingGain", "textKey": "bassshakertelemetry.config.mining_swing_gain", "bind": "miningSwingHapticsGain", "min": 0.0, "max": 1.0, "step": 0.01, "format": "percentRange" },
+              { "type": "button", "id": "miningSwingTest", "textKey": "bassshakertelemetry.config.test", "action": "testMiningSwing", "width": 64 }
+            ]
+          },
+
+          { "type": "label", "textKey": "bassshakertelemetry.config.timing" },
+          { "type": "slider", "id": "damageMs", "textKey": "bassshakertelemetry.config.damage_ms", "bind": "damageBurstMs", "min": 20, "max": 250, "step": 1, "format": "ms" },
+          { "type": "slider", "id": "accelMs", "textKey": "bassshakertelemetry.config.accel_ms", "bind": "accelBumpMs", "min": 20, "max": 200, "step": 1, "format": "ms" },
+          { "type": "slider", "id": "soundCooldownMs", "textKey": "bassshakertelemetry.config.sound_cooldown_ms", "bind": "soundHapticsCooldownMs", "min": 0, "max": 250, "step": 1, "format": "ms" },
+          { "type": "slider", "id": "gameplayCooldownMs", "textKey": "bassshakertelemetry.config.gameplay_cooldown_ms", "bind": "gameplayHapticsCooldownMs", "min": 0, "max": 400, "step": 1, "format": "ms" },
+          { "type": "slider", "id": "miningPeriodMs", "textKey": "bassshakertelemetry.config.mining_period_ms", "bind": "gameplayMiningPulsePeriodMs", "min": 60, "max": 350, "step": 1, "format": "ms" },
+
+          { "type": "label", "textKey": "bassshakertelemetry.config.audio" },
+          { "type": "button", "id": "buffer", "textKey": "bassshakertelemetry.config.output_buffer", "action": "cycleBufferChoice" },
+          { "type": "button", "id": "latency", "textKey": "bassshakertelemetry.config.latency_test_off", "action": "toggleLatencyTest" },
+          { "type": "toggle", "id": "debugOverlay", "textKey": "bassshakertelemetry.config.debug_overlay", "bind": "debugOverlayEnabled" },
+          { "type": "button", "id": "demo", "textKey": "bassshakertelemetry.config.demo_run", "action": "toggleDemo" },
+
+          { "type": "label", "textKey": "bassshakertelemetry.config.tone_shaping" },
+          { "type": "toggle", "id": "outputEq", "textKey": "bassshakertelemetry.config.output_eq", "bind": "outputEqEnabled" },
+          { "type": "slider", "id": "outputEqFreq", "textKey": "bassshakertelemetry.config.output_eq_freq", "bind": "outputEqFreqHz", "min": 10, "max": 120, "step": 1, "format": "hz" },
+          { "type": "slider", "id": "outputEqGain", "textKey": "bassshakertelemetry.config.output_eq_gain", "bind": "outputEqGainDb", "min": -12, "max": 12, "step": 1, "format": "db" },
+          { "type": "toggle", "id": "smartVolume", "textKey": "bassshakertelemetry.config.smart_volume", "bind": "smartVolumeEnabled" },
+          { "type": "slider", "id": "smartVolumeTarget", "textKey": "bassshakertelemetry.config.smart_volume_target", "bind": "smartVolumeTargetPct", "min": 10, "max": 90, "step": 1, "format": "pct" },
+
+          { "type": "label", "textKey": "bassshakertelemetry.config.calibration" },
+          { "type": "button", "id": "cal30", "textKey": "bassshakertelemetry.config.cal_tone_30hz", "action": "testCalibrationTone30Hz" },
+          { "type": "button", "id": "cal60", "textKey": "bassshakertelemetry.config.cal_tone_60hz", "action": "testCalibrationTone60Hz" },
+          { "type": "button", "id": "calSweep", "textKey": "bassshakertelemetry.config.cal_sweep_20_120hz", "action": "testCalibrationSweep" },
+          { "type": "button", "id": "calStop", "textKey": "bassshakertelemetry.config.cal_stop", "action": "stopCalibration" },
+
+          { "type": "label", "textKey": "bassshakertelemetry.config.spatial" },
+          { "type": "button", "id": "spatial", "textKey": "bassshakertelemetry.config.spatial_open", "action": "openSpatial" },
+
+          { "type": "label", "textKey": "bassshakertelemetry.config.instruments" },
+          { "type": "button", "id": "instruments", "textKey": "bassshakertelemetry.config.instruments", "action": "openInstruments" }
+        ]
+      }
+    },
+    "instrument_config": {
+      "titleKey": "bassshakertelemetry.config.instruments",
+      "root": {
+        "type": "panel",
+        "layout": "vertical",
+        "padding": 0,
+        "spacing": 6,
+        "children": [
+          { "type": "label", "textKey": "bassshakertelemetry.config.instruments" },
+          { "type": "button", "id": "openEditor", "textKey": "bassshakertelemetry.config.instruments_open_editor", "action": "openInstrumentsEditor" }
+        ]
+      }
+    },
+    "spatial_config": {
+      "titleKey": "bassshakertelemetry.spatial.title",
+      "root": {
+        "type": "panel",
+        "layout": "vertical",
+        "padding": 0,
+        "spacing": 6,
+        "children": [
+          {
+            "type": "toggle",
+            "id": "soundscapeEnabled",
+            "textKey": "bassshakertelemetry.spatial.soundscape_enabled",
+            "bind": "soundScapeEnabled"
+          },
+          {
+            "type": "toggle",
+            "id": "panningEnabled",
+            "textKey": "bassshakertelemetry.spatial.panning_enabled",
+            "bind": "soundScapeSpatialEnabled"
+          },
+          {
+            "type": "slider",
+            "id": "distanceAtten",
+            "textKey": "bassshakertelemetry.spatial.distance_atten",
+            "bind": "soundScapeSpatialDistanceAttenStrength",
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.01,
+            "format": "percent"
+          },
+          {
+            "type": "button",
+            "id": "openRouting",
+            "textKey": "bassshakertelemetry.spatial.open_routing",
+            "action": "openSoundscape"
+          },
+          {
+            "type": "button",
+            "id": "openBusRouting",
+            "textKey": "bassshakertelemetry.spatial.open_bus_routing",
+            "action": "openSpatialBusRouting"
+          },
+          {
+            "type": "button",
+            "id": "openCalibration",
+            "textKey": "bassshakertelemetry.spatial.open_calibration",
+            "action": "openSpatialCalibration"
+          },
+          {
+            "type": "button",
+            "id": "openDebugger",
+            "textKey": "bassshakertelemetry.spatial.open_debugger",
+            "action": "openSpatialDebugger"
+          }
+        ]
+      }
+    },
+    "soundscape_config": {
+      "titleKey": "bassshakertelemetry.soundscape.title",
+      "root": {
+        "type": "panel",
+        "layout": "vertical",
+        "padding": 0,
+        "spacing": 6,
+        "children": [
+          { "type": "label", "textKey": "bassshakertelemetry.soundscape.section.mode" },
+          {
+            "type": "toggle",
+            "id": "soundscapeEnabled",
+            "textKey": "bassshakertelemetry.spatial.soundscape_enabled",
+            "bind": "soundScapeEnabled"
+          },
+          {
+            "type": "button",
+            "id": "groups",
+            "textKey": "bassshakertelemetry.soundscape.groups",
+            "action": "openSoundscapeGroups"
+          },
+          {
+            "type": "button",
+            "id": "overrides",
+            "textKey": "bassshakertelemetry.soundscape.overrides",
+            "action": "openSoundscapeOverrides"
+          },
+
+          { "type": "label", "textKey": "bassshakertelemetry.soundscape.section.routing" },
+          { "type": "button", "id": "routeRoad", "textKey": "bassshakertelemetry.soundscape.route.road", "action": "cycleSoundscapeRoute:road" },
+          { "type": "button", "id": "routeDamage", "textKey": "bassshakertelemetry.soundscape.route.damage", "action": "cycleSoundscapeRoute:damage" },
+          { "type": "button", "id": "routeBiome", "textKey": "bassshakertelemetry.soundscape.route.biome", "action": "cycleSoundscapeRoute:biome_chime" },
+          { "type": "button", "id": "routeAccel", "textKey": "bassshakertelemetry.soundscape.route.accel", "action": "cycleSoundscapeRoute:accel_bump" },
+          { "type": "button", "id": "routeSound", "textKey": "bassshakertelemetry.soundscape.route.sound", "action": "cycleSoundscapeRoute:sound" },
+          { "type": "button", "id": "routeGameplay", "textKey": "bassshakertelemetry.soundscape.route.gameplay", "action": "cycleSoundscapeRoute:gameplay" },
+          { "type": "button", "id": "routeFootsteps", "textKey": "bassshakertelemetry.soundscape.route.footsteps", "action": "cycleSoundscapeRoute:footsteps" },
+          { "type": "button", "id": "routeMounted", "textKey": "bassshakertelemetry.soundscape.route.mounted", "action": "cycleSoundscapeRoute:mounted" },
+          { "type": "button", "id": "routeMining", "textKey": "bassshakertelemetry.soundscape.route.mining", "action": "cycleSoundscapeRoute:mining_swing" },
+          { "type": "button", "id": "routeCustom", "textKey": "bassshakertelemetry.soundscape.route.custom", "action": "cycleSoundscapeRoute:custom" }
+        ]
+      }
+    },
+    "soundscape_groups": {
+      "titleKey": "bassshakertelemetry.soundscape.groups_title",
+      "root": {
+        "type": "panel",
+        "layout": "vertical",
+        "padding": 0,
+        "spacing": 6,
+        "children": [
+          { "type": "label", "textKey": "bassshakertelemetry.soundscape.groups_title" },
+          { "type": "button", "id": "add", "textKey": "bassshakertelemetry.soundscape.group_add", "action": "addSoundscapeGroup" }
+        ]
+      }
+    },
+    "soundscape_group_edit": {
+      "titleKey": "bassshakertelemetry.soundscape.group_edit_title",
+      "root": {
+        "type": "panel",
+        "layout": "vertical",
+        "padding": 0,
+        "spacing": 6,
+        "children": [
+          { "type": "label", "textKey": "bassshakertelemetry.soundscape.group_edit_title" }
+        ]
+      }
+    },
+    "soundscape_overrides": {
+      "titleKey": "bassshakertelemetry.soundscape.overrides_title",
+      "root": {
+        "type": "panel",
+        "layout": "vertical",
+        "padding": 0,
+        "spacing": 6,
+        "children": [
+          { "type": "label", "textKey": "bassshakertelemetry.soundscape.overrides_desc" },
+          { "type": "button", "id": "add", "textKey": "bassshakertelemetry.soundscape.override_add", "action": "addSoundscapeOverride" }
+        ]
+      }
+    },
+    "soundscape_override_edit": {
+      "titleKey": "bassshakertelemetry.soundscape.override_edit_title",
+      "root": {
+        "type": "panel",
+        "layout": "vertical",
+        "padding": 0,
+        "spacing": 6,
+        "children": [
+          { "type": "label", "textKey": "bassshakertelemetry.soundscape.override_edit_title" }
+        ]
+      }
     }
   }
 }
