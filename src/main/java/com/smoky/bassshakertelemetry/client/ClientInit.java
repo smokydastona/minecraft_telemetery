@@ -3,9 +3,11 @@ package com.smoky.bassshakertelemetry.client;
 import com.smoky.bassshakertelemetry.client.accessibility.HudCueOverlayHandler;
 import com.smoky.bassshakertelemetry.client.accessibility.HudCueTickHandler;
 import com.smoky.bassshakertelemetry.client.integration.WebSocketTelemetryController;
+import com.smoky.bassshakertelemetry.client.ui.SchemaTelemetryConfigScreen;
 import com.smoky.bassshakertelemetry.client.ui.TelemetryConfigScreen;
 import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
 import com.smoky.bassshakertelemetry.client.ui.neon.UiBundleAutoUpdater;
+import com.smoky.bassshakertelemetry.client.ui.neon.schema.NeonUiSchemaLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.client.ConfigScreenHandler;
@@ -42,6 +44,9 @@ public final class ClientInit {
     }
 
     private static Screen createConfigScreen(Minecraft minecraft, Screen parent) {
+        if (NeonUiSchemaLoader.hasActiveScreen("telemetry_config")) {
+            return new SchemaTelemetryConfigScreen(parent);
+        }
         return new TelemetryConfigScreen(parent);
     }
 }

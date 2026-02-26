@@ -91,7 +91,7 @@ public final class TelemetryConfigScreen extends Screen {
                 deviceButtonLabel(),
                 () -> {
                     if (this.minecraft != null) {
-                        this.minecraft.setScreen(new OutputDeviceScreen(this));
+                        this.minecraft.setScreen(new OutputDeviceScreen(this, this::setSelectedDevice));
                     }
                 }
         );

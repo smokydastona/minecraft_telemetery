@@ -16,16 +16,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 public final class OutputDeviceScreen extends Screen {
-    private final TelemetryConfigScreen parent;
+    private final Screen parent;
+    private final Consumer<String> onSelectDevice;
 
     private List<String> devices = List.of("<Default>");
     private String selectedDevice = "<Default>";
 
-    public OutputDeviceScreen(TelemetryConfigScreen parent) {
+    public OutputDeviceScreen(Screen parent, Consumer<String> onSelectDevice) {
         super(Component.translatable("bassshakertelemetry.config.output_device_title"));
-        this.parent = parent;
+        this.parent = Objects.requireNonNull(parent, "parent");
+        this.onSelectDevice = Objects.requireNonNull(onSelectDevice, "onSelectDevice");
     }
 
     @Override
@@ -80,8 +83,8 @@ public final class OutputDeviceScreen extends Screen {
     }
 
     private void onDone() {
-        // Apply selection back to parent; actual persistence happens when the user hits Done on the main config screen.
-        parent.setSelectedDevice(selectedDevice);
+        // Apply selection back to the parent; actual persistence happens when the user hits Done on the main config screen.
+        onSelectDevice.accept(selectedDevice);
         if (this.minecraft != null) {
             this.minecraft.setScreen(parent);
         }
