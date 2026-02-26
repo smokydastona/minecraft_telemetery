@@ -80,6 +80,7 @@ public final class NeonUiSchemaLoader {
 
     private static NeonUiSchema tryLoadFromResources(ResourceManager rm) {
         try {
+            @SuppressWarnings("null")
             var opt = rm.getResource(DEFAULT_SCHEMA);
             if (opt.isEmpty()) return null;
             Resource res = opt.get();

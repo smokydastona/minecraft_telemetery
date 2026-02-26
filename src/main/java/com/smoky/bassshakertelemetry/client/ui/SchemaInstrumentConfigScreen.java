@@ -134,10 +134,11 @@ public final class SchemaInstrumentConfigScreen extends Screen {
 
     private void handleAction(String action) {
         if (action == null) return;
-        if (this.minecraft == null) return;
+        Minecraft mc = this.minecraft;
+        if (mc == null) return;
 
         switch (action) {
-            case "openInstrumentsEditor" -> this.minecraft.setScreen(new HapticInstrumentEditorScreen(this));
+            case "openInstrumentsEditor" -> mc.setScreen(new HapticInstrumentEditorScreen(this));
             default -> {
             }
         }
@@ -192,7 +193,7 @@ public final class SchemaInstrumentConfigScreen extends Screen {
         }
 
         public void addSettingEntry(SettingsEntry e) {
-            this.addEntry(e);
+            this.addEntry(Objects.requireNonNull(e));
         }
     }
 
@@ -210,6 +211,7 @@ public final class SchemaInstrumentConfigScreen extends Screen {
         }
 
         @Override
+        @SuppressWarnings("null")
         public void render(GuiGraphics gfx, int idx, int top, int left, int w, int h, int mouseX, int mouseY, boolean hovered, float partialTick) {
         }
     }
@@ -218,7 +220,7 @@ public final class SchemaInstrumentConfigScreen extends Screen {
         private final Component msg;
 
         private LabelEntry(Component msg) {
-            this.msg = msg;
+            this.msg = Objects.requireNonNullElse(msg, Component.empty());
         }
 
         @Override
@@ -227,8 +229,9 @@ public final class SchemaInstrumentConfigScreen extends Screen {
         }
 
         @Override
+        @SuppressWarnings("null")
         public void render(GuiGraphics gfx, int idx, int top, int left, int w, int h, int mouseX, int mouseY, boolean hovered, float partialTick) {
-            var font = Minecraft.getInstance().font;
+            var font = Objects.requireNonNull(Minecraft.getInstance().font, "font");
             gfx.drawString(font, msg, left + 4, top + 14, NeonStyle.get().text, false);
         }
     }
@@ -237,7 +240,7 @@ public final class SchemaInstrumentConfigScreen extends Screen {
         private final Button button;
 
         private ButtonOnlyEntry(Button button) {
-            this.button = button;
+            this.button = Objects.requireNonNull(button);
         }
 
         @Override
@@ -246,6 +249,7 @@ public final class SchemaInstrumentConfigScreen extends Screen {
         }
 
         @Override
+        @SuppressWarnings("null")
         public void render(GuiGraphics gfx, int idx, int top, int left, int w, int h, int mouseX, int mouseY, boolean hovered, float partialTick) {
             button.setX(left);
             button.setY(top);

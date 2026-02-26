@@ -91,6 +91,8 @@ The mod can load its Neon UI style/tokens/assets from one of three places:
 
 In-game, Neon screens include a **Reload UI bundle** button to re-read style/tokens/textures from disk without restarting.
 
+UI bundle schemas can also override the layout of several config screens. If a schema screen is missing/invalid, the mod falls back to the built-in (hardcoded) screen.
+
 Relevant config keys (saved in `config/bassshakertelemetry.json`):
 
 - `uiBundleAutoUpdateEnabled` (boolean, default `true`)

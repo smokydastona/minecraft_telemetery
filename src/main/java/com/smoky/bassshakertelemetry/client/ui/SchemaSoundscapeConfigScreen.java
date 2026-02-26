@@ -213,8 +213,8 @@ public final class SchemaSoundscapeConfigScreen extends Screen {
             String bind = n.bind;
             if (bind == null || bind.isBlank()) return;
 
-            boolean v = state.get(bind) instanceof Boolean b ? b : (n.value != null && n.value);
-            settingsList.addSettingEntry(new ButtonOnlyEntry(new NeonCycleButton<>(
+            Boolean v = state.get(bind) instanceof Boolean b ? b : (n.value != null && n.value);
+            settingsList.addSettingEntry(new ButtonOnlyEntry(new NeonCycleButton<Boolean>(
                     0,
                     0,
                     contentWidth - 12,
@@ -222,8 +222,8 @@ public final class SchemaSoundscapeConfigScreen extends Screen {
                     resolveText(n.textKey, n.text),
                     List.of(Boolean.TRUE, Boolean.FALSE),
                     v,
-                    vv -> vv ? Component.translatable("options.on") : Component.translatable("options.off"),
-                    vv -> state.put(bind, vv)
+                vv -> Boolean.TRUE.equals(vv) ? Component.translatable("options.on") : Component.translatable("options.off"),
+                vv -> state.put(bind, Boolean.TRUE.equals(vv))
             )));
             return;
         }
@@ -281,27 +281,28 @@ public final class SchemaSoundscapeConfigScreen extends Screen {
 
         Button btn = routingButtons.get(categoryKey);
         if (btn != null) {
-            btn.setMessage(routeLabel(label, next));
+            btn.setMessage(Objects.requireNonNull(routeLabel(label, next), "routeLabel"));
         }
     }
 
     private void handleAction(String action) {
         if (action == null) return;
-        if (this.minecraft == null) return;
+        Minecraft mc = this.minecraft;
+        if (mc == null) return;
 
         switch (action) {
             case "openSoundscapeGroups" -> {
                 if (NeonUiSchemaLoader.hasActiveScreen("soundscape_groups") && NeonUiSchemaLoader.hasActiveScreen("soundscape_group_edit")) {
-                    this.minecraft.setScreen(new SchemaSoundscapeGroupsScreen(this));
+                    mc.setScreen(new SchemaSoundscapeGroupsScreen(this));
                 } else {
-                    this.minecraft.setScreen(new SoundScapeGroupsScreen(this));
+                    mc.setScreen(new SoundScapeGroupsScreen(this));
                 }
             }
             case "openSoundscapeOverrides" -> {
                 if (NeonUiSchemaLoader.hasActiveScreen("soundscape_overrides") && NeonUiSchemaLoader.hasActiveScreen("soundscape_override_edit")) {
-                    this.minecraft.setScreen(new SchemaSoundscapeOverridesScreen(this));
+                    mc.setScreen(new SchemaSoundscapeOverridesScreen(this));
                 } else {
-                    this.minecraft.setScreen(new SoundScapeOverridesScreen(this));
+                    mc.setScreen(new SoundScapeOverridesScreen(this));
                 }
             }
             default -> {
@@ -361,9 +362,10 @@ public final class SchemaSoundscapeConfigScreen extends Screen {
         return Component.empty();
     }
 
+    @SuppressWarnings("null")
     private static Component routeLabel(Component label, String target) {
         String t = (target == null) ? "grp:All" : target;
-        String display = displayTarget(t);
+        String display = Objects.toString(displayTarget(t), "");
 
         return Objects.requireNonNull(label)
                 .copy()
@@ -576,20 +578,20 @@ public final class SchemaSoundscapeConfigScreen extends Screen {
     }
 
     private static final class ButtonOnlyEntry extends SettingsEntry {
-        private final Button button;
+        private final net.minecraft.client.gui.components.AbstractWidget widget;
 
-        ButtonOnlyEntry(Button button) {
-            this.button = Objects.requireNonNull(button);
+        ButtonOnlyEntry(net.minecraft.client.gui.components.AbstractWidget widget) {
+            this.widget = Objects.requireNonNull(widget);
         }
 
         @Override
         public List<? extends GuiEventListener> children() {
-            return Collections.singletonList(button);
+            return Collections.singletonList(widget);
         }
 
         @Override
         public List<? extends NarratableEntry> narratables() {
-            return Collections.singletonList(button);
+            return Collections.singletonList(widget);
         }
 
         @Override
@@ -597,9 +599,9 @@ public final class SchemaSoundscapeConfigScreen extends Screen {
         public void render(GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
                            int mouseX, int mouseY, boolean hovered, float partialTick) {
             int innerX = x + 2;
-            button.setX(innerX);
-            button.setY(y + 4);
-            button.render(guiGraphics, mouseX, mouseY, partialTick);
+            widget.setX(innerX);
+            widget.setY(y + 4);
+            widget.render(guiGraphics, mouseX, mouseY, partialTick);
         }
     }
 
@@ -615,6 +617,7 @@ public final class SchemaSoundscapeConfigScreen extends Screen {
         }
 
         @Override
+        @SuppressWarnings("null")
         public void render(GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
                            int mouseX, int mouseY, boolean hovered, float partialTick) {
         }

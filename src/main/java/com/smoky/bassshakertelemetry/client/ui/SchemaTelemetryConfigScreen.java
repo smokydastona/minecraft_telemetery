@@ -10,6 +10,7 @@ import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
 import com.smoky.bassshakertelemetry.client.ui.neon.schema.NeonUiSchema;
 import com.smoky.bassshakertelemetry.client.ui.neon.schema.NeonUiSchemaLoader;
 import com.smoky.bassshakertelemetry.config.BstConfig;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.StringWidget;
@@ -33,7 +34,6 @@ public final class SchemaTelemetryConfigScreen extends Screen {
     private String selectedDevice = "<Default>";
 
     private final Map<String, Object> state = new HashMap<>();
-    private NeonRangeSlider masterVolumeSlider;
 
     public SchemaTelemetryConfigScreen(Screen parent) {
         super(Component.translatable("bassshakertelemetry.config.title"));
@@ -175,22 +175,23 @@ public final class SchemaTelemetryConfigScreen extends Screen {
 
     private void handleAction(String action) {
         if (action == null) return;
-        if (this.minecraft == null) return;
+        Minecraft mc = this.minecraft;
+        if (mc == null) return;
 
         switch (action) {
-            case "openOutputDevice" -> this.minecraft.setScreen(new OutputDeviceScreen(this, this::setSelectedDevice));
+            case "openOutputDevice" -> mc.setScreen(new OutputDeviceScreen(this, this::setSelectedDevice));
             case "openAdvanced" -> {
                 if (NeonUiSchemaLoader.hasActiveScreen("advanced_settings")) {
-                    this.minecraft.setScreen(new SchemaAdvancedSettingsScreen(this));
+                    mc.setScreen(new SchemaAdvancedSettingsScreen(this));
                 } else {
-                    this.minecraft.setScreen(new AdvancedSettingsScreen(this));
+                    mc.setScreen(new AdvancedSettingsScreen(this));
                 }
             }
             case "openSoundscape" -> {
                 if (NeonUiSchemaLoader.hasActiveScreen("soundscape_config")) {
-                    this.minecraft.setScreen(new SchemaSoundscapeConfigScreen(this));
+                    mc.setScreen(new SchemaSoundscapeConfigScreen(this));
                 } else {
-                    this.minecraft.setScreen(new SoundScapeConfigScreen(this));
+                    mc.setScreen(new SoundScapeConfigScreen(this));
                 }
             }
             default -> {
@@ -349,6 +350,7 @@ public final class SchemaTelemetryConfigScreen extends Screen {
         return rowH;
     }
 
+    @SuppressWarnings("null")
     private void addWidgetsFromNode(NeonUiSchema.NeonUiNode node, int rowH) {
         if (node == null) return;
         if (node instanceof NeonUiSchema.PanelNode panel) {
@@ -395,7 +397,7 @@ public final class SchemaTelemetryConfigScreen extends Screen {
         if (node instanceof NeonUiSchema.ToggleNode n) {
             String bind = n.bind;
             boolean v = state.get(bind) instanceof Boolean b ? b : (n.value != null && n.value);
-            this.addRenderableWidget(new NeonCycleButton<>(
+            this.addRenderableWidget(new NeonCycleButton<Boolean>(
                     node.computedX,
                     node.computedY,
                     node.computedWidth,
@@ -404,7 +406,9 @@ public final class SchemaTelemetryConfigScreen extends Screen {
                     List.of(Boolean.TRUE, Boolean.FALSE),
                     v,
                     vv -> vv ? Component.translatable("options.on") : Component.translatable("options.off"),
-                    vv -> state.put(bind, vv)
+                    vv -> {
+                        state.put(bind, vv);
+                    }
             ));
             return;
         }
@@ -428,11 +432,10 @@ public final class SchemaTelemetryConfigScreen extends Screen {
                     step,
                     fmt,
                     () -> state.get(bind) instanceof Number num ? num.doubleValue() : initial,
-                    v -> state.put(bind, v)
+                    v -> {
+                        state.put(bind, v);
+                    }
             );
-            if ("masterVolume".equals(bind)) {
-                masterVolumeSlider = slider;
-            }
             this.addRenderableWidget(slider);
             return;
         }
@@ -452,8 +455,10 @@ public final class SchemaTelemetryConfigScreen extends Screen {
                     resolveText(n.textKey, n.text),
                     buildIndexList(n.options.size()),
                     initialIdx,
-                    i -> Component.literal(n.options.get(i)),
-                    i -> state.put(bind, i)
+                    i -> Component.literal(Objects.requireNonNullElse(n.options.get(i), "")),
+                    i -> {
+                        state.put(bind, i);
+                    }
             ));
         }
     }
@@ -517,6 +522,7 @@ public final class SchemaTelemetryConfigScreen extends Screen {
         };
     }
 
+    @SuppressWarnings("null")
     private Component deviceButtonLabel() {
         return Component.translatable("bassshakertelemetry.config.output_device")
                 .append(": ")
@@ -531,7 +537,7 @@ public final class SchemaTelemetryConfigScreen extends Screen {
         this.selectedDevice = v;
 
         if (outputDeviceButton != null) {
-            outputDeviceButton.setMessage(deviceButtonLabel());
+            outputDeviceButton.setMessage(Objects.requireNonNull(deviceButtonLabel(), "deviceButtonLabel"));
         }
     }
 }

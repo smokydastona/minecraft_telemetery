@@ -119,6 +119,7 @@ public final class SchemaSoundscapeOverrideEditScreen extends Screen {
         ));
     }
 
+    @SuppressWarnings("null")
     private Component targetLabel(String rawTarget) {
         String display = Objects.requireNonNull(displayTarget(rawTarget), "displayTarget");
         return Component.translatable("bassshakertelemetry.soundscape.override_target_value")

@@ -9,6 +9,7 @@ import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
 import com.smoky.bassshakertelemetry.client.ui.neon.schema.NeonUiSchema;
 import com.smoky.bassshakertelemetry.client.ui.neon.schema.NeonUiSchemaLoader;
 import com.smoky.bassshakertelemetry.config.BstConfig;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
@@ -155,19 +156,20 @@ public final class SchemaSpatialConfigScreen extends Screen {
 
     private void handleAction(String action) {
         if (action == null) return;
-        if (this.minecraft == null) return;
+        Minecraft mc = this.minecraft;
+        if (mc == null) return;
 
         switch (action) {
             case "openSoundscape" -> {
                 if (NeonUiSchemaLoader.hasActiveScreen("soundscape_config")) {
-                    this.minecraft.setScreen(new SchemaSoundscapeConfigScreen(this));
+                    mc.setScreen(new SchemaSoundscapeConfigScreen(this));
                 } else {
-                    this.minecraft.setScreen(new SoundScapeConfigScreen(this));
+                    mc.setScreen(new SoundScapeConfigScreen(this));
                 }
             }
-            case "openSpatialBusRouting" -> this.minecraft.setScreen(new SpatialBusRoutingScreen(this));
-            case "openSpatialCalibration" -> this.minecraft.setScreen(new SpatialCalibrationScreen(this));
-            case "openSpatialDebugger" -> this.minecraft.setScreen(new SpatialDebuggerScreen(this));
+            case "openSpatialBusRouting" -> mc.setScreen(new SpatialBusRoutingScreen(this));
+            case "openSpatialCalibration" -> mc.setScreen(new SpatialCalibrationScreen(this));
+            case "openSpatialDebugger" -> mc.setScreen(new SpatialDebuggerScreen(this));
             default -> {
             }
         }
@@ -316,6 +318,7 @@ public final class SchemaSpatialConfigScreen extends Screen {
         return rowH;
     }
 
+    @SuppressWarnings("null")
     private void addWidgetsFromNode(NeonUiSchema.NeonUiNode node, int rowH) {
         if (node == null) return;
         if (node instanceof NeonUiSchema.PanelNode panel) {

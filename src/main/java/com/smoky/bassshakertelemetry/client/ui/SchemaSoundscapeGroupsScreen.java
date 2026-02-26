@@ -139,6 +139,7 @@ public final class SchemaSoundscapeGroupsScreen extends Screen {
         }
     }
 
+    @SuppressWarnings("null")
     private void onAdd() {
         String base = "Group";
         int i = 1;
@@ -147,12 +148,12 @@ public final class SchemaSoundscapeGroupsScreen extends Screen {
         }
         String name = base + " " + i;
         groups.put(name, List.of("FL", "FR"));
-        if (this.minecraft != null) {
-            if (NeonUiSchemaLoader.hasActiveScreen("soundscape_group_edit")) {
-                this.minecraft.setScreen(new SchemaSoundscapeGroupEditScreen(this, groups, name));
-            } else {
-                this.minecraft.setScreen(new SoundScapeGroupsScreen(parent));
-            }
+        Minecraft mc = this.minecraft;
+        if (mc == null) return;
+        if (NeonUiSchemaLoader.hasActiveScreen("soundscape_group_edit")) {
+            mc.setScreen(new SchemaSoundscapeGroupEditScreen(this, groups, name));
+        } else {
+            mc.setScreen(new SoundScapeGroupsScreen(parent));
         }
     }
 

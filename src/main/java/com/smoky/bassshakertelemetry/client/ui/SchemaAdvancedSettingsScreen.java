@@ -233,7 +233,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
             if (bind == null || bind.isBlank()) return;
             boolean v = state.get(bind) instanceof Boolean b ? b : (n.value != null && n.value);
 
-            settingsList.addSettingEntry(new ButtonOnlyEntry(new NeonCycleButton<>(
+            settingsList.addSettingEntry(new SliderOnlyEntry(new NeonCycleButton<Boolean>(
                     0,
                     0,
                     contentWidth - 12,
@@ -242,7 +242,9 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
                     List.of(Boolean.TRUE, Boolean.FALSE),
                     v,
                     vv -> vv ? Component.translatable("options.on") : Component.translatable("options.off"),
-                    vv -> state.put(bind, vv)
+                    vv -> {
+                        state.put(bind, vv);
+                    }
             )));
             return;
         }
@@ -282,7 +284,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
             idx = Math.max(0, Math.min(n.options.size() - 1, idx));
             int initialIdx = idx;
 
-            settingsList.addSettingEntry(new ButtonOnlyEntry(new NeonCycleButton<>(
+            settingsList.addSettingEntry(new SliderOnlyEntry(new NeonCycleButton<Integer>(
                     0,
                     0,
                     contentWidth - 12,
@@ -290,8 +292,10 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
                     resolveText(n.textKey, n.text),
                     buildIndexList(n.options.size()),
                     initialIdx,
-                    i -> Component.literal(n.options.get(i)),
-                    i -> state.put(bind, i)
+                    i -> Component.literal(Objects.requireNonNull(Objects.requireNonNullElse(n.options.get(i), ""), "option")),
+                    i -> {
+                        state.put(bind, i);
+                    }
             )));
         }
     }
@@ -344,7 +348,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
             if (bind == null || bind.isBlank()) return null;
             boolean v = state.get(bind) instanceof Boolean b ? b : (n.value != null && n.value);
 
-            var btn = new NeonCycleButton<>(
+                var btn = new NeonCycleButton<Boolean>(
                     0,
                     0,
                     w,
@@ -353,7 +357,9 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
                     List.of(Boolean.TRUE, Boolean.FALSE),
                     v,
                     vv -> vv ? Component.translatable("options.on") : Component.translatable("options.off"),
-                    vv -> state.put(bind, vv)
+                    vv -> {
+                    state.put(bind, vv);
+                    }
             );
             return new AbstractRowWidget(btn, explicitWidth);
         }
@@ -393,7 +399,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
             idx = Math.max(0, Math.min(n.options.size() - 1, idx));
             int initialIdx = idx;
 
-            var btn = new NeonCycleButton<>(
+                var btn = new NeonCycleButton<Integer>(
                     0,
                     0,
                     w,
@@ -401,8 +407,10 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
                     resolveText(n.textKey, n.text),
                     buildIndexList(n.options.size()),
                     initialIdx,
-                    i -> Component.literal(n.options.get(i)),
-                    i -> state.put(bind, i)
+                    i -> Component.literal(Objects.requireNonNull(Objects.requireNonNullElse(n.options.get(i), ""), "option")),
+                    i -> {
+                    state.put(bind, i);
+                    }
             );
             return new AbstractRowWidget(btn, explicitWidth);
         }
@@ -412,7 +420,8 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
 
     private void handleAction(String action) {
         if (action == null) return;
-        if (this.minecraft == null) return;
+        Minecraft mc = this.minecraft;
+        if (mc == null) return;
 
         switch (action) {
             case "testRoadTexture" -> AudioOutputEngine.get().testRoadTexture();
@@ -432,19 +441,19 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
 
             case "openSpatial" -> {
                 if (NeonUiSchemaLoader.hasActiveScreen("spatial_config")) {
-                    this.minecraft.setScreen(new SchemaSpatialConfigScreen(this));
+                    mc.setScreen(new SchemaSpatialConfigScreen(this));
                 } else {
-                    this.minecraft.setScreen(new SpatialConfigScreen(this));
+                    mc.setScreen(new SpatialConfigScreen(this));
                 }
             }
             case "openInstruments" -> {
                 if (NeonUiSchemaLoader.hasActiveScreen("instrument_config")) {
-                    this.minecraft.setScreen(new SchemaInstrumentConfigScreen(this));
+                    mc.setScreen(new SchemaInstrumentConfigScreen(this));
                 } else {
-                    this.minecraft.setScreen(new HapticInstrumentEditorScreen(this));
+                    mc.setScreen(new HapticInstrumentEditorScreen(this));
                 }
             }
-            case "openInstrumentsEditor" -> this.minecraft.setScreen(new HapticInstrumentEditorScreen(this));
+            case "openInstrumentsEditor" -> mc.setScreen(new HapticInstrumentEditorScreen(this));
             default -> {
             }
         }
@@ -543,6 +552,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
     }
 
     @Override
+    @SuppressWarnings("null")
     public void tick() {
         super.tick();
 
@@ -553,7 +563,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
                 AudioOutputEngine.get().testLatencyPulse();
             }
             if (latencyTestButton != null) {
-                latencyTestButton.setMessage(latencyButtonLabel(pulseNow));
+                latencyTestButton.setMessage(Objects.requireNonNull(latencyButtonLabel(pulseNow), "latencyButtonLabel"));
             }
         }
 
@@ -564,7 +574,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         latencyTestActive = !latencyTestActive;
         latencyTestTicks = 0;
         if (latencyTestButton != null) {
-            latencyTestButton.setMessage(latencyButtonLabel(false));
+            latencyTestButton.setMessage(Objects.requireNonNull(latencyButtonLabel(false), "latencyButtonLabel"));
         }
     }
 
@@ -572,10 +582,11 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         latencyTestActive = false;
         latencyTestTicks = 0;
         if (latencyTestButton != null) {
-            latencyTestButton.setMessage(latencyButtonLabel(false));
+            latencyTestButton.setMessage(Objects.requireNonNull(latencyButtonLabel(false), "latencyButtonLabel"));
         }
     }
 
+    @SuppressWarnings("null")
     private Component latencyButtonLabel(boolean pulseNow) {
         Component base = latencyTestActive
                 ? Component.translatable("bassshakertelemetry.config.latency_test_on")
@@ -591,7 +602,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         demoStep = 0;
         demoNextNanos = System.nanoTime();
         if (demoButton != null) {
-            demoButton.setMessage(demoLabel());
+            demoButton.setMessage(Objects.requireNonNull(demoLabel(), "demoLabel"));
         }
     }
 
@@ -600,7 +611,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         demoStep = 0;
         demoNextNanos = 0L;
         if (demoButton != null) {
-            demoButton.setMessage(demoLabel());
+            demoButton.setMessage(Objects.requireNonNull(demoLabel(), "demoLabel"));
         }
     }
 
@@ -638,10 +649,11 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         demoStep++;
 
         if (demoButton != null) {
-            demoButton.setMessage(demoLabel());
+            demoButton.setMessage(Objects.requireNonNull(demoLabel(), "demoLabel"));
         }
     }
 
+    @SuppressWarnings("null")
     private Component demoLabel() {
         return demoActive
                 ? Component.translatable("bassshakertelemetry.config.demo_stop")
@@ -651,10 +663,11 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
     private void cycleBufferChoice() {
         bufferChoiceIndex = (clampIndex(bufferChoiceIndex) + 1) % BUFFER_CHOICES_MS.length;
         if (bufferButton != null) {
-            bufferButton.setMessage(bufferButtonLabel());
+            bufferButton.setMessage(Objects.requireNonNull(bufferButtonLabel(), "bufferButtonLabel"));
         }
     }
 
+    @SuppressWarnings("null")
     private Component bufferButtonLabel() {
         int ms = BUFFER_CHOICES_MS[clampIndex(bufferChoiceIndex)];
         Component v = (ms <= 0)
@@ -756,6 +769,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         }
 
         @Override
+        @SuppressWarnings("null")
         public void render(GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
                            int mouseX, int mouseY, boolean hovered, float partialTick) {
         }
@@ -779,6 +793,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         }
 
         @Override
+        @SuppressWarnings("null")
         public void render(GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
                            int mouseX, int mouseY, boolean hovered, float partialTick) {
             guiGraphics.drawString(
@@ -809,6 +824,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         }
 
         @Override
+        @SuppressWarnings("null")
         public void render(GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
                            int mouseX, int mouseY, boolean hovered, float partialTick) {
             int innerX = x + 2;
@@ -836,6 +852,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         }
 
         @Override
+        @SuppressWarnings("null")
         public void render(GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
                            int mouseX, int mouseY, boolean hovered, float partialTick) {
             int innerX = x + 2;
@@ -873,6 +890,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         }
 
         @Override
+        @SuppressWarnings("null")
         public void render(GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
                            int mouseX, int mouseY, boolean hovered, float partialTick) {
             if (widgets.isEmpty()) return;

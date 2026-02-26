@@ -54,6 +54,7 @@ public final class NeonRangeSlider extends AbstractSliderButton {
     }
 
     @Override
+    @SuppressWarnings("null")
     protected void updateMessage() {
         double v = fromNormalized(this.value);
         String fmt = (format == null) ? "" : format.trim();
@@ -91,6 +92,16 @@ public final class NeonRangeSlider extends AbstractSliderButton {
     @Override
     @SuppressWarnings("null")
     public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        // Keep slider synced to external state unless the mouse is currently pressed.
+        if (!Minecraft.getInstance().mouseHandler.isLeftPressed()) {
+            double external = clamp(getter.getAsDouble(), this.min, this.max);
+            double normalized = toNormalized(external);
+            if (Math.abs(normalized - this.value) > 1e-6) {
+                this.value = normalized;
+                updateMessage();
+            }
+        }
+
         NeonStyle style = NeonStyle.get();
         NeonAnimationTokens anim = style.anim;
 

@@ -2,6 +2,7 @@ package com.smoky.bassshakertelemetry.client.ui;
 
 import com.smoky.bassshakertelemetry.client.ui.neon.NeonButton;
 import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.StringWidget;
@@ -126,7 +127,7 @@ public final class SchemaSoundscapeGroupEditScreen extends Screen {
             enabled[idx] = true;
         }
         if (channelButtons[idx] != null) {
-            channelButtons[idx].setMessage(channelLabel(idx));
+            channelButtons[idx].setMessage(Objects.requireNonNull(channelLabel(idx), "channelLabel"));
         }
     }
 

@@ -48,6 +48,16 @@ In-game:
 - **Sound Scape (7.1)**: category routing + group management for mapping haptics across multiple output channels. If no multichannel device is available, the UI restricts routing choices to stereo.
 	- Includes an optional per-effect overrides editor (debug key → target).
 
+UI bundle (Neon skin):
+
+- The config screens can load their **style/assets** (and optional **screen schema**) from a UI bundle.
+- Neon screens include a **Reload UI bundle** button to re-read the bundle from disk without restarting.
+- Bundle folders:
+	- Disk override: `config/bassshakertelemetry/ui_bundle/`
+	- Disk remote (auto-updated): `config/bassshakertelemetry/ui_bundle_remote/`
+
+For the full UI bundle and schema details, see `docs/MOD_FEATURES.md`.
+
 Optional integrations:
 
 - WebSocket telemetry output (JSON) can be enabled via config keys (client-only).

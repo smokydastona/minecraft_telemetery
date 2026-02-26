@@ -7,6 +7,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 ## [Unreleased]
 
 ### Added
+- Neon UI bundle support (built-in + disk override/remote) including schema-driven config screens and an in-game **Reload UI bundle** button.
 - Sound Scape (7.1) routing: per-category routing UI with editable channel groups (targets up to 8 output channels: FL/FR/C/LFE/SL/SR/BL/BR).
 - Sound Scape overrides editor: per-effect (debug key) routing rules that take priority over category routing.
 - Optional 7.1 (8-channel) JavaSound output with stereo fallback when multichannel output is unavailable.

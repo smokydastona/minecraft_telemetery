@@ -17,6 +17,7 @@ public final class NeonLabel extends AbstractWidget {
     }
 
     @Override
+    @SuppressWarnings("null")
     protected void updateWidgetNarration(net.minecraft.client.gui.narration.NarrationElementOutput narrationElementOutput) {
     }
 
