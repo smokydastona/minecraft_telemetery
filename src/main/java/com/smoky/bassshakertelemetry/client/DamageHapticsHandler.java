@@ -32,7 +32,6 @@ public final class DamageHapticsHandler {
     private long lastWitherTickNanos;
 
     @SubscribeEvent
-    @SuppressWarnings("null")
     public void onLivingHurt(LivingHurtEvent event) {
         BstConfig.Data cfg = BstConfig.get();
         if (!cfg.enabled || !cfg.damageBurstEnabled) {
@@ -119,7 +118,6 @@ public final class DamageHapticsHandler {
     }
 
     @SubscribeEvent
-    @SuppressWarnings("null")
     public void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) {
             return;
@@ -144,6 +142,13 @@ public final class DamageHapticsHandler {
         }
 
         var player = mc.player;
+        if (player == null) {
+            lastHurtTime = 0;
+            lastHealth = -1.0f;
+            lastDead = false;
+            lastAir = -1;
+            return;
+        }
 
         // Death rumble (one-shot).
         boolean deadNow = player.isDeadOrDying() || player.getHealth() <= 0.0f;
@@ -228,10 +233,21 @@ public final class DamageHapticsHandler {
 
                     // Tick-based fallback may not have a DamageSource; use lastHurtByMob when available.
                     Entity attacker = player.getLastHurtByMob();
-                    boolean hasSource = attacker != null;
-                    double sx = hasSource ? attacker.getX() : player.getX();
-                    double sy = hasSource ? attacker.getY() : player.getY();
-                    double sz = hasSource ? attacker.getZ() : player.getZ();
+                    boolean hasSource;
+                    double sx;
+                    double sy;
+                    double sz;
+                    if (attacker != null) {
+                        hasSource = true;
+                        sx = attacker.getX();
+                        sy = attacker.getY();
+                        sz = attacker.getZ();
+                    } else {
+                        hasSource = false;
+                        sx = player.getX();
+                        sy = player.getY();
+                        sz = player.getZ();
+                    }
 
                     var store = BstVibrationProfiles.get();
                     var encoded = DirectionalEncoding.apply(
@@ -315,7 +331,8 @@ public final class DamageHapticsHandler {
         lastAir = air;
 
         // Poison / wither: light rhythmic pulses while effect is active.
-        if (player.hasEffect(MobEffects.POISON)) {
+        var poison = MobEffects.POISON;
+        if (poison != null && player.hasEffect(poison)) {
             if ((now - lastPoisonTickNanos) > 650_000_000L) {
                 lastPoisonTickNanos = now;
                 var resolved = BstVibrationProfiles.get().resolve("damage.poison", 1.0, 1.0);
@@ -333,7 +350,8 @@ public final class DamageHapticsHandler {
                 }
             }
         }
-        if (player.hasEffect(MobEffects.WITHER)) {
+        var wither = MobEffects.WITHER;
+        if (wither != null && player.hasEffect(wither)) {
             if ((now - lastWitherTickNanos) > 560_000_000L) {
                 lastWitherTickNanos = now;
                 var resolved = BstVibrationProfiles.get().resolve("damage.wither", 1.0, 1.0);
