@@ -18,6 +18,9 @@ import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,7 +57,6 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
     }
 
     @Override
-    @SuppressWarnings("null")
     protected void init() {
         super.init();
         NeonStyle.initClient();
@@ -72,12 +74,15 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         int leftX = centerX - (contentWidth / 2);
 
         var font = Objects.requireNonNull(this.font, "font");
+        String titleKey = (schema.titleKey == null || schema.titleKey.isBlank())
+            ? "bassshakertelemetry.config.advanced_title"
+            : Objects.requireNonNull(schema.titleKey, "schema.titleKey");
         this.addRenderableWidget(new StringWidget(
                 centerX - 140,
                 20,
                 280,
                 20,
-                Component.translatable(Objects.requireNonNullElse(schema.titleKey, "bassshakertelemetry.config.advanced_title")),
+            Objects.requireNonNull(Component.translatable(Objects.requireNonNull(titleKey, "titleKey")), "title"),
                 font
         ));
 
@@ -98,7 +103,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         loadBoundState(schema.root);
         addEntriesFromNode(schema.root, contentWidth);
 
-        this.addRenderableWidget(settingsList);
+        this.addRenderableWidget(Objects.requireNonNull(settingsList, "settingsList"));
 
         int buttonW = (contentWidth - 10) / 2;
 
@@ -112,7 +117,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
                     boolean ok = NeonStyle.reloadFromDiskBundleIfPresent();
                     if (this.minecraft != null && this.minecraft.player != null) {
                         this.minecraft.player.displayClientMessage(
-                                Component.literal(ok ? "UI bundle reloaded" : "UI bundle not found"),
+                            Objects.requireNonNull(Component.literal(ok ? "UI bundle reloaded" : "UI bundle not found"), "bundleMessage"),
                                 true
                         );
                     }
@@ -516,14 +521,12 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
     }
 
     @Override
-    @SuppressWarnings("null")
-    public void renderBackground(GuiGraphics guiGraphics) {
+    public void renderBackground(@Nonnull GuiGraphics guiGraphics) {
         guiGraphics.fill(0, 0, this.width, this.height, NeonStyle.get().background);
     }
 
     @Override
-    @SuppressWarnings("null")
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void render(@Nonnull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
         var font = this.font;
@@ -535,7 +538,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
 
         guiGraphics.drawString(
                 font,
-                uiBundleStatusLabel(),
+                Objects.requireNonNull(uiBundleStatusLabel(), "uiBundleStatusLabel"),
                 leftX,
                 y,
                 NeonStyle.get().textDim,
@@ -552,7 +555,6 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
     }
 
     @Override
-    @SuppressWarnings("null")
     public void tick() {
         super.tick();
 
@@ -586,13 +588,20 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         }
     }
 
-    @SuppressWarnings("null")
+    @SuppressWarnings("all")
     private Component latencyButtonLabel(boolean pulseNow) {
         Component base = latencyTestActive
                 ? Component.translatable("bassshakertelemetry.config.latency_test_on")
                 : Component.translatable("bassshakertelemetry.config.latency_test_off");
         if (latencyTestActive && pulseNow) {
-            return base.copy().append(" ").append(Component.literal("*"));
+            @Nullable net.minecraft.network.chat.MutableComponent out = base.copy().append(" ").append(Component.literal("*"));
+            if (out == null) {
+                throw new NullPointerException("latencyLabelPulse");
+            }
+            return out;
+        }
+        if (base == null) {
+            throw new NullPointerException("latencyLabel");
         }
         return base;
     }
@@ -653,7 +662,6 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         }
     }
 
-    @SuppressWarnings("null")
     private Component demoLabel() {
         return demoActive
                 ? Component.translatable("bassshakertelemetry.config.demo_stop")
@@ -667,16 +675,21 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         }
     }
 
-    @SuppressWarnings("null")
+    @SuppressWarnings("all")
     private Component bufferButtonLabel() {
         int ms = BUFFER_CHOICES_MS[clampIndex(bufferChoiceIndex)];
         Component v = (ms <= 0)
                 ? Component.translatable("bassshakertelemetry.config.buffer_auto")
                 : Component.literal(ms + "ms");
-        return Component.translatable("bassshakertelemetry.config.output_buffer")
+
+        @Nullable net.minecraft.network.chat.MutableComponent out = Component.translatable("bassshakertelemetry.config.output_buffer")
                 .copy()
                 .append(": ")
                 .append(v);
+        if (out == null) {
+            throw new NullPointerException("bufferButtonLabel");
+        }
+        return out;
     }
 
     private static int findBufferChoiceIndex(int currentMs) {
@@ -769,8 +782,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         }
 
         @Override
-        @SuppressWarnings("null")
-        public void render(GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
+        public void render(@Nonnull GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
                            int mouseX, int mouseY, boolean hovered, float partialTick) {
         }
     }
@@ -793,12 +805,11 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         }
 
         @Override
-        @SuppressWarnings("null")
-        public void render(GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
+        public void render(@Nonnull GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
                            int mouseX, int mouseY, boolean hovered, float partialTick) {
             guiGraphics.drawString(
                     Objects.requireNonNull(Minecraft.getInstance().font),
-                    label,
+                Objects.requireNonNull(label, "label"),
                     x + 2,
                     y + 6,
                     0xFFFFFF
@@ -824,8 +835,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         }
 
         @Override
-        @SuppressWarnings("null")
-        public void render(GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
+        public void render(@Nonnull GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
                            int mouseX, int mouseY, boolean hovered, float partialTick) {
             int innerX = x + 2;
             widget.setX(innerX);
@@ -852,8 +862,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         }
 
         @Override
-        @SuppressWarnings("null")
-        public void render(GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
+        public void render(@Nonnull GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
                            int mouseX, int mouseY, boolean hovered, float partialTick) {
             int innerX = x + 2;
             button.setX(innerX);
@@ -890,8 +899,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
         }
 
         @Override
-        @SuppressWarnings("null")
-        public void render(GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
+        public void render(@Nonnull GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
                            int mouseX, int mouseY, boolean hovered, float partialTick) {
             if (widgets.isEmpty()) return;
 
