@@ -16,6 +16,8 @@ import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import javax.annotation.Nonnull;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -38,7 +40,6 @@ public final class SchemaSoundscapeGroupsScreen extends Screen {
     }
 
     @Override
-    @SuppressWarnings("null")
     protected void init() {
         super.init();
         NeonStyle.initClient();
@@ -56,13 +57,16 @@ public final class SchemaSoundscapeGroupsScreen extends Screen {
         int leftX = centerX - (contentWidth / 2);
 
         var font = Objects.requireNonNull(this.font, "font");
+        String titleKey = (schema.titleKey == null || schema.titleKey.isBlank())
+            ? "bassshakertelemetry.soundscape.groups_title"
+            : Objects.requireNonNull(schema.titleKey, "schema.titleKey");
 
         this.addRenderableWidget(new StringWidget(
                 centerX - 140,
                 20,
                 280,
                 20,
-                Component.translatable(Objects.requireNonNullElse(schema.titleKey, "bassshakertelemetry.soundscape.groups_title")),
+            Objects.requireNonNull(Component.translatable(titleKey), "title"),
                 font
         ));
 
@@ -78,7 +82,7 @@ public final class SchemaSoundscapeGroupsScreen extends Screen {
 
         list = new GroupsList(mc, contentWidth, listHeight, listTop, listTop + listHeight, 24, leftX);
         refreshList();
-        this.addRenderableWidget(list);
+        this.addRenderableWidget(Objects.requireNonNull(list, "list"));
 
         this.addRenderableWidget(new NeonButton(
                 leftX,
@@ -99,7 +103,7 @@ public final class SchemaSoundscapeGroupsScreen extends Screen {
                     boolean ok = NeonStyle.reloadFromDiskBundleIfPresent();
                     if (this.minecraft != null && this.minecraft.player != null) {
                         this.minecraft.player.displayClientMessage(
-                                Component.literal(ok ? "UI bundle reloaded" : "UI bundle not found"),
+                            Objects.requireNonNull(Component.literal(ok ? "UI bundle reloaded" : "UI bundle not found"), "bundleMessage"),
                                 true
                         );
                     }
@@ -139,7 +143,6 @@ public final class SchemaSoundscapeGroupsScreen extends Screen {
         }
     }
 
-    @SuppressWarnings("null")
     private void onAdd() {
         String base = "Group";
         int i = 1;
@@ -184,14 +187,12 @@ public final class SchemaSoundscapeGroupsScreen extends Screen {
     }
 
     @Override
-    @SuppressWarnings("null")
-    public void renderBackground(GuiGraphics guiGraphics) {
+    public void renderBackground(@Nonnull GuiGraphics guiGraphics) {
         guiGraphics.fill(0, 0, this.width, this.height, NeonStyle.get().background);
     }
 
     @Override
-    @SuppressWarnings("null")
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void render(@Nonnull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
         var font = this.font;
@@ -203,7 +204,7 @@ public final class SchemaSoundscapeGroupsScreen extends Screen {
 
         guiGraphics.drawString(
                 font,
-                uiBundleStatusLabel(),
+            Objects.requireNonNull(uiBundleStatusLabel(), "uiBundleStatusLabel"),
                 leftX,
                 y,
                 NeonStyle.get().textDim,
@@ -315,8 +316,8 @@ public final class SchemaSoundscapeGroupsScreen extends Screen {
         }
 
         @Override
-        @SuppressWarnings("null")
-        public void render(GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
+        @SuppressWarnings("all")
+        public void render(@Nonnull GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
                            int mouseX, int mouseY, boolean hovered, float partialTick) {
             guiGraphics.drawString(
                     Objects.requireNonNull(SchemaSoundscapeGroupsScreen.this.font),
