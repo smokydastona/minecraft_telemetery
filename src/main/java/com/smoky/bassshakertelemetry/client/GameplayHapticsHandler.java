@@ -29,7 +29,6 @@ public final class GameplayHapticsHandler {
     private long lastMinePulseNanos;
 
     @SubscribeEvent
-    @SuppressWarnings("null")
     public void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) {
             return;
@@ -46,6 +45,9 @@ public final class GameplayHapticsHandler {
         }
 
         var player = mc.player;
+        if (player == null) {
+            return;
+        }
 
         // While holding attack on a block, emit a periodic low pulse (legacy mining texture).
         // If swing-synced mining is enabled, prefer that (it matches the on-screen animation).
@@ -60,7 +62,6 @@ public final class GameplayHapticsHandler {
     }
 
     @SubscribeEvent
-    @SuppressWarnings("null")
     public void onMouseButton(InputEvent.MouseButton event) {
         if (event.getAction() != GLFW.GLFW_PRESS) {
             return;
@@ -85,7 +86,6 @@ public final class GameplayHapticsHandler {
     }
 
     @SubscribeEvent
-    @SuppressWarnings("null")
     public void onKey(InputEvent.Key event) {
         if (event.getAction() != GLFW.GLFW_PRESS) {
             return;
