@@ -45,6 +45,9 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Accessibility HUD: optional on-screen cue list for key danger events (damage, explosions, thunder, boss cues, Warden heartbeat) plus a low-health warning, with 8-way directional arrows (←→↑↓↖↗↘↙) that update as you turn.
 
 ### Changed
+- Lower-latency defaults: JavaSound requested buffer now defaults to 20ms (was auto/0), and the audio engine renders in 10ms chunks for faster one-shot response.
+- Added a small config migration (`configVersion`) so existing configs that still have `javaSoundBufferMs: 0` pick up the new 20ms default once.
+- Gameplay attack/use click haptics now trigger from input events (mouse/keyboard, respects keybinds) instead of tick edge detection.
 - Default directional instruments (`impact_heavy`, `heartbeat_warden`, `wind_elytra`) now include a `direction` node with `band: "auto"`.
 - Directional impulses now support azimuth-based stereo panning when Spatial is enabled, even if Sound Scape routing is not enabled.
 - Encoded-mono directional encoding now blends between adjacent direction bands (smoother diagonals; less snapping).

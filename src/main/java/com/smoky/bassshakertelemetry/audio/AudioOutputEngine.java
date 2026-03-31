@@ -1017,7 +1017,10 @@ public final class AudioOutputEngine {
         long startedNs = System.nanoTime();
         boolean loggedNoTelemetryHint = false;
         try {
-            int framesPerChunk = 1024;
+            // Chunk size is a key contributor to end-to-end latency.
+            // 1024 frames @ 48kHz is ~21.3ms of inherent scheduling delay.
+            // 480 frames is exactly 10ms @ 48kHz and is a good low-latency default.
+            int framesPerChunk = 480;
             byte[] buffer = new byte[framesPerChunk * 2 * BYTES_PER_SAMPLE];
             int bufferChannels = 2;
 

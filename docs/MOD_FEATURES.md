@@ -21,7 +21,9 @@
 - Gating: automatically fades out and eventually closes the audio device when no live telemetry (e.g., menus / pause)
 - Priority & ducking (multi-bus): within each internal bus (see `HapticBus`), one dominant vibration wins and same-bus sources are ducked; continuous road texture is ducked while higher-priority events are active
 - Audio backend selection: `audioBackend` config key (currently only `javasound` is implemented; other ids are reserved)
-- Latency tuning: optional JavaSound output buffer size selection (JavaSound backend only; larger buffers are often more stable but add latency)
+- Latency tuning: JavaSound output buffer size selection (JavaSound backend only; larger buffers are often more stable but add latency)
+	- Default requested buffer is ~20ms (drivers may clamp/ignore this).
+	- Internal render cadence is ~10ms chunks (480 frames @ 48kHz), which reduces scheduling/quantization delay for one-shot impulses.
 - Latency test: an in-game latency test pulse toggle is available in Advanced settings → Audio
 - Calibration tools: quick test tones + a frequency sweep (plus a Stop/Silence button) are available in Advanced settings → Audio
 - Debug overlay: optional developer overlay showing the last vibration source/key, priority, frequency, gain, and recent suppression.
@@ -45,6 +47,7 @@ External output:
 - **Sound haptics**: maps many in-game sounds (explosions, thunder, hurt, break/place, steps, attacks, doors/containers/buttons/levers, etc.) into short impulses.
 - **Deduplication**: when an authoritative server-relayed event fires (e.g., explosion/block break/combat hit), nearby matching sound-inferred impulses are briefly suppressed to avoid double-triggering.
 - **Gameplay haptics (non-sexual)**: maps basic interactions (attack/use click edges, mining pulse while holding attack on a block, XP gains) into short impulses.
+	- Attack/use click edges are triggered from real input events (mouse/keyboard) and respect keybinds, to reduce “up to one tick” delay.
 - **Footsteps**: grounded walking emits short step pulses (no continuous "engine" rumble).
 - **Mining swing**: emits a pulse at the start of each arm swing while mining a block (visual-sync).
 

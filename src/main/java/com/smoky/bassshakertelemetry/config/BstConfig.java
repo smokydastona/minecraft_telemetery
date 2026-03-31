@@ -68,6 +68,18 @@ public final class BstConfig {
     private static Data sanitize(Data data) {
         Data d = (data == null) ? new Data() : data;
 
+        // --- One-time config migrations ---
+        // Gson sets missing int fields to 0, so we use an explicit version field.
+        // This lets us upgrade older configs once without overriding user choices forever.
+        if (d.configVersion < 1) {
+            // Older configs defaulted javaSoundBufferMs to 0 (auto), which is often high-latency.
+            // Upgrade to the low-latency default once; users can still manually set it back to 0.
+            if (d.javaSoundBufferMs == 0) {
+                d.javaSoundBufferMs = 20;
+            }
+            d.configVersion = 1;
+        }
+
         // --- Sound Scape defaults ---
         if (d.soundScapeGroups == null) {
             d.soundScapeGroups = new HashMap<>();
@@ -270,6 +282,10 @@ public final class BstConfig {
     }
 
     public static final class Data {
+        // Increment when we need to migrate older config files.
+        // (Older configs will deserialize this as 0.)
+        public int configVersion = 1;
+
         // Master switches
         public boolean enabled = true;
 
@@ -279,7 +295,8 @@ public final class BstConfig {
 
         // JavaSound buffer size. 0 = auto/default line buffer.
         // Larger buffers tend to be more stable but add latency.
-        public int javaSoundBufferMs = 0;
+        // Default: 20ms (good low-latency starting point on most devices).
+        public int javaSoundBufferMs = 20;
 
         // Developer tools
         public boolean debugOverlayEnabled = false;

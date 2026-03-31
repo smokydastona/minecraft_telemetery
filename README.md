@@ -42,7 +42,7 @@ In-game:
 
 - Minecraft main menu → **Mods** → **Bass Shaker Telemetry** → **Config**
 - Output device selection, master volume, per-effect toggles and volume sliders.
-- Advanced settings includes an optional output buffer size selector, a latency test pulse, calibration tones/sweep, and a haptic instrument graph editor (Phase 2).
+- Advanced settings includes an output buffer size selector (JavaSound backend) to tune **latency vs stability**, a latency test pulse, calibration tones/sweep, and a haptic instrument graph editor (Phase 2).
 - Advanced settings also includes a **Spatial** section (Phase 3) for Sound Scape: spatial panning toggle, distance attenuation, a guided per-channel calibration wizard (gain + simple EQ, burst test, RMS auto-trim, comfort limit capture), and a real-time spatial debugger (meters/waveform/spectrogram/timeline/latency).
 - Each effect slider includes a **Test** button.
 - **Sound Scape (7.1)**: category routing + group management for mapping haptics across multiple output channels. If no multichannel device is available, the UI restricts routing choices to stereo.
@@ -86,6 +86,11 @@ For other mods, a small public integration API is available under `com.smoky.bas
 Hardware tuning + troubleshooting guide: `docs/HARDWARE_TUNING_GUIDE.md`.
 
 When filing bugs, please include a debug overlay capture and the JavaSound buffer (requested vs accepted) log lines.
+
+## Latency notes
+
+- The mod is tuned for low latency by default (requested JavaSound buffer defaults to ~20ms, and the engine renders in ~10ms chunks at 48kHz).
+- Your actual end-to-end delay still depends on the Windows audio stack + device/driver: some drivers clamp/ignore requested JavaSound buffer sizes.
 
 ## Known limitations (alpha)
 

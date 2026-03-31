@@ -2,10 +2,14 @@ package com.smoky.bassshakertelemetry.client;
 
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.config.BstConfig;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.world.phys.HitResult;
+import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,9 +22,6 @@ import java.util.Map;
  */
 public final class GameplayHapticsHandler {
     private final Map<String, Long> lastFireByBucketNanos = new HashMap<>();
-
-    private boolean lastAttackDown;
-    private boolean lastUseDown;
 
     private int lastXpLevel = -1;
     private float lastXpProgress = -1.0f;
@@ -36,34 +37,19 @@ public final class GameplayHapticsHandler {
 
         BstConfig.Data cfg = BstConfig.get();
         if (!cfg.enabled || !cfg.gameplayHapticsEnabled) {
-            lastAttackDown = false;
-            lastUseDown = false;
             return;
         }
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.isPaused() || mc.player == null || mc.level == null || mc.options == null) {
-            lastAttackDown = false;
-            lastUseDown = false;
             return;
         }
 
         var player = mc.player;
 
-        boolean attackDown = mc.options.keyAttack.isDown();
-        boolean useDown = mc.options.keyUse.isDown();
-
-        // Rising edges: treat as discrete "click" events.
-        if (cfg.gameplayAttackClickEnabled && attackDown && !lastAttackDown && !isCrosshairOnBlock(mc)) {
-            onAttackClick(mc, cfg);
-        }
-        if (cfg.gameplayUseClickEnabled && useDown && !lastUseDown) {
-            onUseClick(mc, cfg);
-        }
-
         // While holding attack on a block, emit a periodic low pulse (legacy mining texture).
         // If swing-synced mining is enabled, prefer that (it matches the on-screen animation).
-        if (!cfg.miningSwingHapticsEnabled && cfg.gameplayMiningPulseEnabled && attackDown && isCrosshairOnBlock(mc)) {
+        if (!cfg.miningSwingHapticsEnabled && cfg.gameplayMiningPulseEnabled && mc.options.keyAttack.isDown() && isCrosshairOnBlock(mc)) {
             onMiningPulse(cfg);
         }
 
@@ -71,9 +57,57 @@ public final class GameplayHapticsHandler {
         if (cfg.gameplayXpEnabled) {
             onXpChange(player.experienceLevel, player.experienceProgress, cfg);
         }
+    }
 
-        lastAttackDown = attackDown;
-        lastUseDown = useDown;
+    @SubscribeEvent
+    @SuppressWarnings("null")
+    public void onMouseButton(InputEvent.MouseButton event) {
+        if (event.getAction() != GLFW.GLFW_PRESS) {
+            return;
+        }
+
+        BstConfig.Data cfg = BstConfig.get();
+        if (!cfg.enabled || !cfg.gameplayHapticsEnabled) {
+            return;
+        }
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.isPaused() || mc.screen != null || mc.player == null || mc.level == null || mc.options == null) {
+            return;
+        }
+
+        if (cfg.gameplayAttackClickEnabled && isBoundToMouse(mc.options.keyAttack, event.getButton()) && !isCrosshairOnBlock(mc)) {
+            onAttackClick(mc, cfg);
+        }
+        if (cfg.gameplayUseClickEnabled && isBoundToMouse(mc.options.keyUse, event.getButton())) {
+            onUseClick(mc, cfg);
+        }
+    }
+
+    @SubscribeEvent
+    @SuppressWarnings("null")
+    public void onKey(InputEvent.Key event) {
+        if (event.getAction() != GLFW.GLFW_PRESS) {
+            return;
+        }
+
+        BstConfig.Data cfg = BstConfig.get();
+        if (!cfg.enabled || !cfg.gameplayHapticsEnabled) {
+            return;
+        }
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.isPaused() || mc.screen != null || mc.player == null || mc.level == null || mc.options == null) {
+            return;
+        }
+
+        // Respect keybinds: only fire if the pressed key matches the binding.
+        if (cfg.gameplayAttackClickEnabled && isBoundToKey(mc.options.keyAttack, event.getKey()) && !isCrosshairOnBlock(mc)) {
+            onAttackClick(mc, cfg);
+        }
+        if (cfg.gameplayUseClickEnabled && isBoundToKey(mc.options.keyUse, event.getKey())) {
+            onUseClick(mc, cfg);
+        }
     }
 
     private void onAttackClick(Minecraft mc, BstConfig.Data cfg) {
@@ -215,6 +249,28 @@ public final class GameplayHapticsHandler {
     private static boolean isCrosshairOnBlock(Minecraft mc) {
         HitResult hr = mc.hitResult;
         return hr != null && hr.getType() == HitResult.Type.BLOCK;
+    }
+
+    private static boolean isBoundToMouse(KeyMapping mapping, int mouseButton) {
+        if (mapping == null) {
+            return false;
+        }
+        InputConstants.Key key = mapping.getKey();
+        if (key == null || key.getType() != InputConstants.Type.MOUSE) {
+            return false;
+        }
+        return key.getValue() == mouseButton;
+    }
+
+    private static boolean isBoundToKey(KeyMapping mapping, int keyCode) {
+        if (mapping == null) {
+            return false;
+        }
+        InputConstants.Key key = mapping.getKey();
+        if (key == null || key.getType() != InputConstants.Type.KEYSYM) {
+            return false;
+        }
+        return key.getValue() == keyCode;
     }
 
     private static double clamp(double v, double min, double max) {
