@@ -25,7 +25,6 @@ public final class SpatialDebuggerScreen extends Screen {
     }
 
     @Override
-    @SuppressWarnings("null")
     protected void init() {
         super.init();
         NeonStyle.initClient();
