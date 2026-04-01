@@ -3,7 +3,6 @@ package com.smoky.bassshakertelemetry.client.ui;
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.client.ui.neon.NeonButton;
 import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
-import com.smoky.bassshakertelemetry.client.ui.neon.NeonToggleButton;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -44,18 +43,6 @@ public final class AdvancedSettingsScreen extends Screen {
 
     private Button bufferButton;
     private int bufferChoiceIndex;
-
-    private Button latencyTestButton;
-    private boolean latencyTestActive;
-    private int latencyTestTicks;
-
-    private Button debugOverlayButton;
-    private boolean debugOverlayEnabled;
-
-    private Button demoButton;
-    private boolean demoActive;
-    private int demoStep;
-    private long demoNextNanos;
 
     private Button outputEqButton;
     private boolean outputEqEnabled;
@@ -130,24 +117,6 @@ public final class AdvancedSettingsScreen extends Screen {
             bufferChoiceIndex = findBufferChoiceIndex(BstConfig.get().javaSoundBufferMs);
         }
         bufferButton = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(bufferButtonLabel()), this::cycleBufferChoice);
-
-        if (latencyTestButton == null) {
-            latencyTestActive = false;
-            latencyTestTicks = 0;
-        }
-        latencyTestButton = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(latencyButtonLabel(false)), this::toggleLatencyTest);
-
-        if (debugOverlayButton == null) {
-            debugOverlayEnabled = BstConfig.get().debugOverlayEnabled;
-        }
-        debugOverlayButton = new NeonToggleButton(0, 0, w, rowH, Objects.requireNonNull(debugOverlayLabel()), () -> debugOverlayEnabled, this::toggleDebugOverlay);
-
-        if (demoButton == null) {
-            demoActive = false;
-            demoStep = 0;
-            demoNextNanos = 0L;
-        }
-        demoButton = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(demoLabel()), this::toggleDemo);
 
         if (outputEqButton == null) {
             outputEqEnabled = BstConfig.get().outputEqEnabled;
@@ -250,9 +219,6 @@ public final class AdvancedSettingsScreen extends Screen {
             case 4 -> {
                 y = addHeader(leftX, y, w, font, tr("bassshakertelemetry.config.audio"));
                 y = addButtonOnly(leftX, y, bufferButton);
-                y = addButtonOnly(leftX, y, latencyTestButton);
-                y = addButtonOnly(leftX, y, debugOverlayButton);
-                y = addButtonOnly(leftX, y, demoButton);
             }
             case 5 -> {
                 y = addHeader(leftX, y, w, font, tr("bassshakertelemetry.config.tone_shaping"));
@@ -357,8 +323,6 @@ public final class AdvancedSettingsScreen extends Screen {
     }
 
     private void onDone() {
-        stopLatencyTest();
-        stopDemo();
         BstConfig.Data data = BstConfig.get();
 
         if (roadGainSlider != null) data.roadTextureGain = roadGainSlider.getRealValue();
@@ -388,8 +352,6 @@ public final class AdvancedSettingsScreen extends Screen {
         data.smartVolumeEnabled = smartVolumeEnabled;
         if (smartVolumeTargetSlider != null) data.smartVolumeTargetPct = smartVolumeTargetSlider.getIntValue();
 
-        data.debugOverlayEnabled = debugOverlayEnabled;
-
         BstConfig.set(data);
         AudioOutputEngine.get().startOrRestart();
 
@@ -399,8 +361,6 @@ public final class AdvancedSettingsScreen extends Screen {
     }
 
     private void onCancel() {
-        stopLatencyTest();
-        stopDemo();
         if (this.minecraft != null) {
             this.minecraft.setScreen(parent);
         }
@@ -417,46 +377,6 @@ public final class AdvancedSettingsScreen extends Screen {
         guiGraphics.fill(0, 0, this.width, this.height, NeonStyle.get().background);
     }
 
-    @Override
-    public void tick() {
-        super.tick();
-        if (!latencyTestActive) {
-            return;
-        }
-
-        latencyTestTicks++;
-        boolean pulseNow = (latencyTestTicks % 10) == 0; // 2 Hz at 20 tps
-        if (pulseNow) {
-            AudioOutputEngine.get().testLatencyPulse();
-        }
-        if (latencyTestButton != null) {
-            latencyTestButton.setMessage(Objects.requireNonNull(latencyButtonLabel(pulseNow)));
-        }
-
-        tickDemo();
-    }
-
-    private void toggleDebugOverlay() {
-        debugOverlayEnabled = !debugOverlayEnabled;
-        if (debugOverlayButton != null) {
-            debugOverlayButton.setMessage(Objects.requireNonNull(debugOverlayLabel()));
-        }
-    }
-
-    private Component debugOverlayLabel() {
-        return debugOverlayEnabled
-                ? Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.debug_overlay_on"))
-                : Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.debug_overlay_off"));
-    }
-
-    private void toggleDemo() {
-        demoActive = !demoActive;
-        demoStep = 0;
-        demoNextNanos = System.nanoTime();
-        if (demoButton != null) {
-            demoButton.setMessage(Objects.requireNonNull(demoLabel()));
-        }
-    }
 
     private void toggleOutputEq() {
         outputEqEnabled = !outputEqEnabled;
@@ -484,80 +404,6 @@ public final class AdvancedSettingsScreen extends Screen {
                 : Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.smart_volume_off"));
     }
 
-    private void stopDemo() {
-        demoActive = false;
-        demoStep = 0;
-        demoNextNanos = 0L;
-        if (demoButton != null) {
-            demoButton.setMessage(Objects.requireNonNull(demoLabel()));
-        }
-    }
-
-    private void tickDemo() {
-        if (!demoActive) {
-            return;
-        }
-        long now = System.nanoTime();
-        if (now < demoNextNanos) {
-            return;
-        }
-
-        // Simple repeatable sequence for tuning: explosion -> damage -> mining -> footsteps.
-        // Uses explicit impulses so it works even outside of normal gameplay triggers.
-        switch (demoStep) {
-            case 0 -> {
-                AudioOutputEngine.get().testLatencyPulse();
-                demoNextNanos = now + 600_000_000L;
-            }
-            case 1 -> {
-                AudioOutputEngine.get().testDamageBurst();
-                demoNextNanos = now + 600_000_000L;
-            }
-            case 2 -> {
-                AudioOutputEngine.get().testRoadTexture();
-                demoNextNanos = now + 600_000_000L;
-            }
-            case 3 -> {
-                AudioOutputEngine.get().testFootsteps();
-                demoNextNanos = now + 350_000_000L;
-            }
-            case 4 -> {
-                AudioOutputEngine.get().testMiningSwing();
-                demoNextNanos = now + 450_000_000L;
-            }
-            default -> {
-                demoStep = -1;
-                demoNextNanos = now + 900_000_000L;
-            }
-        }
-        demoStep++;
-
-        if (demoButton != null) {
-            demoButton.setMessage(Objects.requireNonNull(demoLabel()));
-        }
-    }
-
-    private Component demoLabel() {
-        return demoActive
-                ? Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.demo_stop"))
-                : Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.demo_run"));
-    }
-
-    private void toggleLatencyTest() {
-        latencyTestActive = !latencyTestActive;
-        latencyTestTicks = 0;
-        if (latencyTestButton != null) {
-            latencyTestButton.setMessage(Objects.requireNonNull(latencyButtonLabel(false)));
-        }
-    }
-
-    private void stopLatencyTest() {
-        latencyTestActive = false;
-        latencyTestTicks = 0;
-        if (latencyTestButton != null) {
-            latencyTestButton.setMessage(Objects.requireNonNull(latencyButtonLabel(false)));
-        }
-    }
 
     private void cycleBufferChoice() {
         bufferChoiceIndex = (clampIndex(bufferChoiceIndex) + 1) % BUFFER_CHOICES_MS.length;
@@ -576,19 +422,6 @@ public final class AdvancedSettingsScreen extends Screen {
                 .append(v);
     }
 
-    private net.minecraft.network.chat.MutableComponent latencyButtonLabel(boolean pulseNow) {
-        net.minecraft.network.chat.MutableComponent base = latencyTestActive
-                ? Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.latency_test_on"))
-                : Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.latency_test_off"));
-        if (latencyTestActive && pulseNow) {
-            return Objects.requireNonNull(Component.translatable(
-                latencyTestActive
-                    ? "bassshakertelemetry.config.latency_test_on"
-                    : "bassshakertelemetry.config.latency_test_off"
-            )).append(" ").append(Objects.requireNonNull(Component.literal("*")));
-        }
-        return base;
-    }
 
     private static int findBufferChoiceIndex(int currentMs) {
         for (int i = 0; i < BUFFER_CHOICES_MS.length; i++) {

@@ -15,7 +15,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Priority-aware impulse mixing with ducking so only one vibration is dominant at a time.
 - Server-relayed haptics packet now includes source position (enables directional encoding in multiplayer).
 - Advanced settings: JavaSound output buffer size selector (helps tune latency/stability).
-- Advanced settings: latency test pulse toggle.
+- Misc settings: Tools page (latency test pulse, demo runner, debug overlay toggle).
 - Advanced settings: Output EQ tone shaping (single-band, with freq + gain).
 - Advanced settings: Smart Volume auto-level (slow AGC).
 - Advanced settings: calibration test tones (30 Hz, 60 Hz) and a 20→120 Hz sweep.
@@ -46,7 +46,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Accessibility HUD: optional on-screen cue list for key danger events (damage, explosions, thunder, boss cues, Warden heartbeat) plus a low-health warning, with 8-way directional arrows (←→↑↓↖↗↘↙) that update as you turn.
 - New **Movement settings** screen: Movement texture toggle + Flight/Air/Swim/Water sliders, plus Footsteps toggle + slider.
 - New **Damage** screen: incoming damage + melee hit + multiplayer hit-confirm (`combat.hit`) tuning.
-- New **Misc** screen: Sound haptics + Gameplay haptics + Biome chime + Accessibility HUD.
+- New **Misc** screen (paged): Sound haptics + Gameplay haptics + Biome chime + Accessibility HUD + Tools.
 
 ### Changed
 - Lower-latency defaults: JavaSound requested buffer now defaults to 20ms (was auto/0), and the audio engine renders in 10ms chunks for faster one-shot response.
@@ -69,6 +69,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Main config screen layout redesigned to a 2x2 page grid (Damage / Movement / Misc / Advanced) after device selection + master volume.
 - Movement settings now includes Mounted footsteps controls (toggle + volume) alongside Footsteps.
 - Advanced settings screen is now paged (Prev/Next) instead of a long scroll list.
+- Misc settings screen is now paged (Prev/Next), and utility tools were moved from Advanced to Misc.
 
 ### Fixed
 - Output device selection now stays on the selected device when 7.1 (8ch) output can’t be opened (falls back to stereo on the same device instead of silently switching to the system default).

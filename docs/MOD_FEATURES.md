@@ -24,10 +24,10 @@
 - Latency tuning: JavaSound output buffer size selection (JavaSound backend only; larger buffers are often more stable but add latency)
 	- Default requested buffer is ~20ms (drivers may clamp/ignore this).
 	- Internal render cadence is ~10ms chunks (480 frames @ 48kHz), which reduces scheduling/quantization delay for one-shot impulses.
-- Latency test: an in-game latency test pulse toggle is available in Advanced settings → Audio
+- Latency test: an in-game latency test pulse toggle is available in Misc → Tools
 - Calibration tools: quick test tones + a frequency sweep (plus a Stop/Silence button) are available in Advanced settings → Tools
-- Debug overlay: optional developer overlay showing the last vibration source/key, priority, frequency, gain, and recent suppression.
-- Demo sequence: a simple built-in demo runner is available in Advanced settings → Audio for repeatable tuning.
+- Debug overlay: optional developer overlay showing the last vibration source/key, priority, frequency, gain, and recent suppression (toggle in Misc → Tools).
+- Demo sequence: a simple built-in demo runner is available in Misc → Tools for repeatable tuning.
 
 External output:
 
@@ -72,10 +72,10 @@ External output:
 	- Multiplayer hit-confirm (server-relayed `combat.hit`)
 
 - **Misc** groups non-movement toggles and volumes:
-	- Sound haptics
-	- Gameplay haptics
-	- Biome chime
-	- Accessibility HUD
+	- (Paged with Prev/Next)
+	- Haptics: Sound haptics, Gameplay haptics, Biome chime
+	- Accessibility: Accessibility HUD
+	- Tools: latency pulse test, debug overlay toggle, demo runner
 
 - **Movement settings** provides movement-related toggles/volumes in one place:
 	- Movement texture master toggle
