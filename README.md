@@ -21,7 +21,7 @@ For DSP-backed `instrument` playback, directional feel is handled inside the ins
 
 ## Signal sources (high level)
 
-- **Telemetry-driven layers** (optional): road texture (speed), accel bump, biome chime, elytra state.
+- **Telemetry-driven layers** (optional): movement texture (speed), accel bump, biome chime, elytra state.
 - **Event impulses**: damage (directional when a source is known), danger ticks (fire/drowning/poison/wither), death rumble.
 - **Flight wind (Elytra)**: a low rumble layer while gliding that shifts left/right as you turn (key: `flight.wind`).
 - **Mounted haptics**: ground mounts emit hoof “clump” pulses (key: `mount.hoof`); flying mounts swap to `flight.wind` while airborne.

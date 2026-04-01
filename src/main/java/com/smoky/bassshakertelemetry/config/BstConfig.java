@@ -323,8 +323,8 @@ public final class BstConfig {
         public boolean damageBurstEnabled = true;
         public boolean biomeChimeEnabled = true;
 
-        // Simulated road texture (low-frequency rumble layer)
-        public boolean roadTextureEnabled = false;
+        // Simulated movement texture (low-frequency rumble layer)
+        public boolean roadTextureEnabled = true;
 
         // Sound-to-haptics (treat common game sounds as rumble events)
         public boolean soundHapticsEnabled = true;

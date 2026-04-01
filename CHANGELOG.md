@@ -59,6 +59,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Config UI pages now consistently use the Neon theme (including device picker, Sound Scape editors, and Spatial screens).
 - Main config screen now includes a **Game sounds device** picker alongside the haptics output device picker.
 - Neon UI bundle now auto-reloads when screens open (manual Reload button removed).
+- Road texture has been renamed to **Movement texture** in the UI/docs, and is now ON by default for new installs.
 
 ### Fixed
 - Output device selection now stays on the selected device when 7.1 (8ch) output can’t be opened (falls back to stereo on the same device instead of silently switching to the system default).

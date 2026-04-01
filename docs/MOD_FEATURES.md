@@ -19,7 +19,7 @@
 - Tone shaping: optional Output EQ (single band) is available in Advanced settings → Audio
 - Auto-level: optional Smart Volume (slow AGC) is available in Advanced settings → Audio
 - Gating: automatically fades out and eventually closes the audio device when no live telemetry (e.g., menus / pause)
-- Priority & ducking (multi-bus): within each internal bus (see `HapticBus`), one dominant vibration wins and same-bus sources are ducked; continuous road texture is ducked while higher-priority events are active
+- Priority & ducking (multi-bus): within each internal bus (see `HapticBus`), one dominant vibration wins and same-bus sources are ducked; continuous movement texture is ducked while higher-priority events are active
 - Audio backend selection: `audioBackend` config key (currently only `javasound` is implemented; other ids are reserved)
 - Latency tuning: JavaSound output buffer size selection (JavaSound backend only; larger buffers are often more stable but add latency)
 	- Default requested buffer is ~20ms (drivers may clamp/ignore this).
@@ -35,7 +35,7 @@ External output:
 
 ## Effects (current)
 
-- **Road texture**: low-frequency filtered noise scaled by speed (toggleable; default OFF).
+- **Movement texture**: low-frequency filtered noise scaled by speed (toggleable; default ON for new installs).
 - **Damage**: triggers on hurt timing (with client-tick fallback). When a damage source position is available (attacker/projectile/source position), `damage.generic` is **directional** so you can feel where it came from.
 - **Periodic danger ticks**: subtle repeating pulses for fire/drowning/poison/wither.
 - **Death rumble**: one-shot death effect (boom + “womp” tail).

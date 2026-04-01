@@ -238,7 +238,8 @@ public final class SoundHapticsHandler {
         }
 
         // Attacks / swings.
-        if (p.contains("attack") || p.contains("sweep") || p.contains("crit")) {
+        if ((p.contains("attack") || p.contains("sweep") || p.contains("crit"))
+            && !(p.contains("nodamage") || p.contains("no_damage"))) {
             // Keep this subtle: gameplay melee click provides the main "thump" when enabled.
             return new HapticImpulse("attack", 52.0, 34, clamp(base * 0.32, 0.0, 0.55), 0.06, 0.0, true, 5);
         }

@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.world.phys.HitResult;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.lwjgl.glfw.GLFW;
@@ -76,10 +77,6 @@ public final class GameplayHapticsHandler {
         if (mc.isPaused() || mc.screen != null || mc.player == null || mc.level == null || mc.options == null) {
             return;
         }
-
-        if (cfg.gameplayAttackClickEnabled && isBoundToMouse(mc.options.keyAttack, event.getButton()) && !isCrosshairOnBlock(mc)) {
-            onAttackClick(mc, cfg);
-        }
         if (cfg.gameplayUseClickEnabled && isBoundToMouse(mc.options.keyUse, event.getButton())) {
             onUseClick(mc, cfg);
         }
@@ -102,17 +99,34 @@ public final class GameplayHapticsHandler {
         }
 
         // Respect keybinds: only fire if the pressed key matches the binding.
-        if (cfg.gameplayAttackClickEnabled && isBoundToKey(mc.options.keyAttack, event.getKey()) && !isCrosshairOnBlock(mc)) {
-            onAttackClick(mc, cfg);
-        }
         if (cfg.gameplayUseClickEnabled && isBoundToKey(mc.options.keyUse, event.getKey())) {
             onUseClick(mc, cfg);
         }
     }
 
-    private void onAttackClick(Minecraft mc, BstConfig.Data cfg) {
-        HitResult hr = mc.hitResult;
-        String bucket = (hr != null && hr.getType() == HitResult.Type.ENTITY) ? "gameplay.attack_entity" : "gameplay.attack_click";
+    @SubscribeEvent
+    public void onAttackEntity(AttackEntityEvent event) {
+        BstConfig.Data cfg = BstConfig.get();
+        if (!cfg.enabled || !cfg.gameplayHapticsEnabled || !cfg.gameplayAttackClickEnabled) {
+            return;
+        }
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.isPaused() || mc.screen != null || mc.player == null || mc.level == null) {
+            return;
+        }
+
+        // Client-only handler: ensure it's the local player.
+        if (event.getEntity() != mc.player) {
+            return;
+        }
+
+        // Only fire on actual entity attack attempts (contact), not air swings.
+        onMeleeHit(mc, cfg);
+    }
+
+    private void onMeleeHit(Minecraft mc, BstConfig.Data cfg) {
+        String bucket = "gameplay.attack_entity";
 
         // Small "thump". Target: around block-break intensity, slightly higher.
         // Also routes via VibrationIngress so sound-inferred attack swings can be suppressed.
