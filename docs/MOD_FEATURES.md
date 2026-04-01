@@ -81,6 +81,7 @@ External output:
 	- Movement texture master toggle
 	- Flight / Air (directional) / Swim / Water (directional) sliders
 	- Footsteps toggle + slider
+	- Mounted footsteps toggle + slider
 - Other per-effect volume sliders are available under **Advanced settings → Effect volumes**.
 - Each effect slider has a **Test** button directly underneath to preview that effect without needing to trigger it in gameplay.
 - Config UI pages consistently use the Neon theme (including device picker, Sound Scape editors, Spatial screens, and the instrument editor).

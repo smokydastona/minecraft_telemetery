@@ -28,10 +28,15 @@ public final class MovementSettingsScreen extends Screen {
     private boolean footstepsEnabled;
     private double footstepsGain;
 
+    private boolean mountedEnabled;
+    private double mountedGain;
+
     private NeonRangeSlider flightSlider;
     private NeonRangeSlider airSlider;
     private NeonRangeSlider swimSlider;
     private NeonRangeSlider waterSlider;
+
+    private NeonRangeSlider mountedGainSlider;
 
     public MovementSettingsScreen(Screen parent) {
         super(Component.translatable("bassshakertelemetry.config.movement_title"));
@@ -46,6 +51,9 @@ public final class MovementSettingsScreen extends Screen {
 
         this.footstepsEnabled = cfg.footstepHapticsEnabled;
         this.footstepsGain = clamp01(cfg.footstepHapticsGain);
+
+        this.mountedEnabled = cfg.mountedHapticsEnabled;
+        this.mountedGain = clamp01(cfg.mountedHapticsGain);
     }
 
     @Override
@@ -180,6 +188,37 @@ public final class MovementSettingsScreen extends Screen {
             v -> footstepsGain = clamp01(v)
         ));
 
+        y += rowH + (rowGap * 2);
+
+        this.addRenderableWidget(new NeonCycleButton<>(
+            leftX,
+            y,
+            contentWidth,
+            rowH,
+            Component.translatable("bassshakertelemetry.config.mounted_enabled"),
+            List.of(Boolean.TRUE, Boolean.FALSE),
+            mountedEnabled,
+            v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
+            v -> mountedEnabled = v
+        ));
+
+        y += rowH + rowGap;
+
+        mountedGainSlider = new NeonRangeSlider(
+            leftX,
+            y,
+            sliderW,
+            rowH,
+            Component.translatable("bassshakertelemetry.config.mounted_gain"),
+            0.0,
+            1.0,
+            0.01,
+            "percent",
+            () -> mountedGain,
+            v -> mountedGain = clamp01(v)
+        );
+        this.addRenderableWidget(mountedGainSlider);
+
         int buttonW = (contentWidth - 10) / 2;
         this.addRenderableWidget(new NeonButton(
             leftX,
@@ -210,6 +249,9 @@ public final class MovementSettingsScreen extends Screen {
 
         data.footstepHapticsEnabled = footstepsEnabled;
         data.footstepHapticsGain = clamp01(footstepsGain);
+
+        data.mountedHapticsEnabled = mountedEnabled;
+        data.mountedHapticsGain = clamp01(mountedGain);
 
         BstConfig.set(data);
         AudioOutputEngine.get().startOrRestart();
@@ -247,6 +289,8 @@ public final class MovementSettingsScreen extends Screen {
         if (airSlider != null) airSlider.active = active;
         if (swimSlider != null) swimSlider.active = active;
         if (waterSlider != null) waterSlider.active = active;
+
+        if (mountedGainSlider != null) mountedGainSlider.active = mountedEnabled;
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }

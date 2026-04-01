@@ -45,7 +45,7 @@ In-game:
 - Game sounds device selection (Minecraft audio output), haptics output device selection (JavaSound), master volume, then page buttons: **Damage / Movement / Misc / Advanced**.
 - **Damage** includes incoming damage controls plus outgoing hit-confirm (server-relayed `combat.hit`) and melee hit tuning.
 - **Misc** groups non-movement toggles/volumes like Sound haptics, Gameplay haptics, Biome chime, and Accessibility HUD.
-- **Movement settings** groups movement-related tuning in one place: Movement texture master toggle, Flight/Air/Swim/Water sliders, plus Footsteps toggle + slider.
+- **Movement settings** groups movement-related tuning in one place: Movement texture master toggle, Flight/Air/Swim/Water sliders, plus Footsteps and Mounted footsteps toggles + sliders.
 - Advanced settings includes an output buffer size selector (JavaSound backend) to tune **latency vs stability**, a latency test pulse, calibration tones/sweep, and a haptic instrument graph editor (Phase 2).
 - Advanced settings also includes a **Spatial** section (Phase 3) for Sound Scape: spatial panning toggle, distance attenuation, a guided per-channel calibration wizard (gain + simple EQ, burst test, RMS auto-trim, comfort limit capture), and a real-time spatial debugger (meters/waveform/spectrogram/timeline/latency).
 - Each effect slider includes a **Test** button.

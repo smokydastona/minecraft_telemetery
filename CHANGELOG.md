@@ -67,6 +67,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Movement texture is now context-aware (land/flight/swim), and both directional wind layers (Elytra + swimming) are gated by the Movement texture master toggle.
 - Default tuning: damage haptics are now louder than melee hits by default (higher default `damageBurstGain`, slightly quieter melee click, and a higher minimum damage scale so small hits still read clearly).
 - Main config screen layout redesigned to a 2x2 page grid (Damage / Movement / Misc / Advanced) after device selection + master volume.
+- Movement settings now includes Mounted footsteps controls (toggle + volume) alongside Footsteps.
 
 ### Fixed
 - Output device selection now stays on the selected device when 7.1 (8ch) output can’t be opened (falls back to stereo on the same device instead of silently switching to the system default).
