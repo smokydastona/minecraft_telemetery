@@ -1,5 +1,6 @@
 package com.smoky.bassshakertelemetry.client.ui.neon;
 
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -63,7 +64,38 @@ public final class NeonButton extends Button {
             textColor = pressed ? style.panel : style.text;
         }
 
-        guiGraphics.drawCenteredString(font, this.getMessage(), x + (w / 2), y + (h - 8) / 2, textColor);
+        Component message = this.getMessage();
+        int textWidth = font.width(message);
+        int padding = 6;
+        int innerLeft = x + padding;
+        int innerRight = x + w - padding;
+        int availableWidth = Math.max(0, innerRight - innerLeft);
+        int textY = y + (h - 8) / 2;
+
+        if (textWidth <= availableWidth) {
+            guiGraphics.drawCenteredString(font, message, x + (w / 2), textY, textColor);
+            return;
+        }
+
+        // Long labels (e.g., audio device names) should never spill outside the button.
+        // Keep UI clean: clip always; scroll only on hover/focus so it isn't distracting.
+        guiGraphics.enableScissor(innerLeft, y + 2, innerRight, y + h - 2);
+
+        if (hovered) {
+            int gapPx = 24;
+            float speedPxPerSec = 18.0f;
+
+            float t = (float) (Util.getMillis() / 1000.0);
+            float cycle = textWidth + gapPx;
+            float offset = (t * speedPxPerSec) % cycle;
+
+            guiGraphics.drawString(font, message, innerLeft - (int) offset, textY, textColor);
+            guiGraphics.drawString(font, message, innerLeft - (int) offset + (int) cycle, textY, textColor);
+        } else {
+            guiGraphics.drawString(font, message, innerLeft, textY, textColor);
+        }
+
+        guiGraphics.disableScissor();
     }
 
     private static float step(float current, float target, float speed) {
