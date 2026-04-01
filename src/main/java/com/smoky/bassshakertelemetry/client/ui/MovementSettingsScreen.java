@@ -25,7 +25,6 @@ public final class MovementSettingsScreen extends Screen {
     private double swimGain;
     private double waterGain;
 
-    private boolean footstepsEnabled;
     private double footstepsGain;
 
     private boolean mountedEnabled;
@@ -49,8 +48,8 @@ public final class MovementSettingsScreen extends Screen {
         this.swimGain = clamp01(cfg.movementSwimGain);
         this.waterGain = clamp01(cfg.movementWaterGain);
 
-        this.footstepsEnabled = cfg.footstepHapticsEnabled;
-        this.footstepsGain = clamp01(cfg.footstepHapticsGain);
+        // Footsteps are enabled/disabled via the gain slider (0 disables) to reduce UI clutter.
+        this.footstepsGain = cfg.footstepHapticsEnabled ? clamp01(cfg.footstepHapticsGain) : 0.0;
 
         this.mountedEnabled = cfg.mountedHapticsEnabled;
         this.mountedGain = clamp01(cfg.mountedHapticsGain);
@@ -160,20 +159,6 @@ public final class MovementSettingsScreen extends Screen {
 
         y += rowH + (rowGap * 2);
 
-        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonCycleButton<>(
-            leftX,
-            y,
-            contentWidth,
-            rowH,
-            Component.translatable("bassshakertelemetry.config.footsteps_enabled"),
-            List.of(Boolean.TRUE, Boolean.FALSE),
-            footstepsEnabled,
-            v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
-            v -> footstepsEnabled = v
-        ), "bassshakertelemetry.config.footsteps_enabled"));
-
-        y += rowH + rowGap;
-
         this.addRenderableWidget(UiTooltip.withLabelKey(new NeonRangeSlider(
             leftX,
             y,
@@ -247,8 +232,8 @@ public final class MovementSettingsScreen extends Screen {
         data.movementSwimGain = clamp01(swimGain);
         data.movementWaterGain = clamp01(waterGain);
 
-        data.footstepHapticsEnabled = footstepsEnabled;
         data.footstepHapticsGain = clamp01(footstepsGain);
+        data.footstepHapticsEnabled = data.footstepHapticsGain > 0.0;
 
         data.mountedHapticsEnabled = mountedEnabled;
         data.mountedHapticsGain = clamp01(mountedGain);
