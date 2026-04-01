@@ -136,16 +136,16 @@ public final class HapticInstrumentEditorScreen extends Screen {
             s -> Component.literal(String.valueOf(s)),
             this::selectInstrument
         );
-        this.addRenderableWidget(instrumentCycle);
+        this.addRenderableWidget(UiTooltip.withLabelKey(instrumentCycle, "bassshakertelemetry.instrument_editor.instrument"));
 
-        reloadButton = new NeonButton(
+        reloadButton = UiTooltip.withLabelKey(new NeonButton(
             x0 + cycleW + 10,
             y,
             reloadW,
             ROW_H,
             Component.translatable("bassshakertelemetry.instrument_editor.reload"),
             this::reloadFromDisk
-        );
+        ), "bassshakertelemetry.instrument_editor.reload");
         this.addRenderableWidget(reloadButton);
 
         y += 24;
@@ -164,70 +164,70 @@ public final class HapticInstrumentEditorScreen extends Screen {
             v -> {
             }
         );
-        this.addRenderableWidget(addTypeCycle);
+        this.addRenderableWidget(UiTooltip.withLabelKey(addTypeCycle, "bassshakertelemetry.instrument_editor.add_type"));
 
-        addNodeButton = new NeonButton(
+        addNodeButton = UiTooltip.withLabelKey(new NeonButton(
             x0 + typeW + 10,
             y,
             addW,
             ROW_H,
             Component.translatable("bassshakertelemetry.instrument_editor.add"),
             this::addNode
-        );
+        ), "bassshakertelemetry.instrument_editor.add");
         this.addRenderableWidget(addNodeButton);
 
         y += 24;
 
         int smallW = (contentW - 30) / 4;
-        setOutputButton = new NeonButton(
+        setOutputButton = UiTooltip.withLabelKey(new NeonButton(
             x0,
             y,
             smallW,
             ROW_H,
             Component.translatable("bassshakertelemetry.instrument_editor.set_output"),
             this::setOutputToSelected
-        );
+        ), "bassshakertelemetry.instrument_editor.set_output");
         this.addRenderableWidget(setOutputButton);
 
-        saveButton = new NeonButton(
+        saveButton = UiTooltip.withLabelKey(new NeonButton(
             x0 + smallW + 10,
             y,
             smallW,
             ROW_H,
             Component.translatable("bassshakertelemetry.instrument_editor.save"),
             this::saveToDisk
-        );
+        ), "bassshakertelemetry.instrument_editor.save");
         this.addRenderableWidget(saveButton);
 
-        copyJsonButton = new NeonButton(
+        copyJsonButton = UiTooltip.withLabelKey(new NeonButton(
             x0 + (smallW + 10) * 2,
             y,
             smallW,
             ROW_H,
             Component.translatable("bassshakertelemetry.instrument_editor.copy_json"),
             this::copySelectedInstrumentJson
-        );
+        ), "bassshakertelemetry.instrument_editor.copy_json");
         this.addRenderableWidget(copyJsonButton);
 
-        testButton = new NeonButton(
+        testButton = UiTooltip.withLabelKey(new NeonButton(
             x0 + (smallW + 10) * 3,
             y,
             smallW,
             ROW_H,
             Component.translatable("bassshakertelemetry.instrument_editor.test"),
             this::testPlay
-        );
+        ), "bassshakertelemetry.instrument_editor.test");
         this.addRenderableWidget(testButton);
 
         int doneW = Math.min(200, contentW);
-        doneButton = new NeonButton(
+        doneButton = UiTooltip.withLabelKey(new NeonButton(
             centerX - (doneW / 2),
             this.height - 28,
             doneW,
             20,
             Component.translatable("bassshakertelemetry.config.done"),
             this::onDone
-        );
+        ), "bassshakertelemetry.config.done");
         this.addRenderableWidget(doneButton);
 
         // Canvas bounds (below controls, above Done)

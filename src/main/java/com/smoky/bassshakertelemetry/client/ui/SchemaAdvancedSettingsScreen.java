@@ -107,23 +107,23 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
 
         int buttonW = (contentWidth - 10) / 2;
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX,
                 this.height - 28,
                 buttonW,
                 20,
                 Component.translatable("bassshakertelemetry.config.done"),
                 this::onDone
-        ));
+        ), "bassshakertelemetry.config.done"));
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX + buttonW + 10,
                 this.height - 28,
                 buttonW,
                 20,
                 Component.translatable("bassshakertelemetry.config.cancel"),
                 this::onCancel
-        ));
+        ), "bassshakertelemetry.config.cancel"));
     }
 
     private void loadBoundState(NeonUiSchema.NeonUiNode node) {
@@ -212,6 +212,9 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
                     b = new NeonButton(0, 0, contentWidth - 12, 20, msg, () -> handleAction(n.action));
                 }
             }
+            if (n.textKey != null && !n.textKey.isBlank()) {
+                UiTooltip.withLabelKey(b, n.textKey);
+            }
             settingsList.addSettingEntry(new ButtonOnlyEntry(b));
             return;
         }
@@ -221,7 +224,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
             if (bind == null || bind.isBlank()) return;
             boolean v = state.get(bind) instanceof Boolean b ? b : (n.value != null && n.value);
 
-            settingsList.addSettingEntry(new SliderOnlyEntry(new NeonCycleButton<Boolean>(
+            NeonCycleButton<Boolean> t = new NeonCycleButton<>(
                     0,
                     0,
                     contentWidth - 12,
@@ -233,7 +236,11 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
                     vv -> {
                         state.put(bind, vv);
                     }
-            )));
+            );
+            if (n.textKey != null && !n.textKey.isBlank()) {
+                UiTooltip.withLabelKey(t, n.textKey);
+            }
+            settingsList.addSettingEntry(new SliderOnlyEntry(t));
             return;
         }
 
@@ -247,7 +254,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
             double initial = readDoubleBind(bind, BstConfig.get(), (n.value == null ? min : n.value));
             String fmt = n.format;
 
-            settingsList.addSettingEntry(new SliderOnlyEntry(new NeonRangeSlider(
+            NeonRangeSlider slider = new NeonRangeSlider(
                     0,
                     0,
                     contentWidth - 12,
@@ -259,7 +266,11 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
                     fmt,
                     () -> state.get(bind) instanceof Number num ? num.doubleValue() : initial,
                     v -> state.put(bind, v)
-            )));
+            );
+            if (n.textKey != null && !n.textKey.isBlank()) {
+                UiTooltip.withLabelKey(slider, n.textKey);
+            }
+            settingsList.addSettingEntry(new SliderOnlyEntry(slider));
             return;
         }
 
@@ -272,7 +283,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
             idx = Math.max(0, Math.min(n.options.size() - 1, idx));
             int initialIdx = idx;
 
-            settingsList.addSettingEntry(new SliderOnlyEntry(new NeonCycleButton<Integer>(
+            NeonCycleButton<Integer> c = new NeonCycleButton<>(
                     0,
                     0,
                     contentWidth - 12,
@@ -284,7 +295,11 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
                     i -> {
                         state.put(bind, i);
                     }
-            )));
+            );
+            if (n.textKey != null && !n.textKey.isBlank()) {
+                UiTooltip.withLabelKey(c, n.textKey);
+            }
+            settingsList.addSettingEntry(new SliderOnlyEntry(c));
         }
     }
 
@@ -328,6 +343,9 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
                     b = new NeonButton(0, 0, w, 20, msg, () -> handleAction(n.action));
                 }
             }
+            if (n.textKey != null && !n.textKey.isBlank()) {
+                UiTooltip.withLabelKey(b, n.textKey);
+            }
             return new AbstractRowWidget(b, explicitWidth);
         }
 
@@ -336,7 +354,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
             if (bind == null || bind.isBlank()) return null;
             boolean v = state.get(bind) instanceof Boolean b ? b : (n.value != null && n.value);
 
-                var btn = new NeonCycleButton<Boolean>(
+            var btn = new NeonCycleButton<Boolean>(
                     0,
                     0,
                     w,
@@ -349,6 +367,9 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
                     state.put(bind, vv);
                     }
             );
+            if (n.textKey != null && !n.textKey.isBlank()) {
+                UiTooltip.withLabelKey(btn, n.textKey);
+            }
             return new AbstractRowWidget(btn, explicitWidth);
         }
 
@@ -375,6 +396,9 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
                     () -> state.get(bind) instanceof Number num ? num.doubleValue() : initial,
                     v -> state.put(bind, v)
             );
+            if (n.textKey != null && !n.textKey.isBlank()) {
+                UiTooltip.withLabelKey(slider, n.textKey);
+            }
             return new AbstractRowWidget(slider, explicitWidth);
         }
 
@@ -387,7 +411,7 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
             idx = Math.max(0, Math.min(n.options.size() - 1, idx));
             int initialIdx = idx;
 
-                var btn = new NeonCycleButton<Integer>(
+            var btn = new NeonCycleButton<Integer>(
                     0,
                     0,
                     w,
@@ -400,6 +424,9 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
                     state.put(bind, i);
                     }
             );
+            if (n.textKey != null && !n.textKey.isBlank()) {
+                UiTooltip.withLabelKey(btn, n.textKey);
+            }
             return new AbstractRowWidget(btn, explicitWidth);
         }
 

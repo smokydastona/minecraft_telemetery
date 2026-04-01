@@ -103,23 +103,23 @@ public final class SchemaSoundscapeConfigScreen extends Screen {
         this.addRenderableWidget(settingsList);
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX,
                 this.height - 28,
                 buttonW,
                 20,
                 Component.translatable("bassshakertelemetry.config.done"),
                 this::onDone
-        ));
+        ), "bassshakertelemetry.config.done"));
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX + buttonW + 10,
                 this.height - 28,
                 buttonW,
                 20,
                 Component.translatable("bassshakertelemetry.config.cancel"),
                 this::onCancel
-        ));
+        ), "bassshakertelemetry.config.cancel"));
     }
 
     private void loadBoundState(NeonUiSchema.NeonUiNode node) {
@@ -197,7 +197,7 @@ public final class SchemaSoundscapeConfigScreen extends Screen {
             if (bind == null || bind.isBlank()) return;
 
             Boolean v = state.get(bind) instanceof Boolean b ? b : (n.value != null && n.value);
-            settingsList.addSettingEntry(new ButtonOnlyEntry(new NeonCycleButton<Boolean>(
+            NeonCycleButton<Boolean> t = new NeonCycleButton<>(
                     0,
                     0,
                     contentWidth - 12,
@@ -207,13 +207,20 @@ public final class SchemaSoundscapeConfigScreen extends Screen {
                     v,
                 vv -> Boolean.TRUE.equals(vv) ? Component.translatable("options.on") : Component.translatable("options.off"),
                 vv -> state.put(bind, Boolean.TRUE.equals(vv))
-            )));
+            );
+            if (n.textKey != null && !n.textKey.isBlank()) {
+                UiTooltip.withLabelKey(t, n.textKey);
+            }
+            settingsList.addSettingEntry(new ButtonOnlyEntry(t));
             return;
         }
 
         if (node instanceof NeonUiSchema.ButtonNode n) {
             Button b = tryBuildButtonFromNode(n, contentWidth, rowH);
             if (b != null) {
+                if (n.textKey != null && !n.textKey.isBlank()) {
+                    UiTooltip.withLabelKey(b, n.textKey);
+                }
                 settingsList.addSettingEntry(new ButtonOnlyEntry(b));
             }
         }

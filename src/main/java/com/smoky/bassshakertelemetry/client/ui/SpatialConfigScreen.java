@@ -32,6 +32,7 @@ public final class SpatialConfigScreen extends Screen {
     }
 
     @Override
+    @SuppressWarnings("null")
     protected void init() {
         super.init();
         NeonStyle.initClient();
@@ -68,6 +69,7 @@ public final class SpatialConfigScreen extends Screen {
             v -> {
             }
         );
+        UiTooltip.withLabelKey(soundScapeToggle, "bassshakertelemetry.spatial.soundscape_enabled");
         this.addRenderableWidget(soundScapeToggle);
 
         y += rowH + rowGap;
@@ -84,6 +86,7 @@ public final class SpatialConfigScreen extends Screen {
             v -> {
             }
         );
+        UiTooltip.withLabelKey(spatialToggle, "bassshakertelemetry.spatial.panning_enabled");
         this.addRenderableWidget(spatialToggle);
 
         y += rowH + rowGap;
@@ -102,11 +105,12 @@ public final class SpatialConfigScreen extends Screen {
             () -> distanceAttenStrength,
             v -> distanceAttenStrength = v
         );
+        UiTooltip.withLabelKey(distanceSlider, "bassshakertelemetry.spatial.distance_atten");
         this.addRenderableWidget(distanceSlider);
 
         y += rowH + rowGap;
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
             leftX,
             y,
             contentWidth,
@@ -117,11 +121,11 @@ public final class SpatialConfigScreen extends Screen {
                     this.minecraft.setScreen(new SoundScapeConfigScreen(this));
                 }
             }
-        ));
+        ), "bassshakertelemetry.spatial.open_routing"));
 
         y += rowH + rowGap;
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
             leftX,
             y,
             contentWidth,
@@ -132,11 +136,11 @@ public final class SpatialConfigScreen extends Screen {
                     this.minecraft.setScreen(new SpatialBusRoutingScreen(this));
                 }
             }
-        ));
+        ), "bassshakertelemetry.spatial.open_bus_routing"));
 
         y += rowH + rowGap;
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
             leftX,
             y,
             contentWidth,
@@ -147,11 +151,11 @@ public final class SpatialConfigScreen extends Screen {
                     this.minecraft.setScreen(new SpatialCalibrationScreen(this));
                 }
             }
-        ));
+        ), "bassshakertelemetry.spatial.open_calibration"));
 
         y += rowH + rowGap;
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
             leftX,
             y,
             contentWidth,
@@ -162,11 +166,11 @@ public final class SpatialConfigScreen extends Screen {
                     this.minecraft.setScreen(new SpatialDebuggerScreen(this));
                 }
             }
-        ));
+        ), "bassshakertelemetry.spatial.open_debugger"));
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(new NeonButton(leftX, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), this::onDone));
-        this.addRenderableWidget(new NeonButton(leftX + buttonW + 10, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), this::onCancel));
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(leftX, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), this::onDone), "bassshakertelemetry.config.done"));
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(leftX + buttonW + 10, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), this::onCancel), "bassshakertelemetry.config.cancel"));
     }
 
     private void onDone() {

@@ -86,23 +86,23 @@ public final class GameSoundDeviceScreen extends Screen {
         this.addRenderableWidget(list);
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX,
                 this.height - 28,
                 buttonW,
                 20,
                 Component.translatable("bassshakertelemetry.config.done"),
                 this::onDone
-        ));
+        ), "bassshakertelemetry.config.done"));
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX + buttonW + 10,
                 this.height - 28,
                 buttonW,
                 20,
                 Component.translatable("bassshakertelemetry.config.cancel"),
                 this::onCancel
-        ));
+        ), "bassshakertelemetry.config.cancel"));
     }
 
     private void onDone() {

@@ -35,14 +35,14 @@ public final class SpatialDebuggerScreen extends Screen {
         int contentWidth = Math.min(310, this.width - 40);
         int leftX = centerX - (contentWidth / 2);
 
-        this.addRenderableWidget(new NeonButton(
-            leftX,
-            this.height - 28,
-            contentWidth,
-            20,
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")),
-            this::onDone
-        ));
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
+                leftX,
+                this.height - 28,
+                contentWidth,
+                20,
+                Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")),
+                this::onDone
+        ), "bassshakertelemetry.config.done"));
     }
 
     private void onDone() {

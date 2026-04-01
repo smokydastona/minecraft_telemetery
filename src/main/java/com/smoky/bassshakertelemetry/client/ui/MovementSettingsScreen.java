@@ -77,7 +77,7 @@ public final class MovementSettingsScreen extends Screen {
 
         int y = 46;
 
-        this.addRenderableWidget(new NeonCycleButton<>(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonCycleButton<>(
             leftX,
             y,
             contentWidth,
@@ -87,12 +87,12 @@ public final class MovementSettingsScreen extends Screen {
             movementEnabled,
             v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
             v -> movementEnabled = v
-        ));
+        ), "bassshakertelemetry.config.movement_enabled"));
 
         y += rowH + (rowGap * 2);
 
         int sliderW = contentWidth;
-        flightSlider = new NeonRangeSlider(
+        flightSlider = UiTooltip.withLabelKey(new NeonRangeSlider(
             leftX,
             y,
             sliderW,
@@ -104,12 +104,12 @@ public final class MovementSettingsScreen extends Screen {
             "percent",
             () -> flightGain,
             v -> flightGain = clamp01(v)
-        );
+        ), "bassshakertelemetry.config.movement_flight");
         this.addRenderableWidget(flightSlider);
 
         y += rowH + rowGap;
 
-        airSlider = new NeonRangeSlider(
+        airSlider = UiTooltip.withLabelKey(new NeonRangeSlider(
             leftX,
             y,
             sliderW,
@@ -121,12 +121,12 @@ public final class MovementSettingsScreen extends Screen {
             "percent",
             () -> airGain,
             v -> airGain = clamp01(v)
-        );
+        ), "bassshakertelemetry.config.movement_air");
         this.addRenderableWidget(airSlider);
 
         y += rowH + rowGap;
 
-        swimSlider = new NeonRangeSlider(
+        swimSlider = UiTooltip.withLabelKey(new NeonRangeSlider(
             leftX,
             y,
             sliderW,
@@ -138,12 +138,12 @@ public final class MovementSettingsScreen extends Screen {
             "percent",
             () -> swimGain,
             v -> swimGain = clamp01(v)
-        );
+        ), "bassshakertelemetry.config.movement_swim");
         this.addRenderableWidget(swimSlider);
 
         y += rowH + rowGap;
 
-        waterSlider = new NeonRangeSlider(
+        waterSlider = UiTooltip.withLabelKey(new NeonRangeSlider(
             leftX,
             y,
             sliderW,
@@ -155,12 +155,12 @@ public final class MovementSettingsScreen extends Screen {
             "percent",
             () -> waterGain,
             v -> waterGain = clamp01(v)
-        );
+        ), "bassshakertelemetry.config.movement_water");
         this.addRenderableWidget(waterSlider);
 
         y += rowH + (rowGap * 2);
 
-        this.addRenderableWidget(new NeonCycleButton<>(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonCycleButton<>(
             leftX,
             y,
             contentWidth,
@@ -170,11 +170,11 @@ public final class MovementSettingsScreen extends Screen {
             footstepsEnabled,
             v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
             v -> footstepsEnabled = v
-        ));
+        ), "bassshakertelemetry.config.footsteps_enabled"));
 
         y += rowH + rowGap;
 
-        this.addRenderableWidget(new NeonRangeSlider(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonRangeSlider(
             leftX,
             y,
             sliderW,
@@ -186,11 +186,11 @@ public final class MovementSettingsScreen extends Screen {
             "percent",
             () -> footstepsGain,
             v -> footstepsGain = clamp01(v)
-        ));
+        ), "bassshakertelemetry.config.footstep_gain"));
 
         y += rowH + (rowGap * 2);
 
-        this.addRenderableWidget(new NeonCycleButton<>(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonCycleButton<>(
             leftX,
             y,
             contentWidth,
@@ -200,11 +200,11 @@ public final class MovementSettingsScreen extends Screen {
             mountedEnabled,
             v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
             v -> mountedEnabled = v
-        ));
+        ), "bassshakertelemetry.config.mounted_enabled"));
 
         y += rowH + rowGap;
 
-        mountedGainSlider = new NeonRangeSlider(
+        mountedGainSlider = UiTooltip.withLabelKey(new NeonRangeSlider(
             leftX,
             y,
             sliderW,
@@ -216,27 +216,27 @@ public final class MovementSettingsScreen extends Screen {
             "percent",
             () -> mountedGain,
             v -> mountedGain = clamp01(v)
-        );
+        ), "bassshakertelemetry.config.mounted_gain");
         this.addRenderableWidget(mountedGainSlider);
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
             leftX,
             this.height - 28,
             buttonW,
             20,
             Component.translatable("bassshakertelemetry.config.done"),
             this::onDone
-        ));
+        ), "bassshakertelemetry.config.done"));
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
             leftX + buttonW + 10,
             this.height - 28,
             buttonW,
             20,
             Component.translatable("bassshakertelemetry.config.cancel"),
             this::onCancel
-        ));
+        ), "bassshakertelemetry.config.cancel"));
     }
 
     private void onDone() {

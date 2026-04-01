@@ -121,7 +121,7 @@ public final class MiscSettingsScreen extends Screen {
         if (pageIndex == 0) {
             // Haptics
 
-            this.addRenderableWidget(new NeonCycleButton<>(
+            this.addRenderableWidget(UiTooltip.withLabelKey(new NeonCycleButton<>(
                     leftX,
                     y,
                     contentWidth,
@@ -131,11 +131,11 @@ public final class MiscSettingsScreen extends Screen {
                     soundHapticsEnabled,
                     v -> v ? tr("options.on") : tr("options.off"),
                     v -> soundHapticsEnabled = v
-            ));
+            ), "bassshakertelemetry.config.sound_haptics"));
 
             y += rowH + rowGap;
 
-            soundGainSlider = new NeonRangeSlider(
+                soundGainSlider = UiTooltip.withLabelKey(new NeonRangeSlider(
                     leftX,
                     y,
                     contentWidth,
@@ -147,12 +147,12 @@ public final class MiscSettingsScreen extends Screen {
                     "percent",
                     () -> soundHapticsGain,
                     v -> soundHapticsGain = clamp02(v)
-            );
+                ), "bassshakertelemetry.config.sound_gain");
             this.addRenderableWidget(soundGainSlider);
 
             y += rowH + (rowGap * 2);
 
-            this.addRenderableWidget(new NeonCycleButton<>(
+                this.addRenderableWidget(UiTooltip.withLabelKey(new NeonCycleButton<>(
                     leftX,
                     y,
                     contentWidth,
@@ -162,11 +162,11 @@ public final class MiscSettingsScreen extends Screen {
                     gameplayHapticsEnabled,
                     v -> v ? tr("options.on") : tr("options.off"),
                     v -> gameplayHapticsEnabled = v
-            ));
+                ), "bassshakertelemetry.config.gameplay_haptics"));
 
             y += rowH + rowGap;
 
-            gameplayGainSlider = new NeonRangeSlider(
+                gameplayGainSlider = UiTooltip.withLabelKey(new NeonRangeSlider(
                     leftX,
                     y,
                     contentWidth,
@@ -178,12 +178,12 @@ public final class MiscSettingsScreen extends Screen {
                     "percent",
                     () -> gameplayHapticsGain,
                     v -> gameplayHapticsGain = clamp02(v)
-            );
+                ), "bassshakertelemetry.config.gameplay_gain");
             this.addRenderableWidget(gameplayGainSlider);
 
             y += rowH + (rowGap * 2);
 
-            this.addRenderableWidget(new NeonCycleButton<>(
+                this.addRenderableWidget(UiTooltip.withLabelKey(new NeonCycleButton<>(
                     leftX,
                     y,
                     contentWidth,
@@ -193,11 +193,11 @@ public final class MiscSettingsScreen extends Screen {
                     biomeChimeEnabled,
                     v -> v ? tr("options.on") : tr("options.off"),
                     v -> biomeChimeEnabled = v
-            ));
+                ), "bassshakertelemetry.config.biome_enabled"));
 
             y += rowH + rowGap;
 
-            biomeChimeGainSlider = new NeonRangeSlider(
+                biomeChimeGainSlider = UiTooltip.withLabelKey(new NeonRangeSlider(
                     leftX,
                     y,
                     contentWidth,
@@ -209,11 +209,11 @@ public final class MiscSettingsScreen extends Screen {
                     "percent",
                     () -> biomeChimeGain,
                     v -> biomeChimeGain = clamp01(v)
-            );
+                ), "bassshakertelemetry.config.biome_gain");
             this.addRenderableWidget(biomeChimeGainSlider);
         } else if (pageIndex == 1) {
             // Accessibility
-            this.addRenderableWidget(new NeonCycleButton<>(
+                this.addRenderableWidget(UiTooltip.withLabelKey(new NeonCycleButton<>(
                     leftX,
                     y,
                     contentWidth,
@@ -223,22 +223,22 @@ public final class MiscSettingsScreen extends Screen {
                     accessibilityHudEnabled,
                     v -> v ? tr("options.on") : tr("options.off"),
                     v -> accessibilityHudEnabled = v
-            ));
+                ), "bassshakertelemetry.config.accessibility_hud"));
         } else {
             // Tools
-            latencyTestButton = new NeonButton(
+                latencyTestButton = UiTooltip.withLabelKey(new NeonButton(
                     leftX,
                     y,
                     contentWidth,
                     rowH,
                     Objects.requireNonNull(latencyButtonLabel(false)),
                     this::toggleLatencyTest
-            );
+                ), "bassshakertelemetry.config.latency_test_off");
             this.addRenderableWidget(latencyTestButton);
 
             y += rowH + rowGap;
 
-            debugOverlayButton = new NeonToggleButton(
+                debugOverlayButton = UiTooltip.withLabelKey(new NeonToggleButton(
                     leftX,
                     y,
                     contentWidth,
@@ -246,63 +246,63 @@ public final class MiscSettingsScreen extends Screen {
                     Objects.requireNonNull(debugOverlayLabel()),
                     () -> debugOverlayEnabled,
                     this::toggleDebugOverlay
-            );
+                ), "bassshakertelemetry.config.debug_overlay_off");
             this.addRenderableWidget(debugOverlayButton);
 
             y += rowH + rowGap;
 
-            demoButton = new NeonButton(
+                demoButton = UiTooltip.withLabelKey(new NeonButton(
                     leftX,
                     y,
                     contentWidth,
                     rowH,
                     Objects.requireNonNull(demoLabel()),
                     this::toggleDemo
-            );
+                ), "bassshakertelemetry.config.demo_run");
             this.addRenderableWidget(demoButton);
         }
 
         int buttonW = (contentWidth - 10) / 2;
 
-        Button prevPageButton = new NeonButton(
+        Button prevPageButton = UiTooltip.withLabelKey(new NeonButton(
             leftX,
             this.height - 52,
             buttonW,
             20,
-            Objects.requireNonNull(Component.literal("< Prev")),
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.page_prev")),
             () -> switchPage(-1)
-        );
+        ), "bassshakertelemetry.config.page_prev");
         prevPageButton.active = pageIndex > 0;
         this.addRenderableWidget(prevPageButton);
 
-        Button nextPageButton = new NeonButton(
+        Button nextPageButton = UiTooltip.withLabelKey(new NeonButton(
             leftX + buttonW + 10,
             this.height - 52,
             buttonW,
             20,
-            Objects.requireNonNull(Component.literal("Next >")),
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.page_next")),
             () -> switchPage(1)
-        );
+        ), "bassshakertelemetry.config.page_next");
         nextPageButton.active = pageIndex < (pageCount - 1);
         this.addRenderableWidget(nextPageButton);
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX,
                 this.height - 28,
                 buttonW,
                 20,
             tr("bassshakertelemetry.config.done"),
                 this::onDone
-        ));
+        ), "bassshakertelemetry.config.done"));
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX + buttonW + 10,
                 this.height - 28,
                 buttonW,
                 20,
             tr("bassshakertelemetry.config.cancel"),
                 this::onCancel
-        ));
+        ), "bassshakertelemetry.config.cancel"));
     }
 
     private void onDone() {
@@ -399,6 +399,12 @@ public final class MiscSettingsScreen extends Screen {
         debugOverlayEnabled = !debugOverlayEnabled;
         if (debugOverlayButton != null) {
             debugOverlayButton.setMessage(Objects.requireNonNull(debugOverlayLabel()));
+            UiTooltip.withLabelKey(
+                    debugOverlayButton,
+                    debugOverlayEnabled
+                            ? "bassshakertelemetry.config.debug_overlay_on"
+                            : "bassshakertelemetry.config.debug_overlay_off"
+            );
         }
     }
 
@@ -414,6 +420,12 @@ public final class MiscSettingsScreen extends Screen {
         demoNextNanos = System.nanoTime();
         if (demoButton != null) {
             demoButton.setMessage(Objects.requireNonNull(demoLabel()));
+            UiTooltip.withLabelKey(
+                    demoButton,
+                    demoActive
+                            ? "bassshakertelemetry.config.demo_stop"
+                            : "bassshakertelemetry.config.demo_run"
+            );
         }
     }
 
@@ -423,6 +435,7 @@ public final class MiscSettingsScreen extends Screen {
         demoNextNanos = 0L;
         if (demoButton != null) {
             demoButton.setMessage(Objects.requireNonNull(demoLabel()));
+            UiTooltip.withLabelKey(demoButton, "bassshakertelemetry.config.demo_run");
         }
     }
 
@@ -479,6 +492,12 @@ public final class MiscSettingsScreen extends Screen {
         latencyTestTicks = 0;
         if (latencyTestButton != null) {
             latencyTestButton.setMessage(Objects.requireNonNull(latencyButtonLabel(false)));
+            UiTooltip.withLabelKey(
+                    latencyTestButton,
+                    latencyTestActive
+                            ? "bassshakertelemetry.config.latency_test_on"
+                            : "bassshakertelemetry.config.latency_test_off"
+            );
         }
     }
 
@@ -487,6 +506,7 @@ public final class MiscSettingsScreen extends Screen {
         latencyTestTicks = 0;
         if (latencyTestButton != null) {
             latencyTestButton.setMessage(Objects.requireNonNull(latencyButtonLabel(false)));
+            UiTooltip.withLabelKey(latencyTestButton, "bassshakertelemetry.config.latency_test_off");
         }
     }
 

@@ -13,6 +13,8 @@ import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import javax.annotation.Nonnull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -20,15 +22,15 @@ import java.util.Objects;
 public final class TelemetryConfigScreen extends Screen {
     private final Screen parent;
 
-    private Button gameSoundDeviceButton;
     private List<String> gameSoundDevices = List.of("<Default>");
     private String selectedGameSoundDevice = "<Default>";
     private boolean gameSoundDeviceDirty = false;
+    private Button gameSoundDeviceButton;
 
-    private Button outputDeviceButton;
     private List<String> devices = List.of("<Default>");
     private String selectedDevice = "<Default>";
     private boolean outputDeviceDirty = false;
+    private Button outputDeviceButton;
 
     private NeonVolumeSlider volumeSlider;
 
@@ -38,10 +40,10 @@ public final class TelemetryConfigScreen extends Screen {
     }
 
     @Override
-    @SuppressWarnings("null")
     protected void init() {
         super.init();
         NeonStyle.initClient();
+
         int centerX = this.width / 2;
         var font = Objects.requireNonNull(this.font, "font");
 
@@ -85,32 +87,31 @@ public final class TelemetryConfigScreen extends Screen {
         }
 
         this.addRenderableWidget(new StringWidget(
-            centerX - 100,
-            20,
-            200,
-            20,
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.title")),
-            font
+                centerX - 100,
+                20,
+                200,
+                20,
+                Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.title")),
+                font
         ));
 
-        gameSoundDeviceButton = new NeonButton(
-            leftX,
-            50,
-            contentWidth,
-            rowH,
-            gameSoundDeviceButtonLabel(),
-            () -> {
-                if (this.minecraft != null) {
-                this.minecraft.setScreen(new GameSoundDeviceScreen(this, this::setSelectedGameSoundDevice, this.selectedGameSoundDevice));
+        gameSoundDeviceButton = UiTooltip.withLabelKey(new NeonButton(
+                leftX,
+                50,
+                contentWidth,
+                rowH,
+                gameSoundDeviceButtonLabel(),
+                () -> {
+                    if (this.minecraft != null) {
+                        this.minecraft.setScreen(new GameSoundDeviceScreen(this, this::setSelectedGameSoundDevice, this.selectedGameSoundDevice));
+                    }
                 }
-            }
-        );
-
+        ), "bassshakertelemetry.config.game_sound_device");
         this.addRenderableWidget(gameSoundDeviceButton);
 
-        outputDeviceButton = new NeonButton(
+        outputDeviceButton = UiTooltip.withLabelKey(new NeonButton(
                 leftX,
-            50 + rowH + rowGap,
+                50 + rowH + rowGap,
                 contentWidth,
                 rowH,
                 deviceButtonLabel(),
@@ -119,20 +120,19 @@ public final class TelemetryConfigScreen extends Screen {
                         this.minecraft.setScreen(new OutputDeviceScreen(this, this::setSelectedDevice, this.selectedDevice));
                     }
                 }
-        );
-
+        ), "bassshakertelemetry.config.output_device");
         this.addRenderableWidget(outputDeviceButton);
 
         int y = 50 + ((rowH + rowGap) * 2);
 
-        volumeSlider = new NeonVolumeSlider(
-            leftX,
-            y,
-            contentWidth,
-            rowH,
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.master_volume")),
-            BstConfig.get().masterVolume
-        );
+        volumeSlider = UiTooltip.withLabelKey(new NeonVolumeSlider(
+                leftX,
+                y,
+                contentWidth,
+                rowH,
+                Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.master_volume")),
+                BstConfig.get().masterVolume
+        ), "bassshakertelemetry.config.master_volume");
         this.addRenderableWidget(volumeSlider);
 
         y += rowH + rowGap;
@@ -142,7 +142,7 @@ public final class TelemetryConfigScreen extends Screen {
         int colLeftX = leftX;
         int colRightX = leftX + colWidth + colGap;
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 colLeftX,
                 y,
                 colWidth,
@@ -153,9 +153,9 @@ public final class TelemetryConfigScreen extends Screen {
                         this.minecraft.setScreen(new DamageSettingsScreen(this));
                     }
                 }
-        ));
+        ), "bassshakertelemetry.config.page_damage"));
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 colRightX,
                 y,
                 colWidth,
@@ -166,11 +166,11 @@ public final class TelemetryConfigScreen extends Screen {
                         this.minecraft.setScreen(new MovementSettingsScreen(this));
                     }
                 }
-        ));
+        ), "bassshakertelemetry.config.page_movement"));
 
         y += rowH + rowGap;
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 colLeftX,
                 y,
                 colWidth,
@@ -181,9 +181,9 @@ public final class TelemetryConfigScreen extends Screen {
                         this.minecraft.setScreen(new MiscSettingsScreen(this));
                     }
                 }
-        ));
+        ), "bassshakertelemetry.config.page_misc"));
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 colRightX,
                 y,
                 colWidth,
@@ -194,25 +194,25 @@ public final class TelemetryConfigScreen extends Screen {
                         this.minecraft.setScreen(new AdvancedSettingsScreen(this));
                     }
                 }
-        ));
+        ), "bassshakertelemetry.config.page_advanced"));
 
-        this.addRenderableWidget(new NeonButton(
-            leftX,
-            this.height - 28,
-            (contentWidth - 10) / 2,
-            20,
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")),
-            this::onDone
-        ));
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
+                leftX,
+                this.height - 28,
+                (contentWidth - 10) / 2,
+                20,
+                Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")),
+                this::onDone
+        ), "bassshakertelemetry.config.done"));
 
-        this.addRenderableWidget(new NeonButton(
-            leftX + ((contentWidth - 10) / 2) + 10,
-            this.height - 28,
-            (contentWidth - 10) / 2,
-            20,
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")),
-            this::onCancel
-        ));
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
+                leftX + ((contentWidth - 10) / 2) + 10,
+                this.height - 28,
+                (contentWidth - 10) / 2,
+                20,
+                Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")),
+                this::onCancel
+        ), "bassshakertelemetry.config.cancel"));
     }
 
     private void onDone() {
@@ -245,23 +245,20 @@ public final class TelemetryConfigScreen extends Screen {
     }
 
     @Override
-    @SuppressWarnings("null")
-    public void renderBackground(GuiGraphics guiGraphics) {
+    public void renderBackground(@Nonnull GuiGraphics guiGraphics) {
         guiGraphics.fill(0, 0, this.width, this.height, NeonStyle.get().background);
     }
 
-    @SuppressWarnings("null")
     private Component deviceButtonLabel() {
         return Component.translatable("bassshakertelemetry.config.output_device")
                 .append(": ")
-                .append(Component.literal(Objects.requireNonNull(selectedDevice)));
+                .append(Objects.requireNonNull(selectedDevice));
     }
 
-    @SuppressWarnings("null")
     private Component gameSoundDeviceButtonLabel() {
         return Component.translatable("bassshakertelemetry.config.game_sound_device")
                 .append(": ")
-                .append(Component.literal(Objects.requireNonNull(selectedGameSoundDevice)));
+                .append(Objects.requireNonNull(selectedGameSoundDevice));
     }
 
     void setSelectedGameSoundDevice(String displayDeviceId) {
@@ -289,5 +286,4 @@ public final class TelemetryConfigScreen extends Screen {
             outputDeviceButton.setMessage(Objects.requireNonNull(deviceButtonLabel()));
         }
     }
-
 }

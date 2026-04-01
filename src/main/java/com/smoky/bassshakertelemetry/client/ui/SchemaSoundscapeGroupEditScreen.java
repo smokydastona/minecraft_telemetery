@@ -73,7 +73,7 @@ public final class SchemaSoundscapeGroupEditScreen extends Screen {
         nameBox = new EditBox(font, leftX, 50, contentWidth, 20, Component.empty());
         nameBox.setValue(originalName);
         nameBox.setMaxLength(32);
-        this.addRenderableWidget(nameBox);
+        this.addRenderableWidget(UiTooltip.withKey(nameBox, "bassshakertelemetry.soundscape.group_name.tooltip"));
 
         int y = 78;
         int rowH = 20;
@@ -98,27 +98,27 @@ public final class SchemaSoundscapeGroupEditScreen extends Screen {
                     () -> toggleChannel(idx)
             );
             channelButtons[i] = b;
-            this.addRenderableWidget(b);
+                this.addRenderableWidget(UiTooltip.withKey(b, "bassshakertelemetry.soundscape.group_channel.tooltip"));
         }
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX,
                 this.height - 28,
                 buttonW,
                 20,
                 Component.translatable("bassshakertelemetry.config.done"),
                 this::onDone
-        ));
+        ), "bassshakertelemetry.config.done"));
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX + buttonW + 10,
                 this.height - 28,
                 buttonW,
                 20,
                 Component.translatable("bassshakertelemetry.config.cancel"),
                 this::onCancel
-        ));
+        ), "bassshakertelemetry.config.cancel"));
     }
 
     private void toggleChannel(int idx) {

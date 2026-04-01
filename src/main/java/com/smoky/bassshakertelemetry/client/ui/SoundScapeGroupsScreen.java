@@ -69,18 +69,18 @@ public final class SoundScapeGroupsScreen extends Screen {
         refreshList();
         this.addRenderableWidget(list);
 
-        this.addRenderableWidget(new NeonButton(
-            leftX,
-            this.height - 50,
-            contentWidth,
-            20,
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.group_add")),
-            this::onAdd
-        ));
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
+                leftX,
+                this.height - 50,
+                contentWidth,
+                20,
+                Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.group_add")),
+                this::onAdd
+        ), "bassshakertelemetry.soundscape.group_add"));
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(new NeonButton(leftX, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), this::onDone));
-        this.addRenderableWidget(new NeonButton(leftX + buttonW + 10, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), this::onCancel));
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(leftX, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), this::onDone), "bassshakertelemetry.config.done"));
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(leftX + buttonW + 10, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), this::onCancel), "bassshakertelemetry.config.cancel"));
     }
 
     private void refreshList() {
@@ -192,7 +192,7 @@ public final class SoundScapeGroupsScreen extends Screen {
 
         GroupEntry(String groupName) {
             this.groupName = Objects.requireNonNull(groupName);
-            this.edit = new NeonButton(
+            this.edit = UiTooltip.withLabelKey(new NeonButton(
                     0,
                     0,
                     70,
@@ -204,9 +204,9 @@ public final class SoundScapeGroupsScreen extends Screen {
                             mc.setScreen(new SoundScapeGroupEditScreen(SoundScapeGroupsScreen.this, groups, this.groupName));
                         }
                     }
-            );
+            ), "bassshakertelemetry.soundscape.group_edit");
 
-            this.delete = new NeonButton(
+            this.delete = UiTooltip.withLabelKey(new NeonButton(
                     0,
                     0,
                     70,
@@ -219,7 +219,7 @@ public final class SoundScapeGroupsScreen extends Screen {
                             refreshList();
                         }
                     }
-            );
+            ), "bassshakertelemetry.soundscape.group_delete");
         }
 
         @Override

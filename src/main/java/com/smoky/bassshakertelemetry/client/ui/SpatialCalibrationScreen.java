@@ -88,31 +88,37 @@ public final class SpatialCalibrationScreen extends Screen {
                 loadCalibrationIntoUi(selectedChannel);
             }
         );
+        UiTooltip.withLabelKey(channelCycle, "bassshakertelemetry.spatial_cal.channel");
         this.addRenderableWidget(channelCycle);
 
         y += rowH + rowGap;
 
         gainSlider = new GainDbSlider(leftX, y, contentWidth, rowH, currentCal.gainDb);
+        UiTooltip.withLabelKey(gainSlider, "bassshakertelemetry.spatial_cal.gain");
         this.addRenderableWidget(gainSlider);
 
         y += rowH + rowGap;
 
         comfortSlider = new ComfortSlider(leftX, y, contentWidth, rowH, currentCal.comfortLimit01);
+        UiTooltip.withLabelKey(comfortSlider, "bassshakertelemetry.spatial_cal.comfort");
         this.addRenderableWidget(comfortSlider);
 
         y += rowH + rowGap;
 
         eqFreqSlider = new EqFreqSlider(leftX, y, contentWidth, rowH, currentCal.eqFreqHz);
+        UiTooltip.withLabelKey(eqFreqSlider, "bassshakertelemetry.spatial_cal.eq_freq");
         this.addRenderableWidget(eqFreqSlider);
 
         y += rowH + rowGap;
 
         eqGainSlider = new EqGainSlider(leftX, y, contentWidth, rowH, currentCal.eqGainDb);
+        UiTooltip.withLabelKey(eqGainSlider, "bassshakertelemetry.spatial_cal.eq_gain");
         this.addRenderableWidget(eqGainSlider);
 
         y += rowH + rowGap;
 
         rmsTargetSlider = new RmsTargetSlider(leftX, y, contentWidth, rowH, 0.25);
+        UiTooltip.withLabelKey(rmsTargetSlider, "bassshakertelemetry.spatial_cal.rms_target");
         this.addRenderableWidget(rmsTargetSlider);
 
         y += rowH + rowGap;
@@ -122,7 +128,7 @@ public final class SpatialCalibrationScreen extends Screen {
         int colLeftX = leftX;
         int colRightX = leftX + colWidth + colGap;
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
             colLeftX,
             y,
             colWidth,
@@ -132,9 +138,9 @@ public final class SpatialCalibrationScreen extends Screen {
                 applyCalibrationFromUi();
                 AudioOutputEngine.get().testCalibrationToneOnChannel(selectedChannel, 30.0, 2000);
             }
-        ));
+        ), "bassshakertelemetry.spatial_cal.tone30"));
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
             colRightX,
             y,
             colWidth,
@@ -144,11 +150,11 @@ public final class SpatialCalibrationScreen extends Screen {
                 applyCalibrationFromUi();
                 AudioOutputEngine.get().testCalibrationToneOnChannel(selectedChannel, 60.0, 2000);
             }
-        ));
+        ), "bassshakertelemetry.spatial_cal.tone60"));
 
         y += rowH + rowGap;
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
             colLeftX,
             y,
             colWidth,
@@ -158,20 +164,20 @@ public final class SpatialCalibrationScreen extends Screen {
                 applyCalibrationFromUi();
                 AudioOutputEngine.get().testCalibrationBurstOnChannel(selectedChannel);
             }
-        ));
+        ), "bassshakertelemetry.spatial_cal.burst"));
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
             colRightX,
             y,
             colWidth,
             rowH,
             Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.auto_trim")),
             this::autoTrimToTargetRms
-        ));
+        ), "bassshakertelemetry.spatial_cal.auto_trim"));
 
         y += rowH + rowGap;
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
             colLeftX,
             y,
             colWidth,
@@ -181,20 +187,20 @@ public final class SpatialCalibrationScreen extends Screen {
                 applyCalibrationFromUi();
                 AudioOutputEngine.get().testCalibrationToneOnChannel(selectedChannel, 60.0, 4000);
             }
-        ));
+        ), "bassshakertelemetry.spatial_cal.comfort_tone"));
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
             colRightX,
             y,
             colWidth,
             rowH,
             Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.capture_comfort")),
             this::captureComfortLimitFromPeak
-        ));
+        ), "bassshakertelemetry.spatial_cal.capture_comfort"));
 
         y += rowH + rowGap;
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
             colLeftX,
             y,
             colWidth,
@@ -204,42 +210,42 @@ public final class SpatialCalibrationScreen extends Screen {
                 applyCalibrationFromUi();
                 AudioOutputEngine.get().testCalibrationSweepOnChannel(selectedChannel);
             }
-        ));
+        ), "bassshakertelemetry.spatial_cal.sweep"));
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
             colRightX,
             y,
             colWidth,
             rowH,
             Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.latency")),
             () -> AudioOutputEngine.get().testLatencyPulseOnChannel(selectedChannel)
-        ));
+        ), "bassshakertelemetry.spatial_cal.latency"));
 
         y += rowH + rowGap;
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
             leftX,
             y,
             contentWidth,
             rowH,
             Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_stop")),
             () -> AudioOutputEngine.get().stopCalibration()
-        ));
+        ), "bassshakertelemetry.config.cal_stop"));
 
         // Wizard navigation
         int navY = this.height - 52;
         int navW = (contentWidth - 10) / 2;
-        stepBack = new NeonButton(leftX, navY, navW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.step_back")), () -> step(-1));
+        stepBack = UiTooltip.withLabelKey(new NeonButton(leftX, navY, navW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.step_back")), () -> step(-1)), "bassshakertelemetry.spatial_cal.step_back");
         this.addRenderableWidget(stepBack);
 
-        stepNext = new NeonButton(leftX + navW + 10, navY, navW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.step_next")), () -> step(1));
+        stepNext = UiTooltip.withLabelKey(new NeonButton(leftX + navW + 10, navY, navW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.step_next")), () -> step(1)), "bassshakertelemetry.spatial_cal.step_next");
         this.addRenderableWidget(stepNext);
 
         updateWizardButtons();
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(new NeonButton(leftX, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), this::onDone));
-        this.addRenderableWidget(new NeonButton(leftX + buttonW + 10, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), this::onCancel));
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(leftX, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), this::onDone), "bassshakertelemetry.config.done"));
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(leftX + buttonW + 10, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), this::onCancel), "bassshakertelemetry.config.cancel"));
     }
 
     private void loadCalibrationIntoUi(String channelId) {

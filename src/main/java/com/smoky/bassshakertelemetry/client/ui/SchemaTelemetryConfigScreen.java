@@ -89,23 +89,23 @@ public final class SchemaTelemetryConfigScreen extends Screen {
         layout(schema.root, leftX, contentTop, contentWidth, contentHeight, rowH, rowGap);
         addWidgetsFromNode(schema.root, rowH);
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX,
                 this.height - 28,
                 (contentWidth - 10) / 2,
                 20,
                 Component.translatable("bassshakertelemetry.config.done"),
                 this::onDone
-        ));
+        ), "bassshakertelemetry.config.done"));
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX + ((contentWidth - 10) / 2) + 10,
                 this.height - 28,
                 (contentWidth - 10) / 2,
                 20,
                 Component.translatable("bassshakertelemetry.config.cancel"),
                 this::onCancel
-        ));
+        ), "bassshakertelemetry.config.cancel"));
     }
 
     private void loadDevices() {
@@ -438,6 +438,9 @@ public final class SchemaTelemetryConfigScreen extends Screen {
                         gameSoundDeviceButtonLabel(),
                         () -> handleAction(n.action)
                 );
+                if (n.textKey != null && !n.textKey.isBlank()) {
+                    UiTooltip.withLabelKey(gameSoundDeviceButton, n.textKey);
+                }
                 this.addRenderableWidget(gameSoundDeviceButton);
             } else if ("openOutputDevice".equals(n.action)) {
                 outputDeviceButton = new NeonButton(
@@ -448,16 +451,23 @@ public final class SchemaTelemetryConfigScreen extends Screen {
                         deviceButtonLabel(),
                         () -> handleAction(n.action)
                 );
+                if (n.textKey != null && !n.textKey.isBlank()) {
+                    UiTooltip.withLabelKey(outputDeviceButton, n.textKey);
+                }
                 this.addRenderableWidget(outputDeviceButton);
             } else {
-                this.addRenderableWidget(new NeonButton(
+                Button b = new NeonButton(
                         node.computedX,
                         node.computedY,
                         node.computedWidth,
                         rowH,
                         msg,
                         () -> handleAction(n.action)
-                ));
+                );
+                if (n.textKey != null && !n.textKey.isBlank()) {
+                    UiTooltip.withLabelKey(b, n.textKey);
+                }
+                this.addRenderableWidget(b);
             }
             return;
         }
@@ -465,7 +475,7 @@ public final class SchemaTelemetryConfigScreen extends Screen {
         if (node instanceof NeonUiSchema.ToggleNode n) {
             String bind = n.bind;
             boolean v = state.get(bind) instanceof Boolean b ? b : (n.value != null && n.value);
-            this.addRenderableWidget(new NeonCycleButton<Boolean>(
+            NeonCycleButton<Boolean> t = new NeonCycleButton<Boolean>(
                     node.computedX,
                     node.computedY,
                     node.computedWidth,
@@ -477,7 +487,11 @@ public final class SchemaTelemetryConfigScreen extends Screen {
                     vv -> {
                         state.put(bind, vv);
                     }
-            ));
+            );
+            if (n.textKey != null && !n.textKey.isBlank()) {
+                UiTooltip.withLabelKey(t, n.textKey);
+            }
+            this.addRenderableWidget(t);
             return;
         }
 
@@ -504,6 +518,9 @@ public final class SchemaTelemetryConfigScreen extends Screen {
                         state.put(bind, v);
                     }
             );
+            if (n.textKey != null && !n.textKey.isBlank()) {
+                UiTooltip.withLabelKey(slider, n.textKey);
+            }
             this.addRenderableWidget(slider);
             return;
         }
@@ -515,7 +532,7 @@ public final class SchemaTelemetryConfigScreen extends Screen {
             idx = Math.max(0, Math.min(n.options.size() - 1, idx));
             int initialIdx = idx;
 
-            this.addRenderableWidget(new NeonCycleButton<>(
+            NeonCycleButton<Integer> c = new NeonCycleButton<>(
                     node.computedX,
                     node.computedY,
                     node.computedWidth,
@@ -527,7 +544,11 @@ public final class SchemaTelemetryConfigScreen extends Screen {
                     i -> {
                         state.put(bind, i);
                     }
-            ));
+            );
+            if (n.textKey != null && !n.textKey.isBlank()) {
+                UiTooltip.withLabelKey(c, n.textKey);
+            }
+            this.addRenderableWidget(c);
         }
     }
 

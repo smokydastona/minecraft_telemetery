@@ -11,6 +11,7 @@ import com.smoky.bassshakertelemetry.client.ui.neon.schema.NeonUiSchemaLoader;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -75,23 +76,23 @@ public final class SchemaSpatialConfigScreen extends Screen {
 
         int buttonW = (contentWidth - 10) / 2;
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX,
                 this.height - 28,
                 buttonW,
                 20,
                 Component.translatable("bassshakertelemetry.config.done"),
                 this::onDone
-        ));
+        ), "bassshakertelemetry.config.done"));
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX + buttonW + 10,
                 this.height - 28,
                 buttonW,
                 20,
                 Component.translatable("bassshakertelemetry.config.cancel"),
                 this::onCancel
-        ));
+        ), "bassshakertelemetry.config.cancel"));
     }
 
     private void loadBoundState(NeonUiSchema.NeonUiNode node) {
@@ -321,21 +322,25 @@ public final class SchemaSpatialConfigScreen extends Screen {
 
         if (node instanceof NeonUiSchema.ButtonNode n) {
             Component msg = resolveText(n.textKey, n.text);
-            this.addRenderableWidget(new NeonButton(
+            Button b = new NeonButton(
                     node.computedX,
                     node.computedY,
                     node.computedWidth,
                     rowH,
                     msg,
                     () -> handleAction(n.action)
-            ));
+            );
+            if (n.textKey != null && !n.textKey.isBlank()) {
+                UiTooltip.withLabelKey(b, n.textKey);
+            }
+            this.addRenderableWidget(b);
             return;
         }
 
         if (node instanceof NeonUiSchema.ToggleNode n) {
             String bind = n.bind;
             boolean v = state.get(bind) instanceof Boolean b ? b : (n.value != null && n.value);
-            this.addRenderableWidget(new NeonCycleButton<>(
+            NeonCycleButton<Boolean> t = new NeonCycleButton<>(
                     node.computedX,
                     node.computedY,
                     node.computedWidth,
@@ -345,7 +350,11 @@ public final class SchemaSpatialConfigScreen extends Screen {
                     v,
                     vv -> vv ? Component.translatable("options.on") : Component.translatable("options.off"),
                     vv -> state.put(bind, vv)
-            ));
+            );
+            if (n.textKey != null && !n.textKey.isBlank()) {
+                UiTooltip.withLabelKey(t, n.textKey);
+            }
+            this.addRenderableWidget(t);
             return;
         }
 
@@ -357,7 +366,7 @@ public final class SchemaSpatialConfigScreen extends Screen {
             double initial = readDoubleBind(bind, BstConfig.get(), (n.value == null ? 0.0 : n.value));
             String fmt = n.format;
 
-            this.addRenderableWidget(new NeonRangeSlider(
+            NeonRangeSlider slider = new NeonRangeSlider(
                     node.computedX,
                     node.computedY,
                     node.computedWidth,
@@ -369,7 +378,11 @@ public final class SchemaSpatialConfigScreen extends Screen {
                     fmt,
                     () -> state.get(bind) instanceof Number num ? num.doubleValue() : initial,
                     v -> state.put(bind, v)
-            ));
+            );
+            if (n.textKey != null && !n.textKey.isBlank()) {
+                UiTooltip.withLabelKey(slider, n.textKey);
+            }
+            this.addRenderableWidget(slider);
             return;
         }
 
@@ -380,7 +393,7 @@ public final class SchemaSpatialConfigScreen extends Screen {
             idx = Math.max(0, Math.min(n.options.size() - 1, idx));
             int initialIdx = idx;
 
-            this.addRenderableWidget(new NeonCycleButton<>(
+            NeonCycleButton<Integer> c = new NeonCycleButton<>(
                     node.computedX,
                     node.computedY,
                     node.computedWidth,
@@ -390,7 +403,11 @@ public final class SchemaSpatialConfigScreen extends Screen {
                     initialIdx,
                     i -> Component.literal(n.options.get(i)),
                     i -> state.put(bind, i)
-            ));
+            );
+            if (n.textKey != null && !n.textKey.isBlank()) {
+                UiTooltip.withLabelKey(c, n.textKey);
+            }
+            this.addRenderableWidget(c);
         }
     }
 

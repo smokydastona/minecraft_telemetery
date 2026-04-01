@@ -71,7 +71,7 @@ public final class DamageSettingsScreen extends Screen {
 
         int y = 46;
 
-        this.addRenderableWidget(new NeonCycleButton<>(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonCycleButton<>(
                 leftX,
                 y,
                 contentWidth,
@@ -81,11 +81,11 @@ public final class DamageSettingsScreen extends Screen {
                 damageEnabled,
             v -> v ? tr("options.on") : tr("options.off"),
                 v -> damageEnabled = v
-        ));
+        ), "bassshakertelemetry.config.damage_incoming"));
 
         y += rowH + rowGap;
 
-        damageGainSlider = new NeonRangeSlider(
+        damageGainSlider = UiTooltip.withLabelKey(new NeonRangeSlider(
                 leftX,
                 y,
                 contentWidth,
@@ -97,12 +97,12 @@ public final class DamageSettingsScreen extends Screen {
                 "percent",
                 () -> damageGain,
             v -> damageGain = clamp02(v)
-        );
+        ), "bassshakertelemetry.config.damage_gain");
         this.addRenderableWidget(damageGainSlider);
 
         y += rowH + (rowGap * 2);
 
-        this.addRenderableWidget(new NeonCycleButton<>(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonCycleButton<>(
                 leftX,
                 y,
                 contentWidth,
@@ -112,11 +112,11 @@ public final class DamageSettingsScreen extends Screen {
                 meleeEnabled,
             v -> v ? tr("options.on") : tr("options.off"),
                 v -> meleeEnabled = v
-        ));
+        ), "bassshakertelemetry.config.combat_melee"));
 
         y += rowH + rowGap;
 
-        meleeGainSlider = new NeonRangeSlider(
+        meleeGainSlider = UiTooltip.withLabelKey(new NeonRangeSlider(
                 leftX,
                 y,
                 contentWidth,
@@ -128,12 +128,12 @@ public final class DamageSettingsScreen extends Screen {
                 "percent",
                 () -> meleeGain,
                 v -> meleeGain = clamp02(v)
-        );
+        ), "bassshakertelemetry.config.combat_melee_gain");
         this.addRenderableWidget(meleeGainSlider);
 
         y += rowH + (rowGap * 2);
 
-        this.addRenderableWidget(new NeonCycleButton<>(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonCycleButton<>(
                 leftX,
                 y,
                 contentWidth,
@@ -143,11 +143,11 @@ public final class DamageSettingsScreen extends Screen {
                 hitConfirmEnabled,
             v -> v ? tr("options.on") : tr("options.off"),
                 v -> hitConfirmEnabled = v
-        ));
+        ), "bassshakertelemetry.config.combat_hit_confirm"));
 
         y += rowH + rowGap;
 
-        hitConfirmGainSlider = new NeonRangeSlider(
+        hitConfirmGainSlider = UiTooltip.withLabelKey(new NeonRangeSlider(
                 leftX,
                 y,
                 contentWidth,
@@ -159,27 +159,27 @@ public final class DamageSettingsScreen extends Screen {
                 "percent",
                 () -> hitConfirmGain,
                 v -> hitConfirmGain = clamp02(v)
-        );
+        ), "bassshakertelemetry.config.combat_hit_confirm_gain");
         this.addRenderableWidget(hitConfirmGainSlider);
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX,
                 this.height - 28,
                 buttonW,
                 20,
             tr("bassshakertelemetry.config.done"),
                 this::onDone
-        ));
+        ), "bassshakertelemetry.config.done"));
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX + buttonW + 10,
                 this.height - 28,
                 buttonW,
                 20,
             tr("bassshakertelemetry.config.cancel"),
                 this::onCancel
-        ));
+        ), "bassshakertelemetry.config.cancel"));
     }
 
     private void onDone() {

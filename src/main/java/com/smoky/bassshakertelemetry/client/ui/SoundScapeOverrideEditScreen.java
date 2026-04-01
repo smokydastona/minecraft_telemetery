@@ -70,7 +70,7 @@ public final class SoundScapeOverrideEditScreen extends Screen {
         keyBox = new EditBox(font, leftX, 60, contentWidth, 20, Component.empty());
         keyBox.setValue(originalKey);
         keyBox.setMaxLength(64);
-        this.addRenderableWidget(keyBox);
+        this.addRenderableWidget(UiTooltip.withLabelKey(keyBox, "bassshakertelemetry.soundscape.override_key"));
 
         this.addRenderableWidget(new StringWidget(
                 leftX,
@@ -99,11 +99,11 @@ public final class SoundScapeOverrideEditScreen extends Screen {
                     }
                 }
         );
-        this.addRenderableWidget(targetButton);
+        this.addRenderableWidget(UiTooltip.withLabelKey(targetButton, "bassshakertelemetry.soundscape.override_target"));
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(new NeonButton(leftX, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), this::onDone));
-        this.addRenderableWidget(new NeonButton(leftX + buttonW + 10, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), this::onCancel));
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(leftX, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), this::onDone), "bassshakertelemetry.config.done"));
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(leftX + buttonW + 10, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), this::onCancel), "bassshakertelemetry.config.cancel"));
     }
 
     private Component targetLabel(String rawTarget) {

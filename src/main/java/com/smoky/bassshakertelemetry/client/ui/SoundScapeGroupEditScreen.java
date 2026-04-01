@@ -74,7 +74,7 @@ public final class SoundScapeGroupEditScreen extends Screen {
         nameBox = new EditBox(font, leftX, 50, contentWidth, 20, Component.empty());
         nameBox.setValue(originalName);
         nameBox.setMaxLength(32);
-        this.addRenderableWidget(nameBox);
+        this.addRenderableWidget(UiTooltip.withKey(nameBox, "bassshakertelemetry.soundscape.group_name.tooltip"));
 
         int y = 78;
         int rowH = 20;
@@ -90,14 +90,17 @@ public final class SoundScapeGroupEditScreen extends Screen {
             int rowY = y + (i / 2) * (rowH + gap);
 
             int idx = i;
-                Button b = new NeonButton(colX, rowY, colW, rowH, channelLabel(idx), () -> toggleChannel(idx));
+            Button b = UiTooltip.withKey(
+                    new NeonButton(colX, rowY, colW, rowH, channelLabel(idx), () -> toggleChannel(idx)),
+                    "bassshakertelemetry.soundscape.group_channel.tooltip"
+            );
             channelButtons[i] = b;
             this.addRenderableWidget(b);
         }
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(new NeonButton(leftX, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), this::onDone));
-        this.addRenderableWidget(new NeonButton(leftX + buttonW + 10, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), this::onCancel));
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(leftX, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), this::onDone), "bassshakertelemetry.config.done"));
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(leftX + buttonW + 10, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), this::onCancel), "bassshakertelemetry.config.cancel"));
     }
 
     private void toggleChannel(int idx) {

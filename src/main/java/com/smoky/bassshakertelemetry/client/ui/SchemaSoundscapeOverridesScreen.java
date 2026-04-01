@@ -86,33 +86,33 @@ public final class SchemaSoundscapeOverridesScreen extends Screen {
         refreshList();
         this.addRenderableWidget(list);
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX,
                 this.height - 50,
                 contentWidth,
                 20,
                 Component.translatable("bassshakertelemetry.soundscape.override_add"),
                 this::onAdd
-        ));
+        ), "bassshakertelemetry.soundscape.override_add"));
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX,
                 this.height - 28,
                 buttonW,
                 20,
                 Component.translatable("bassshakertelemetry.config.done"),
                 this::onDone
-        ));
+        ), "bassshakertelemetry.config.done"));
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX + buttonW + 10,
                 this.height - 28,
                 buttonW,
                 20,
                 Component.translatable("bassshakertelemetry.config.cancel"),
                 this::onCancel
-        ));
+        ), "bassshakertelemetry.config.cancel"));
     }
 
     private void refreshList() {
@@ -241,7 +241,7 @@ public final class SchemaSoundscapeOverridesScreen extends Screen {
         OverrideEntry(String key) {
             this.key = Objects.requireNonNull(key);
 
-            this.edit = new NeonButton(
+            this.edit = UiTooltip.withLabelKey(new NeonButton(
                     0,
                     0,
                     70,
@@ -257,9 +257,9 @@ public final class SchemaSoundscapeOverridesScreen extends Screen {
                             }
                         }
                     }
-            );
+            ), "bassshakertelemetry.soundscape.override_edit");
 
-            this.delete = new NeonButton(
+            this.delete = UiTooltip.withLabelKey(new NeonButton(
                     0,
                     0,
                     70,
@@ -269,7 +269,7 @@ public final class SchemaSoundscapeOverridesScreen extends Screen {
                         overrides.remove(this.key);
                         refreshList();
                     }
-            );
+            ), "bassshakertelemetry.soundscape.override_delete");
         }
 
         @Override

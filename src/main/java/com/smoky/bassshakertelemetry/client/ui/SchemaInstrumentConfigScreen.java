@@ -66,23 +66,23 @@ public final class SchemaInstrumentConfigScreen extends Screen {
 
         int buttonW = (contentWidth - 10) / 2;
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX,
                 this.height - 28,
                 buttonW,
                 20,
                 Component.translatable("bassshakertelemetry.config.done"),
                 this::onDone
-        ));
+        ), "bassshakertelemetry.config.done"));
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(
                 leftX + buttonW + 10,
                 this.height - 28,
                 buttonW,
                 20,
                 Component.translatable("bassshakertelemetry.config.cancel"),
                 this::onCancel
-        ));
+        ), "bassshakertelemetry.config.cancel"));
     }
 
     private void addEntriesFromNode(NeonUiSchema.NeonUiNode node, int contentWidth, int rowH) {
@@ -111,6 +111,9 @@ public final class SchemaInstrumentConfigScreen extends Screen {
         if (node instanceof NeonUiSchema.ButtonNode n) {
             Component msg = resolveText(n.textKey, n.text);
             Button b = new NeonButton(0, 0, contentWidth - 12, rowH, msg, () -> handleAction(n.action));
+            if (n.textKey != null && !n.textKey.isBlank()) {
+                UiTooltip.withLabelKey(b, n.textKey);
+            }
             settingsList.addSettingEntry(new ButtonOnlyEntry(b));
         }
     }

@@ -106,17 +106,34 @@ public final class AdvancedSettingsScreen extends Screen {
         mountedGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.mounted_gain", BstConfig.get().mountedHapticsGain, 0.0, 1.00);
         miningSwingGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.mining_swing_gain", BstConfig.get().miningSwingHapticsGain, 0.0, 1.00);
 
+        UiTooltip.withLabelKey(roadGainSlider, "bassshakertelemetry.config.road_gain");
+        UiTooltip.withLabelKey(damageGainSlider, "bassshakertelemetry.config.damage_gain");
+        UiTooltip.withLabelKey(biomeGainSlider, "bassshakertelemetry.config.biome_gain");
+        UiTooltip.withLabelKey(accelGainSlider, "bassshakertelemetry.config.accel_gain");
+        UiTooltip.withLabelKey(soundGainSlider, "bassshakertelemetry.config.sound_gain");
+        UiTooltip.withLabelKey(gameplayGainSlider, "bassshakertelemetry.config.gameplay_gain");
+        UiTooltip.withLabelKey(footstepGainSlider, "bassshakertelemetry.config.footstep_gain");
+        UiTooltip.withLabelKey(mountedGainSlider, "bassshakertelemetry.config.mounted_gain");
+        UiTooltip.withLabelKey(miningSwingGainSlider, "bassshakertelemetry.config.mining_swing_gain");
+
         damageMsSlider = new IntSlider(w, rowH, "bassshakertelemetry.config.damage_ms", BstConfig.get().damageBurstMs, 20, 250, "ms");
         accelMsSlider = new IntSlider(w, rowH, "bassshakertelemetry.config.accel_ms", BstConfig.get().accelBumpMs, 20, 200, "ms");
         soundCooldownMsSlider = new IntSlider(w, rowH, "bassshakertelemetry.config.sound_cooldown_ms", BstConfig.get().soundHapticsCooldownMs, 0, 250, "ms");
         gameplayCooldownMsSlider = new IntSlider(w, rowH, "bassshakertelemetry.config.gameplay_cooldown_ms", BstConfig.get().gameplayHapticsCooldownMs, 0, 400, "ms");
         miningPeriodMsSlider = new IntSlider(w, rowH, "bassshakertelemetry.config.mining_period_ms", BstConfig.get().gameplayMiningPulsePeriodMs, 60, 350, "ms");
 
+        UiTooltip.withLabelKey(damageMsSlider, "bassshakertelemetry.config.damage_ms");
+        UiTooltip.withLabelKey(accelMsSlider, "bassshakertelemetry.config.accel_ms");
+        UiTooltip.withLabelKey(soundCooldownMsSlider, "bassshakertelemetry.config.sound_cooldown_ms");
+        UiTooltip.withLabelKey(gameplayCooldownMsSlider, "bassshakertelemetry.config.gameplay_cooldown_ms");
+        UiTooltip.withLabelKey(miningPeriodMsSlider, "bassshakertelemetry.config.mining_period_ms");
+
         // Audio / debug state
         if (bufferButton == null) {
             bufferChoiceIndex = findBufferChoiceIndex(BstConfig.get().javaSoundBufferMs);
         }
         bufferButton = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(bufferButtonLabel()), this::cycleBufferChoice);
+        UiTooltip.withLabelKey(bufferButton, "bassshakertelemetry.config.output_buffer");
 
         if (outputEqButton == null) {
             outputEqEnabled = BstConfig.get().outputEqEnabled;
@@ -125,11 +142,18 @@ public final class AdvancedSettingsScreen extends Screen {
         outputEqFreqSlider = new IntSlider(w, rowH, "bassshakertelemetry.config.output_eq_freq", BstConfig.get().outputEqFreqHz, 10, 120, "Hz");
         outputEqGainSlider = new IntSlider(w, rowH, "bassshakertelemetry.config.output_eq_gain", BstConfig.get().outputEqGainDb, -12, 12, "dB");
 
+        applyOutputEqButtonTooltip();
+        UiTooltip.withLabelKey(outputEqFreqSlider, "bassshakertelemetry.config.output_eq_freq");
+        UiTooltip.withLabelKey(outputEqGainSlider, "bassshakertelemetry.config.output_eq_gain");
+
         if (smartVolumeButton == null) {
             smartVolumeEnabled = BstConfig.get().smartVolumeEnabled;
         }
         smartVolumeButton = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(smartVolumeLabel()), this::toggleSmartVolume);
         smartVolumeTargetSlider = new IntSlider(w, rowH, "bassshakertelemetry.config.smart_volume_target", BstConfig.get().smartVolumeTargetPct, 10, 90, "%");
+
+        applySmartVolumeButtonTooltip();
+        UiTooltip.withLabelKey(smartVolumeTargetSlider, "bassshakertelemetry.config.smart_volume_target");
 
         // Tools
         calTone30Button = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_tone_30hz")), () -> AudioOutputEngine.get().testCalibrationTone30Hz());
@@ -137,17 +161,26 @@ public final class AdvancedSettingsScreen extends Screen {
         calSweepButton = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_sweep_20_120hz")), () -> AudioOutputEngine.get().testCalibrationSweep());
         calStopButton = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_stop")), () -> AudioOutputEngine.get().stopCalibration());
 
+        UiTooltip.withLabelKey(calTone30Button, "bassshakertelemetry.config.cal_tone_30hz");
+        UiTooltip.withLabelKey(calTone60Button, "bassshakertelemetry.config.cal_tone_60hz");
+        UiTooltip.withLabelKey(calSweepButton, "bassshakertelemetry.config.cal_sweep_20_120hz");
+        UiTooltip.withLabelKey(calStopButton, "bassshakertelemetry.config.cal_stop");
+
         spatialOpenButton = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.spatial_open")), () -> {
             if (this.minecraft != null) {
                 this.minecraft.setScreen(new SpatialConfigScreen(this));
             }
         });
 
+        UiTooltip.withLabelKey(spatialOpenButton, "bassshakertelemetry.config.spatial_open");
+
         instrumentsOpenButton = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.instruments_open_editor")), () -> {
             if (this.minecraft != null) {
                 this.minecraft.setScreen(new HapticInstrumentEditorScreen(this));
             }
         });
+
+        UiTooltip.withLabelKey(instrumentsOpenButton, "bassshakertelemetry.config.instruments_open_editor");
     }
 
     private @Nonnull Component pageLabel() {
@@ -253,39 +286,45 @@ public final class AdvancedSettingsScreen extends Screen {
                 this.height - 52,
                 buttonW,
                 20,
-            Objects.requireNonNull(Component.literal("< Prev")),
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.page_prev")),
                 () -> switchPage(-1)
         );
         prevPageButton.active = pageIndex > 0;
-        this.addRenderableWidget(prevPageButton);
+        this.addRenderableWidget(UiTooltip.withLabelKey(prevPageButton, "bassshakertelemetry.config.page_prev"));
 
         Button nextPageButton = new NeonButton(
                 leftX + buttonW + 10,
                 this.height - 52,
                 buttonW,
                 20,
-            Objects.requireNonNull(Component.literal("Next >")),
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.page_next")),
                 () -> switchPage(1)
         );
         nextPageButton.active = pageIndex < (pageCount - 1);
-        this.addRenderableWidget(nextPageButton);
+        this.addRenderableWidget(UiTooltip.withLabelKey(nextPageButton, "bassshakertelemetry.config.page_next"));
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(
+            new NeonButton(
                 leftX,
                 this.height - 28,
                 buttonW,
                 20,
                 tr("bassshakertelemetry.config.done"),
                 this::onDone
+            ),
+            "bassshakertelemetry.config.done"
         ));
 
-        this.addRenderableWidget(new NeonButton(
+        this.addRenderableWidget(UiTooltip.withLabelKey(
+            new NeonButton(
                 leftX + buttonW + 10,
                 this.height - 28,
                 buttonW,
                 20,
                 tr("bassshakertelemetry.config.cancel"),
                 this::onCancel
+            ),
+            "bassshakertelemetry.config.cancel"
         ));
     }
 
@@ -299,7 +338,10 @@ public final class AdvancedSettingsScreen extends Screen {
         slider.setY(y);
         this.addRenderableWidget(slider);
 
-        Button testButton = new NeonButton(leftX + 2, y + 22, 90, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.test")), Objects.requireNonNull(testAction));
+        Button testButton = UiTooltip.withLabelKey(
+                new NeonButton(leftX + 2, y + 22, 90, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.test")), Objects.requireNonNull(testAction)),
+                "bassshakertelemetry.config.test"
+        );
         this.addRenderableWidget(testButton);
         return y + 44 + 6;
     }
@@ -382,7 +424,16 @@ public final class AdvancedSettingsScreen extends Screen {
         outputEqEnabled = !outputEqEnabled;
         if (outputEqButton != null) {
             outputEqButton.setMessage(Objects.requireNonNull(outputEqLabel()));
+            applyOutputEqButtonTooltip();
         }
+    }
+
+    private void applyOutputEqButtonTooltip() {
+        if (outputEqButton == null) return;
+        UiTooltip.withLabelKey(
+                outputEqButton,
+                outputEqEnabled ? "bassshakertelemetry.config.output_eq_on" : "bassshakertelemetry.config.output_eq_off"
+        );
     }
 
     private Component outputEqLabel() {
@@ -395,7 +446,16 @@ public final class AdvancedSettingsScreen extends Screen {
         smartVolumeEnabled = !smartVolumeEnabled;
         if (smartVolumeButton != null) {
             smartVolumeButton.setMessage(Objects.requireNonNull(smartVolumeLabel()));
+            applySmartVolumeButtonTooltip();
         }
+    }
+
+    private void applySmartVolumeButtonTooltip() {
+        if (smartVolumeButton == null) return;
+        UiTooltip.withLabelKey(
+                smartVolumeButton,
+                smartVolumeEnabled ? "bassshakertelemetry.config.smart_volume_on" : "bassshakertelemetry.config.smart_volume_off"
+        );
     }
 
     private Component smartVolumeLabel() {

@@ -89,8 +89,8 @@ public final class SpatialBusRoutingScreen extends Screen {
         this.addRenderableWidget(settingsList);
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(new NeonButton(leftX, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), this::onDone));
-        this.addRenderableWidget(new NeonButton(leftX + buttonW + 10, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), this::onCancel));
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(leftX, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), this::onDone), "bassshakertelemetry.config.done"));
+        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonButton(leftX + buttonW + 10, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), this::onCancel), "bassshakertelemetry.config.cancel"));
     }
 
     private void addBusRoutingEntry(int contentWidth, int rowH, String busId) {
@@ -115,6 +115,8 @@ public final class SpatialBusRoutingScreen extends Screen {
                 btnRef[0].setMessage(Objects.requireNonNull(routeLabel(labelKey, options.get(indexRef[0]))));
             }
         );
+
+        UiTooltip.withLabelKey(btnRef[0], labelKey);
 
         Button b = btnRef[0];
 
