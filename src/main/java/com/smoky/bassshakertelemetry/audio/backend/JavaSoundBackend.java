@@ -13,7 +13,9 @@ import javax.sound.sampled.*;
 public final class JavaSoundBackend implements HapticAudioBackend {
     private static final Logger LOGGER = LogManager.getLogger("bassshakertelemetry");
 
-    private static final float SAMPLE_RATE = 48_000f;
+    private static final int DEFAULT_LOW_LATENCY_BUFFER_MS = 20;
+    private static final double WARN_IF_ACTUAL_BUFFER_MS_OVER = 250.0;
+    private static final double HARD_REJECT_IF_ACTUAL_BUFFER_MS_OVER = 500.0;
 
     @Override
     public String id() {
@@ -83,8 +85,8 @@ public final class JavaSoundBackend implements HapticAudioBackend {
 
     private SourceDataLine openPreferredDeviceLineWithFormat(AudioFormat format, BstConfig.Data cfg, String preferredDeviceId) {
         DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, format);
-        int bufferMs = clampInt((cfg == null) ? 0 : cfg.javaSoundBufferMs, 0, 500);
-        int requestedBytes = requestedBufferBytes(format, bufferMs);
+        int rawBufferMs = clampInt((cfg == null) ? 0 : cfg.javaSoundBufferMs, 0, 500);
+        int effectiveBufferMs = effectiveRequestedBufferMs(rawBufferMs);
 
         try {
             Mixer.Info mixerInfo = AudioDeviceUtil.findMixerByName(preferredDeviceId, format);
@@ -93,8 +95,8 @@ public final class JavaSoundBackend implements HapticAudioBackend {
             }
             Mixer mixer = AudioSystem.getMixer(mixerInfo);
             SourceDataLine line = (SourceDataLine) mixer.getLine(lineInfo);
-            openLine(line, format, requestedBytes);
-            logOpenedLine(line, preferredDeviceId, bufferMs, format);
+            openLineLowLatency(line, format, effectiveBufferMs);
+            logOpenedLine(line, preferredDeviceId, rawBufferMs, effectiveBufferMs, format);
             return line;
         } catch (Exception e) {
             LOGGER.warn("[BST] Failed to open preferred audio device: '{}'", preferredDeviceId, e);
@@ -104,13 +106,13 @@ public final class JavaSoundBackend implements HapticAudioBackend {
 
     private SourceDataLine openDefaultDeviceLineWithFormat(AudioFormat format, BstConfig.Data cfg) {
         DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, format);
-        int bufferMs = clampInt((cfg == null) ? 0 : cfg.javaSoundBufferMs, 0, 500);
-        int requestedBytes = requestedBufferBytes(format, bufferMs);
+        int rawBufferMs = clampInt((cfg == null) ? 0 : cfg.javaSoundBufferMs, 0, 500);
+        int effectiveBufferMs = effectiveRequestedBufferMs(rawBufferMs);
 
         try {
             SourceDataLine line = (SourceDataLine) AudioSystem.getLine(lineInfo);
-            openLine(line, format, requestedBytes);
-            logOpenedLine(line, "<Default>", bufferMs, format);
+            openLineLowLatency(line, format, effectiveBufferMs);
+            logOpenedLine(line, "<Default>", rawBufferMs, effectiveBufferMs, format);
             return line;
         } catch (Exception e) {
             LOGGER.error("[BST] Failed to open default audio device", e);
@@ -118,37 +120,123 @@ public final class JavaSoundBackend implements HapticAudioBackend {
         }
     }
 
+    private static int effectiveRequestedBufferMs(int rawBufferMs) {
+        int raw = clampInt(rawBufferMs, 0, 500);
+        // 0 means "auto" in config, but the JavaSound default often ends up high-latency.
+        // For accessibility / tight feedback timing, treat it as a low-latency request.
+        if (raw <= 0) return DEFAULT_LOW_LATENCY_BUFFER_MS;
+        return Math.max(5, raw);
+    }
+
     private static int requestedBufferBytes(AudioFormat format, int bufferMs) {
         int frameSize = format.getFrameSize();
-        int requestedFrames = (bufferMs <= 0) ? 0 : (int) Math.round((bufferMs / 1000.0) * SAMPLE_RATE);
-        requestedFrames = clampInt(requestedFrames, 0, ((int) SAMPLE_RATE) * 2);
+        double sampleRate = (format == null) ? 48_000.0 : Math.max(1.0, format.getSampleRate());
+        int requestedFrames = (bufferMs <= 0) ? 0 : (int) Math.round((bufferMs / 1000.0) * sampleRate);
+        requestedFrames = clampInt(requestedFrames, 0, ((int) sampleRate) * 2);
         return (requestedFrames <= 0) ? 0 : Math.max(frameSize, requestedFrames * frameSize);
     }
 
-    private static void openLine(SourceDataLine line, AudioFormat format, int requestedBytes) throws LineUnavailableException {
-        if (requestedBytes > 0) {
+    private static void openLineLowLatency(SourceDataLine line, AudioFormat format, int requestedBufferMs) throws LineUnavailableException {
+        // Try a set of small buffer sizes first. Some devices throw if the buffer is too small,
+        // and our previous fallback (line.open(format)) could pick a ~1s buffer.
+        int[] candidatesMs = new int[] {
+                clampInt(requestedBufferMs, 5, 500),
+                10,
+                15,
+                20,
+                30,
+                40,
+                60,
+                80,
+                120,
+            200,
+            300,
+            400,
+            500
+        };
+
+        Exception last = null;
+        for (int ms : candidatesMs) {
+            int clamped = clampInt(ms, 5, 500);
+            int requestedBytes = requestedBufferBytes(format, clamped);
+
             try {
                 line.open(format, requestedBytes);
+            } catch (Exception e) {
+                last = e;
+                continue;
+            }
+
+            double actualMs = computeActualBufferMs(line, format);
+            // Always accept a reasonable-size buffer even if it's above the "ideal" target.
+            // But hard-reject extreme buffers because they create ~1s+ latency.
+            if (actualMs > HARD_REJECT_IF_ACTUAL_BUFFER_MS_OVER) {
+                try {
+                    line.close();
+                } catch (Exception ignored) {
+                }
+                continue;
+            }
+
+            if (actualMs > 0.0) {
                 return;
+            }
+
+            // Buffer opened but ended up too large; close and try another request.
+            try {
+                line.close();
             } catch (Exception ignored) {
-                // fallback below
             }
         }
-        line.open(format);
+
+        // Last resort: open with device default.
+        // We still validate the resulting buffer; if it is extreme, fail fast rather than silently
+        // producing delayed haptics.
+        try {
+            line.open(format);
+            double actualMs = computeActualBufferMs(line, format);
+            if (actualMs > HARD_REJECT_IF_ACTUAL_BUFFER_MS_OVER) {
+                try {
+                    line.close();
+                } catch (Exception ignored) {
+                }
+                throw new LineUnavailableException("Audio device forced extreme buffer (~" + String.format(java.util.Locale.ROOT, "%.1f", actualMs) + "ms). Select another device or raise 'javaSoundBufferMs' only as needed.");
+            }
+        } catch (LineUnavailableException e) {
+            throw e;
+        } catch (Exception e) {
+            if (last instanceof RuntimeException re) throw re;
+            throw new LineUnavailableException("Failed to open audio line (last error: " + (last == null ? "<none>" : last) + ")");
+        }
     }
 
-    private static void logOpenedLine(SourceDataLine line, String deviceLabel, int requestedBufferMs, AudioFormat format) {
+    private static double computeActualBufferMs(SourceDataLine line, AudioFormat format) {
         try {
             int bytes = line.getBufferSize();
             int frameSize = format.getFrameSize();
             int frames = (frameSize <= 0) ? 0 : (bytes / frameSize);
-            double ms = (frames * 1000.0) / SAMPLE_RATE;
-            LOGGER.info("[BST] Opened audio line: device='{}' fmt={}ch requestedBufferMs={} actualBufferMs~={} ({} bytes)",
+            double sampleRate = (format == null) ? 48_000.0 : Math.max(1.0, format.getSampleRate());
+            return (frames * 1000.0) / sampleRate;
+        } catch (Exception ignored) {
+            return -1.0;
+        }
+    }
+
+    private static void logOpenedLine(SourceDataLine line, String deviceLabel, int rawRequestedBufferMs, int effectiveRequestedBufferMs, AudioFormat format) {
+        try {
+            int bytes = line.getBufferSize();
+            double ms = computeActualBufferMs(line, format);
+            LOGGER.info("[BST] Opened audio line: device='{}' fmt={}ch requestedBufferMsRaw={} requestedBufferMs={} actualBufferMs~={} ({} bytes)",
                     deviceLabel,
                     format.getChannels(),
-                    requestedBufferMs,
+                    rawRequestedBufferMs,
+                    effectiveRequestedBufferMs,
                     String.format(java.util.Locale.ROOT, "%.1f", ms),
                     bytes);
+            if (ms > WARN_IF_ACTUAL_BUFFER_MS_OVER) {
+                LOGGER.warn("[BST] Audio output latency is high (actualBufferMs~={}). Reduce 'javaSoundBufferMs' in Advanced settings and avoid Bluetooth devices.",
+                        String.format(java.util.Locale.ROOT, "%.1f", ms));
+            }
         } catch (Exception ignored) {
         }
     }

@@ -37,6 +37,10 @@ This mod uses JavaSound. Different devices/drivers accept different buffer sizes
 Tip:
 - If you hear clicks/pops under load, try increasing the buffer size one step.
 
+Note:
+- Some drivers clamp/ignore the requested buffer and may force a very large buffer (hundreds of ms or more), which will feel "late" for one-shot haptics.
+- The mod logs the requested vs accepted buffer; if your device forces an extreme buffer, prefer switching to a different output device/driver path rather than trying to compensate.
+
 ## Common USB DAC quirks
 
 - Some USB DAC drivers ignore requested buffer sizes; the mod logs the **accepted** buffer.

@@ -92,6 +92,7 @@ When filing bugs, please include a debug overlay capture and the JavaSound buffe
 
 - The mod is tuned for low latency by default (requested JavaSound buffer defaults to ~20ms, and the engine renders in ~10ms chunks at 48kHz).
 - Your actual end-to-end delay still depends on the Windows audio stack + device/driver: some drivers clamp/ignore requested JavaSound buffer sizes.
+- If the driver forces an extreme buffer (hundreds of ms+), the mod will log it; for tight sync you may need a different output device/driver path.
 
 ## Known limitations (alpha)
 

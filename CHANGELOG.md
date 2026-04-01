@@ -64,6 +64,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Output device selection now stays on the selected device when 7.1 (8ch) output can’t be opened (falls back to stereo on the same device instead of silently switching to the system default).
 - Output device selection UI is no longer gated by 7.1 support (devices won’t revert to `<Default>` just because Sound Scape is enabled).
 - Output device selection screen now correctly reflects the newly selected device when you return to the main config screen.
+- Reduced end-to-end haptics latency by preventing JavaSound from silently falling back to extreme device-default buffers (which can be ~1s on some drivers).
 
 ## [0.1.23] - 2026-02-16
 
