@@ -33,7 +33,7 @@ public final class DamageSettingsScreen extends Screen {
     private NeonRangeSlider hitConfirmGainSlider;
 
     public DamageSettingsScreen(Screen parent) {
-        super(Component.translatable("bassshakertelemetry.config.damage_title"));
+        super(tr("bassshakertelemetry.config.damage_title"));
         this.parent = parent;
 
         BstConfig.Data cfg = BstConfig.get();
@@ -63,7 +63,7 @@ public final class DamageSettingsScreen extends Screen {
                 18,
                 contentWidth,
                 20,
-                Component.translatable("bassshakertelemetry.config.damage_title"),
+            tr("bassshakertelemetry.config.damage_title"),
                 font
         ));
 
@@ -74,10 +74,10 @@ public final class DamageSettingsScreen extends Screen {
                 y,
                 contentWidth,
                 rowH,
-                Component.translatable("bassshakertelemetry.config.damage_incoming"),
+            tr("bassshakertelemetry.config.damage_incoming"),
                 List.of(Boolean.TRUE, Boolean.FALSE),
                 damageEnabled,
-                v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
+            v -> v ? tr("options.on") : tr("options.off"),
                 v -> damageEnabled = v
         ));
 
@@ -88,7 +88,7 @@ public final class DamageSettingsScreen extends Screen {
                 y,
                 contentWidth,
                 rowH,
-                Component.translatable("bassshakertelemetry.config.damage_gain"),
+            tr("bassshakertelemetry.config.damage_gain"),
                 0.0,
             2.0,
                 0.01,
@@ -105,10 +105,10 @@ public final class DamageSettingsScreen extends Screen {
                 y,
                 contentWidth,
                 rowH,
-                Component.translatable("bassshakertelemetry.config.combat_melee"),
+            tr("bassshakertelemetry.config.combat_melee"),
                 List.of(Boolean.TRUE, Boolean.FALSE),
                 meleeEnabled,
-                v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
+            v -> v ? tr("options.on") : tr("options.off"),
                 v -> meleeEnabled = v
         ));
 
@@ -119,7 +119,7 @@ public final class DamageSettingsScreen extends Screen {
                 y,
                 contentWidth,
                 rowH,
-                Component.translatable("bassshakertelemetry.config.combat_melee_gain"),
+            tr("bassshakertelemetry.config.combat_melee_gain"),
                 0.0,
                 2.0,
                 0.01,
@@ -136,10 +136,10 @@ public final class DamageSettingsScreen extends Screen {
                 y,
                 contentWidth,
                 rowH,
-                Component.translatable("bassshakertelemetry.config.combat_hit_confirm"),
+            tr("bassshakertelemetry.config.combat_hit_confirm"),
                 List.of(Boolean.TRUE, Boolean.FALSE),
                 hitConfirmEnabled,
-                v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
+            v -> v ? tr("options.on") : tr("options.off"),
                 v -> hitConfirmEnabled = v
         ));
 
@@ -150,7 +150,7 @@ public final class DamageSettingsScreen extends Screen {
                 y,
                 contentWidth,
                 rowH,
-                Component.translatable("bassshakertelemetry.config.combat_hit_confirm_gain"),
+            tr("bassshakertelemetry.config.combat_hit_confirm_gain"),
                 0.0,
                 2.0,
                 0.01,
@@ -166,7 +166,7 @@ public final class DamageSettingsScreen extends Screen {
                 this.height - 28,
                 buttonW,
                 20,
-                Component.translatable("bassshakertelemetry.config.done"),
+            tr("bassshakertelemetry.config.done"),
                 this::onDone
         ));
 
@@ -175,7 +175,7 @@ public final class DamageSettingsScreen extends Screen {
                 this.height - 28,
                 buttonW,
                 20,
-                Component.translatable("bassshakertelemetry.config.cancel"),
+            tr("bassshakertelemetry.config.cancel"),
                 this::onCancel
         ));
     }
@@ -233,5 +233,9 @@ public final class DamageSettingsScreen extends Screen {
         if (v < 0.0) return 0.0;
         if (v > 2.0) return 2.0;
         return v;
+    }
+
+    private static Component tr(String key) {
+        return Objects.requireNonNull(Component.translatable(key), key);
     }
 }
