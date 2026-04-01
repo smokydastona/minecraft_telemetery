@@ -5,11 +5,13 @@ import com.smoky.bassshakertelemetry.audio.dsp.DspContext;
 import com.smoky.bassshakertelemetry.audio.dsp.DspGraph;
 import com.smoky.bassshakertelemetry.audio.dsp.DspGraphInstance;
 import com.smoky.bassshakertelemetry.audio.dsp.DspNodeFactory;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonButton;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonCycleButton;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
 import com.smoky.bassshakertelemetry.config.BstHapticInstruments;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -45,9 +47,9 @@ public final class HapticInstrumentEditorScreen extends Screen {
     private List<String> instrumentIds = List.of();
     private String selectedInstrumentId = "";
 
-    private CycleButton<String> instrumentCycle;
+    private NeonCycleButton<String> instrumentCycle;
     private Button reloadButton;
-    private CycleButton<String> addTypeCycle;
+    private NeonCycleButton<String> addTypeCycle;
     private Button addNodeButton;
     private Button setOutputButton;
     private Button saveButton;
@@ -91,6 +93,7 @@ public final class HapticInstrumentEditorScreen extends Screen {
     @SuppressWarnings("null")
     protected void init() {
         super.init();
+        NeonStyle.initClient();
 
         var font = Objects.requireNonNull(this.font, "font");
         int centerX = this.width / 2;
@@ -122,62 +125,109 @@ public final class HapticInstrumentEditorScreen extends Screen {
         int reloadW = 90;
         int cycleW = Math.max(160, contentW - reloadW - 10);
 
-        instrumentCycle = CycleButton.builder((String s) -> Component.literal(s))
-            .withValues(instrumentIds)
-            .withInitialValue(selectedInstrumentId)
-            .create(x0, y, cycleW, ROW_H, Component.translatable("bassshakertelemetry.instrument_editor.instrument"),
-                (btn, val) -> selectInstrument(val));
+        instrumentCycle = new NeonCycleButton<>(
+            x0,
+            y,
+            cycleW,
+            ROW_H,
+            Component.translatable("bassshakertelemetry.instrument_editor.instrument"),
+            instrumentIds,
+            selectedInstrumentId,
+            s -> Component.literal(String.valueOf(s)),
+            this::selectInstrument
+        );
         this.addRenderableWidget(instrumentCycle);
 
-        reloadButton = Button.builder(Component.translatable("bassshakertelemetry.instrument_editor.reload"), b -> reloadFromDisk())
-            .bounds(x0 + cycleW + 10, y, reloadW, ROW_H)
-            .build();
+        reloadButton = new NeonButton(
+            x0 + cycleW + 10,
+            y,
+            reloadW,
+            ROW_H,
+            Component.translatable("bassshakertelemetry.instrument_editor.reload"),
+            this::reloadFromDisk
+        );
         this.addRenderableWidget(reloadButton);
 
         y += 24;
 
         int addW = 90;
         int typeW = Math.max(160, contentW - addW - 10);
-        addTypeCycle = CycleButton.builder((String s) -> Component.literal(s))
-            .withValues(NODE_TYPES)
-            .withInitialValue(NODE_TYPES.get(0))
-            .create(x0, y, typeW, ROW_H, Component.translatable("bassshakertelemetry.instrument_editor.add_type"),
-                (btn, val) -> {
-                });
+        addTypeCycle = new NeonCycleButton<>(
+            x0,
+            y,
+            typeW,
+            ROW_H,
+            Component.translatable("bassshakertelemetry.instrument_editor.add_type"),
+            NODE_TYPES,
+            NODE_TYPES.get(0),
+            s -> Component.literal(String.valueOf(s)),
+            v -> {
+            }
+        );
         this.addRenderableWidget(addTypeCycle);
 
-        addNodeButton = Button.builder(Component.translatable("bassshakertelemetry.instrument_editor.add"), b -> addNode())
-            .bounds(x0 + typeW + 10, y, addW, ROW_H)
-            .build();
+        addNodeButton = new NeonButton(
+            x0 + typeW + 10,
+            y,
+            addW,
+            ROW_H,
+            Component.translatable("bassshakertelemetry.instrument_editor.add"),
+            this::addNode
+        );
         this.addRenderableWidget(addNodeButton);
 
         y += 24;
 
         int smallW = (contentW - 30) / 4;
-        setOutputButton = Button.builder(Component.translatable("bassshakertelemetry.instrument_editor.set_output"), b -> setOutputToSelected())
-            .bounds(x0, y, smallW, ROW_H)
-            .build();
+        setOutputButton = new NeonButton(
+            x0,
+            y,
+            smallW,
+            ROW_H,
+            Component.translatable("bassshakertelemetry.instrument_editor.set_output"),
+            this::setOutputToSelected
+        );
         this.addRenderableWidget(setOutputButton);
 
-        saveButton = Button.builder(Component.translatable("bassshakertelemetry.instrument_editor.save"), b -> saveToDisk())
-            .bounds(x0 + smallW + 10, y, smallW, ROW_H)
-            .build();
+        saveButton = new NeonButton(
+            x0 + smallW + 10,
+            y,
+            smallW,
+            ROW_H,
+            Component.translatable("bassshakertelemetry.instrument_editor.save"),
+            this::saveToDisk
+        );
         this.addRenderableWidget(saveButton);
 
-        copyJsonButton = Button.builder(Component.translatable("bassshakertelemetry.instrument_editor.copy_json"), b -> copySelectedInstrumentJson())
-            .bounds(x0 + (smallW + 10) * 2, y, smallW, ROW_H)
-            .build();
+        copyJsonButton = new NeonButton(
+            x0 + (smallW + 10) * 2,
+            y,
+            smallW,
+            ROW_H,
+            Component.translatable("bassshakertelemetry.instrument_editor.copy_json"),
+            this::copySelectedInstrumentJson
+        );
         this.addRenderableWidget(copyJsonButton);
 
-        testButton = Button.builder(Component.translatable("bassshakertelemetry.instrument_editor.test"), b -> testPlay())
-            .bounds(x0 + (smallW + 10) * 3, y, smallW, ROW_H)
-            .build();
+        testButton = new NeonButton(
+            x0 + (smallW + 10) * 3,
+            y,
+            smallW,
+            ROW_H,
+            Component.translatable("bassshakertelemetry.instrument_editor.test"),
+            this::testPlay
+        );
         this.addRenderableWidget(testButton);
 
         int doneW = Math.min(200, contentW);
-        doneButton = Button.builder(Component.translatable("bassshakertelemetry.config.done"), b -> onDone())
-            .bounds(centerX - (doneW / 2), this.height - 28, doneW, 20)
-            .build();
+        doneButton = new NeonButton(
+            centerX - (doneW / 2),
+            this.height - 28,
+            doneW,
+            20,
+            Component.translatable("bassshakertelemetry.config.done"),
+            this::onDone
+        );
         this.addRenderableWidget(doneButton);
 
         // Canvas bounds (below controls, above Done)
@@ -187,6 +237,12 @@ public final class HapticInstrumentEditorScreen extends Screen {
         canvasY1 = this.height - 40;
 
         loadInstrumentIntoEditor(selectedInstrumentId);
+    }
+
+    @Override
+    @SuppressWarnings("null")
+    public void renderBackground(GuiGraphics guiGraphics) {
+        guiGraphics.fill(0, 0, this.width, this.height, NeonStyle.get().background);
     }
 
     private void selectInstrument(String id) {
@@ -444,15 +500,23 @@ public final class HapticInstrumentEditorScreen extends Screen {
     }
 
     private void drawCanvas(GuiGraphics g) {
+        var style = NeonStyle.get();
+        int bg = withAlpha(style.panel, 220);
+        int border = style.primary;
+
         // Panel background + border
-        g.fill(canvasX0, canvasY0, canvasX1, canvasY1, 0xAA000000);
-        g.fill(canvasX0, canvasY0, canvasX1, canvasY0 + 1, 0xFF606060);
-        g.fill(canvasX0, canvasY1 - 1, canvasX1, canvasY1, 0xFF606060);
-        g.fill(canvasX0, canvasY0, canvasX0 + 1, canvasY1, 0xFF606060);
-        g.fill(canvasX1 - 1, canvasY0, canvasX1, canvasY1, 0xFF606060);
+        g.fill(canvasX0, canvasY0, canvasX1, canvasY1, bg);
+        g.fill(canvasX0, canvasY0, canvasX1, canvasY0 + 1, border);
+        g.fill(canvasX0, canvasY1 - 1, canvasX1, canvasY1, border);
+        g.fill(canvasX0, canvasY0, canvasX0 + 1, canvasY1, border);
+        g.fill(canvasX1 - 1, canvasY0, canvasX1, canvasY1, border);
     }
 
     private void drawConnections(GuiGraphics g) {
+        var style = NeonStyle.get();
+        int active = style.primaryHover;
+        int normal = style.textDim;
+
         for (EditableNode n : nodes) {
             List<String> ins = inputNames(n);
             for (int i = 0; i < ins.size(); i++) {
@@ -468,7 +532,7 @@ public final class HapticInstrumentEditorScreen extends Screen {
                 int inX = n.x + 2;
                 int inY = n.y + NODE_HEADER_H + (i * PORT_SPACING) + 3;
 
-                int color = from.equals(connectSourceNodeId) ? 0xFF00FFAA : 0xFFB0B0B0;
+                int color = from.equals(connectSourceNodeId) ? active : normal;
 
                 // L-shaped wire: src -> mid -> dst
                 int midX = (srcOutX + inX) / 2;
@@ -481,6 +545,7 @@ public final class HapticInstrumentEditorScreen extends Screen {
 
     private void drawNodes(GuiGraphics g) {
         var font = Objects.requireNonNull(this.font, "font");
+        var style = NeonStyle.get();
 
         Map<String, Double> debugValues = computeDebugPreviewValues();
 
@@ -489,8 +554,8 @@ public final class HapticInstrumentEditorScreen extends Screen {
             boolean isSelected = n.id.equals(selectedNodeId);
             boolean isOutput = n.id.equals(outputNodeId);
 
-            int bg = isSelected ? 0xFF2E2E2E : 0xFF1D1D1D;
-            int border = isOutput ? 0xFFFFD166 : 0xFF606060;
+            int bg = isSelected ? style.primaryPressed : style.panel;
+            int border = isOutput ? style.accent : style.primary;
             g.fill(n.x, n.y, n.x + NODE_W, n.y + h, bg);
             g.fill(n.x, n.y, n.x + NODE_W, n.y + 1, border);
             g.fill(n.x, n.y + h - 1, n.x + NODE_W, n.y + h, border);
@@ -498,19 +563,19 @@ public final class HapticInstrumentEditorScreen extends Screen {
             g.fill(n.x + NODE_W - 1, n.y, n.x + NODE_W, n.y + h, border);
 
             String title = n.id + " : " + n.type;
-            g.drawString(font, title, n.x + 6, n.y + 3, 0xFFFFFF);
+            g.drawString(font, title, n.x + 6, n.y + 3, style.text);
 
             Double v = debugValues.get(n.id);
             if (v != null) {
                 String sv = Objects.requireNonNull(String.format(Locale.ROOT, "%.3f", v), "sv");
                 int w = font.width(Objects.requireNonNull(sv, "sv"));
-                g.drawString(font, Objects.requireNonNull(sv, "sv"), n.x + NODE_W - 10 - w, n.y + 3, 0xB0B0B0);
+                g.drawString(font, Objects.requireNonNull(sv, "sv"), n.x + NODE_W - 10 - w, n.y + 3, style.textDim);
             }
 
             // Output port
             int outX = n.x + NODE_W - 6;
             int outY = n.y + (NODE_HEADER_H / 2);
-            int outColor = n.id.equals(connectSourceNodeId) ? 0xFF00FFAA : 0xFFCCCCCC;
+            int outColor = n.id.equals(connectSourceNodeId) ? style.primaryHover : style.textDim;
             g.fill(outX - PORT_R, outY - PORT_R, outX + PORT_R + 1, outY + PORT_R + 1, outColor);
 
             List<String> ins = inputNames(n);
@@ -520,10 +585,10 @@ public final class HapticInstrumentEditorScreen extends Screen {
                 int inY = n.y + NODE_HEADER_H + (i * PORT_SPACING) + 3;
 
                 boolean connected = !String.valueOf(n.inputs.getOrDefault(inputName, "")).isBlank();
-                int inColor = connected ? 0xFF9AD0EC : 0xFFCCCCCC;
+                int inColor = connected ? style.primary : style.textDim;
                 g.fill(inX - PORT_R, inY - PORT_R, inX + PORT_R + 1, inY + PORT_R + 1, inColor);
 
-                g.drawString(font, Objects.requireNonNull(inputName, "inputName"), n.x + 10, inY - 4, 0xE0E0E0);
+                g.drawString(font, Objects.requireNonNull(inputName, "inputName"), n.x + 10, inY - 4, style.text);
             }
         }
     }
@@ -571,7 +636,18 @@ public final class HapticInstrumentEditorScreen extends Screen {
         String src = (connectSourceNodeId == null || connectSourceNodeId.isBlank()) ? "-" : connectSourceNodeId;
         String out = (outputNodeId == null || outputNodeId.isBlank()) ? "-" : outputNodeId;
 
-        g.drawString(font, Objects.requireNonNull(Component.translatable("bassshakertelemetry.instrument_editor.status", sel, src, out)), x, y, 0xE0E0E0);
+        g.drawString(
+            font,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.instrument_editor.status", sel, src, out)),
+            x,
+            y,
+            NeonStyle.get().textDim
+        );
+    }
+
+    private static int withAlpha(int argb, int alpha) {
+        int a = (alpha < 0) ? 0 : Math.min(255, alpha);
+        return (argb & 0x00FFFFFF) | (a << 24);
     }
 
     @Override

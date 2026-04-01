@@ -1,8 +1,11 @@
 package com.smoky.bassshakertelemetry.client.ui;
 
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonButton;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.StringWidget;
@@ -34,6 +37,7 @@ public final class SoundScapeOverridesScreen extends Screen {
     @SuppressWarnings("null")
     protected void init() {
         super.init();
+        NeonStyle.initClient();
 
         int centerX = this.width / 2;
         int contentWidth = Math.min(310, this.width - 40);
@@ -70,20 +74,18 @@ public final class SoundScapeOverridesScreen extends Screen {
         refreshList();
         this.addRenderableWidget(list);
 
-        this.addRenderableWidget(Button.builder(
-                        Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.override_add")),
-                        b -> onAdd())
-                .bounds(leftX, this.height - 50, contentWidth, 20)
-                .build());
+        this.addRenderableWidget(new NeonButton(
+            leftX,
+            this.height - 50,
+            contentWidth,
+            20,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.override_add")),
+            this::onAdd
+        ));
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), b -> onDone())
-                .bounds(leftX, this.height - 28, buttonW, 20)
-                .build());
-
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), b -> onCancel())
-                .bounds(leftX + buttonW + 10, this.height - 28, buttonW, 20)
-                .build());
+        this.addRenderableWidget(new NeonButton(leftX, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), this::onDone));
+        this.addRenderableWidget(new NeonButton(leftX + buttonW + 10, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), this::onCancel));
     }
 
     private void refreshList() {
@@ -140,6 +142,12 @@ public final class SoundScapeOverridesScreen extends Screen {
     @Override
     public void onClose() {
         onCancel();
+    }
+
+    @Override
+    @SuppressWarnings("null")
+    public void renderBackground(GuiGraphics guiGraphics) {
+        guiGraphics.fill(0, 0, this.width, this.height, NeonStyle.get().background);
     }
 
     private static boolean containsKeyIgnoreCase(Map<String, String> map, String key) {
@@ -202,25 +210,31 @@ public final class SoundScapeOverridesScreen extends Screen {
         OverrideEntry(String key) {
             this.key = Objects.requireNonNull(key);
 
-            this.edit = Button.builder(
-                            Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.override_edit")),
-                            b -> {
-                                Minecraft mc = SoundScapeOverridesScreen.this.minecraft;
-                                if (mc != null) {
-                                    mc.setScreen(new SoundScapeOverrideEditScreen(SoundScapeOverridesScreen.this, overrides, this.key));
-                                }
-                            })
-                    .bounds(0, 0, 70, 20)
-                    .build();
+            this.edit = new NeonButton(
+                    0,
+                    0,
+                    70,
+                    20,
+                    Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.override_edit")),
+                    () -> {
+                        Minecraft mc = SoundScapeOverridesScreen.this.minecraft;
+                        if (mc != null) {
+                            mc.setScreen(new SoundScapeOverrideEditScreen(SoundScapeOverridesScreen.this, overrides, this.key));
+                        }
+                    }
+            );
 
-            this.delete = Button.builder(
-                            Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.override_delete")),
-                            b -> {
-                                overrides.remove(this.key);
-                                refreshList();
-                            })
-                    .bounds(0, 0, 70, 20)
-                    .build();
+            this.delete = new NeonButton(
+                    0,
+                    0,
+                    70,
+                    20,
+                    Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.override_delete")),
+                    () -> {
+                        overrides.remove(this.key);
+                        refreshList();
+                    }
+            );
         }
 
         @Override

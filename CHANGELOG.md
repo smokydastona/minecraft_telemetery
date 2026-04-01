@@ -56,10 +56,12 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Audio output now goes through a backend abstraction selected by `audioBackend` (Phase 1 foundation; currently only `javasound` is implemented).
 - Impulse ducking is now per-bus (see `HapticBus`); impulses are no longer globally ducked by other one-shot effects, while road texture still ducks under active events.
 - Spatial debugger now shows per-channel meters, waveform, low-frequency spectrogram, recent event timeline, and a buffer/queued latency estimate.
+- Config UI pages now consistently use the Neon theme (including device picker, Sound Scape editors, and Spatial screens).
 
 ### Fixed
 - Output device selection now stays on the selected device when 7.1 (8ch) output can’t be opened (falls back to stereo on the same device instead of silently switching to the system default).
 - Output device selection UI is no longer gated by 7.1 support (devices won’t revert to `<Default>` just because Sound Scape is enabled).
+- Output device selection screen now correctly reflects the newly selected device when you return to the main config screen.
 
 ## [0.1.23] - 2026-02-16
 

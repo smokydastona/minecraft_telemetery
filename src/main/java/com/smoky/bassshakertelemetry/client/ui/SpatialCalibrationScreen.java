@@ -1,10 +1,12 @@
 package com.smoky.bassshakertelemetry.client.ui;
 
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonButton;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonCycleButton;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -27,7 +29,7 @@ public final class SpatialCalibrationScreen extends Screen {
     private Button stepBack;
     private Button stepNext;
 
-    private CycleButton<String> channelCycle;
+    private NeonCycleButton<String> channelCycle;
     private GainDbSlider gainSlider;
     private ComfortSlider comfortSlider;
     private EqFreqSlider eqFreqSlider;
@@ -43,6 +45,7 @@ public final class SpatialCalibrationScreen extends Screen {
     @SuppressWarnings("null")
     protected void init() {
         super.init();
+        NeonStyle.initClient();
 
         AudioOutputEngine.setDebugCaptureEnabled(true);
 
@@ -71,13 +74,20 @@ public final class SpatialCalibrationScreen extends Screen {
 
         int y = 50;
 
-        channelCycle = CycleButton.<String>builder(v -> Objects.requireNonNull(Component.literal(v)))
-            .withValues(CHANNEL_IDS)
-            .withInitialValue(selectedChannel)
-            .create(leftX, y, contentWidth, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.channel")), (btn, v) -> {
+        channelCycle = new NeonCycleButton<>(
+            leftX,
+            y,
+            contentWidth,
+            rowH,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.channel")),
+            CHANNEL_IDS,
+            selectedChannel,
+            v -> Objects.requireNonNull(Component.literal(v)),
+            v -> {
                 selectedChannel = normalizeChannelId(v);
                 loadCalibrationIntoUi(selectedChannel);
-            });
+            }
+        );
         this.addRenderableWidget(channelCycle);
 
         y += rowH + rowGap;
@@ -112,106 +122,124 @@ public final class SpatialCalibrationScreen extends Screen {
         int colLeftX = leftX;
         int colRightX = leftX + colWidth + colGap;
 
-        this.addRenderableWidget(Button.builder(
-                Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.tone30")),
-                b -> {
-                    applyCalibrationFromUi();
-                    AudioOutputEngine.get().testCalibrationToneOnChannel(selectedChannel, 30.0, 2000);
-                })
-            .bounds(colLeftX, y, colWidth, rowH)
-            .build());
+        this.addRenderableWidget(new NeonButton(
+            colLeftX,
+            y,
+            colWidth,
+            rowH,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.tone30")),
+            () -> {
+                applyCalibrationFromUi();
+                AudioOutputEngine.get().testCalibrationToneOnChannel(selectedChannel, 30.0, 2000);
+            }
+        ));
 
-        this.addRenderableWidget(Button.builder(
-                Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.tone60")),
-                b -> {
-                    applyCalibrationFromUi();
-                    AudioOutputEngine.get().testCalibrationToneOnChannel(selectedChannel, 60.0, 2000);
-                })
-            .bounds(colRightX, y, colWidth, rowH)
-            .build());
-
-        y += rowH + rowGap;
-
-        this.addRenderableWidget(Button.builder(
-                Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.burst")),
-                b -> {
-                    applyCalibrationFromUi();
-                    AudioOutputEngine.get().testCalibrationBurstOnChannel(selectedChannel);
-                })
-            .bounds(colLeftX, y, colWidth, rowH)
-            .build());
-
-        this.addRenderableWidget(Button.builder(
-                Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.auto_trim")),
-                b -> autoTrimToTargetRms())
-            .bounds(colRightX, y, colWidth, rowH)
-            .build());
+        this.addRenderableWidget(new NeonButton(
+            colRightX,
+            y,
+            colWidth,
+            rowH,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.tone60")),
+            () -> {
+                applyCalibrationFromUi();
+                AudioOutputEngine.get().testCalibrationToneOnChannel(selectedChannel, 60.0, 2000);
+            }
+        ));
 
         y += rowH + rowGap;
 
-        this.addRenderableWidget(Button.builder(
-                Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.comfort_tone")),
-                b -> {
-                    applyCalibrationFromUi();
-                    AudioOutputEngine.get().testCalibrationToneOnChannel(selectedChannel, 60.0, 4000);
-                })
-            .bounds(colLeftX, y, colWidth, rowH)
-            .build());
+        this.addRenderableWidget(new NeonButton(
+            colLeftX,
+            y,
+            colWidth,
+            rowH,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.burst")),
+            () -> {
+                applyCalibrationFromUi();
+                AudioOutputEngine.get().testCalibrationBurstOnChannel(selectedChannel);
+            }
+        ));
 
-        this.addRenderableWidget(Button.builder(
-                Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.capture_comfort")),
-                b -> captureComfortLimitFromPeak())
-            .bounds(colRightX, y, colWidth, rowH)
-            .build());
-
-        y += rowH + rowGap;
-
-        this.addRenderableWidget(Button.builder(
-                Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.sweep")),
-                b -> {
-                    applyCalibrationFromUi();
-                    AudioOutputEngine.get().testCalibrationSweepOnChannel(selectedChannel);
-                })
-            .bounds(colLeftX, y, colWidth, rowH)
-            .build());
-
-        this.addRenderableWidget(Button.builder(
-                Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.latency")),
-                b -> AudioOutputEngine.get().testLatencyPulseOnChannel(selectedChannel))
-            .bounds(colRightX, y, colWidth, rowH)
-            .build());
+        this.addRenderableWidget(new NeonButton(
+            colRightX,
+            y,
+            colWidth,
+            rowH,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.auto_trim")),
+            this::autoTrimToTargetRms
+        ));
 
         y += rowH + rowGap;
 
-        this.addRenderableWidget(Button.builder(
-                Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_stop")),
-                b -> AudioOutputEngine.get().stopCalibration())
-            .bounds(leftX, y, contentWidth, rowH)
-            .build());
+        this.addRenderableWidget(new NeonButton(
+            colLeftX,
+            y,
+            colWidth,
+            rowH,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.comfort_tone")),
+            () -> {
+                applyCalibrationFromUi();
+                AudioOutputEngine.get().testCalibrationToneOnChannel(selectedChannel, 60.0, 4000);
+            }
+        ));
+
+        this.addRenderableWidget(new NeonButton(
+            colRightX,
+            y,
+            colWidth,
+            rowH,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.capture_comfort")),
+            this::captureComfortLimitFromPeak
+        ));
+
+        y += rowH + rowGap;
+
+        this.addRenderableWidget(new NeonButton(
+            colLeftX,
+            y,
+            colWidth,
+            rowH,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.sweep")),
+            () -> {
+                applyCalibrationFromUi();
+                AudioOutputEngine.get().testCalibrationSweepOnChannel(selectedChannel);
+            }
+        ));
+
+        this.addRenderableWidget(new NeonButton(
+            colRightX,
+            y,
+            colWidth,
+            rowH,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.latency")),
+            () -> AudioOutputEngine.get().testLatencyPulseOnChannel(selectedChannel)
+        ));
+
+        y += rowH + rowGap;
+
+        this.addRenderableWidget(new NeonButton(
+            leftX,
+            y,
+            contentWidth,
+            rowH,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_stop")),
+            () -> AudioOutputEngine.get().stopCalibration()
+        ));
 
         // Wizard navigation
         int navY = this.height - 52;
         int navW = (contentWidth - 10) / 2;
-        stepBack = Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.step_back")), b -> step(-1))
-            .bounds(leftX, navY, navW, 20)
-            .build();
+        stepBack = new NeonButton(leftX, navY, navW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.step_back")), () -> step(-1));
         this.addRenderableWidget(stepBack);
 
-        stepNext = Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.step_next")), b -> step(1))
-            .bounds(leftX + navW + 10, navY, navW, 20)
-            .build();
+        stepNext = new NeonButton(leftX + navW + 10, navY, navW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.spatial_cal.step_next")), () -> step(1));
         this.addRenderableWidget(stepNext);
 
         updateWizardButtons();
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), b -> onDone())
-            .bounds(leftX, this.height - 28, buttonW, 20)
-            .build());
-
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), b -> onCancel())
-            .bounds(leftX + buttonW + 10, this.height - 28, buttonW, 20)
-            .build());
+        this.addRenderableWidget(new NeonButton(leftX, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), this::onDone));
+        this.addRenderableWidget(new NeonButton(leftX + buttonW + 10, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), this::onCancel));
     }
 
     private void loadCalibrationIntoUi(String channelId) {
@@ -273,6 +301,12 @@ public final class SpatialCalibrationScreen extends Screen {
     @Override
     public void onClose() {
         onCancel();
+    }
+
+    @Override
+    @SuppressWarnings("null")
+    public void renderBackground(GuiGraphics guiGraphics) {
+        guiGraphics.fill(0, 0, this.width, this.height, NeonStyle.get().background);
     }
 
     @Override

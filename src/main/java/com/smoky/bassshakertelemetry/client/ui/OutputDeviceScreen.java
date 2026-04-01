@@ -2,9 +2,11 @@ package com.smoky.bassshakertelemetry.client.ui;
 
 import com.smoky.bassshakertelemetry.audio.AudioDeviceUtil;
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonButton;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -21,20 +23,27 @@ import java.util.function.Consumer;
 public final class OutputDeviceScreen extends Screen {
     private final Screen parent;
     private final Consumer<String> onSelectDevice;
+    private final String initialSelectedDevice;
 
     private List<String> devices = List.of("<Default>");
     private String selectedDevice = "<Default>";
 
     public OutputDeviceScreen(Screen parent, Consumer<String> onSelectDevice) {
+        this(parent, onSelectDevice, null);
+    }
+
+    public OutputDeviceScreen(Screen parent, Consumer<String> onSelectDevice, String initialSelectedDevice) {
         super(Component.translatable("bassshakertelemetry.config.output_device_title"));
         this.parent = Objects.requireNonNull(parent, "parent");
         this.onSelectDevice = Objects.requireNonNull(onSelectDevice, "onSelectDevice");
+        this.initialSelectedDevice = initialSelectedDevice;
     }
 
     @Override
     @SuppressWarnings("null")
     protected void init() {
         super.init();
+        NeonStyle.initClient();
 
         int centerX = this.width / 2;
         int contentWidth = Math.min(310, this.width - 40);
@@ -56,10 +65,16 @@ public final class OutputDeviceScreen extends Screen {
         deviceNames.addAll(AudioDeviceUtil.listOutputDeviceNames(AudioOutputEngine.get().formatStereo()));
         this.devices = deviceNames;
 
-        String current = BstConfig.get().outputDeviceName;
-        String currentDisplay = AudioDeviceUtil.resolveDisplayName(current, AudioOutputEngine.get().formatStereo());
-        if (!this.devices.contains(currentDisplay)) currentDisplay = "<Default>";
-        this.selectedDevice = currentDisplay;
+        // Prefer the selection from the parent screen (may be unsaved) so highlighting is accurate.
+        String preferred = Objects.requireNonNullElse(initialSelectedDevice, "").trim();
+        if (!preferred.isEmpty() && this.devices.contains(preferred)) {
+            this.selectedDevice = preferred;
+        } else {
+            String current = BstConfig.get().outputDeviceName;
+            String currentDisplay = AudioDeviceUtil.resolveDisplayName(current, AudioOutputEngine.get().formatStereo());
+            if (!this.devices.contains(currentDisplay)) currentDisplay = "<Default>";
+            this.selectedDevice = currentDisplay;
+        }
 
         Minecraft mc = Objects.requireNonNull(this.minecraft, "minecraft");
         int listTop = 50;
@@ -73,13 +88,23 @@ public final class OutputDeviceScreen extends Screen {
         this.addRenderableWidget(list);
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), b -> onDone())
-                .bounds(leftX, this.height - 28, buttonW, 20)
-                .build());
+        this.addRenderableWidget(new NeonButton(
+            leftX,
+            this.height - 28,
+            buttonW,
+            20,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")),
+            this::onDone
+        ));
 
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), b -> onCancel())
-                .bounds(leftX + buttonW + 10, this.height - 28, buttonW, 20)
-                .build());
+        this.addRenderableWidget(new NeonButton(
+            leftX + buttonW + 10,
+            this.height - 28,
+            buttonW,
+            20,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")),
+            this::onCancel
+        ));
     }
 
     private void onDone() {
@@ -99,6 +124,12 @@ public final class OutputDeviceScreen extends Screen {
     @Override
     public void onClose() {
         onCancel();
+    }
+
+    @Override
+    @SuppressWarnings("null")
+    public void renderBackground(GuiGraphics guiGraphics) {
+        guiGraphics.fill(0, 0, this.width, this.height, NeonStyle.get().background);
     }
 
     private final class DeviceList extends ContainerObjectSelectionList<DeviceEntry> {
@@ -153,7 +184,8 @@ public final class OutputDeviceScreen extends Screen {
         @SuppressWarnings("null")
         public void render(net.minecraft.client.gui.GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
                            int mouseX, int mouseY, boolean hovered, float partialTick) {
-            int color = (Objects.equals(deviceId, selectedDevice)) ? 0xFFFFFF : 0xE0E0E0;
+            var style = NeonStyle.get();
+            int color = (Objects.equals(deviceId, selectedDevice)) ? style.text : style.textDim;
             guiGraphics.drawString(Objects.requireNonNull(OutputDeviceScreen.this.font), Objects.requireNonNull(deviceId), x + 4, y + 5, color);
         }
 

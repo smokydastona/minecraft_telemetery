@@ -2,7 +2,10 @@ package com.smoky.bassshakertelemetry.client.ui;
 
 import com.smoky.bassshakertelemetry.audio.AudioDeviceUtil;
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonButton;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
 import com.smoky.bassshakertelemetry.config.BstConfig;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.StringWidget;
@@ -51,6 +54,7 @@ public final class SpatialBusRoutingScreen extends Screen {
     @SuppressWarnings("null")
     protected void init() {
         super.init();
+        NeonStyle.initClient();
 
         int centerX = this.width / 2;
         int contentWidth = Math.min(310, this.width - 40);
@@ -85,13 +89,8 @@ public final class SpatialBusRoutingScreen extends Screen {
         this.addRenderableWidget(settingsList);
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), b -> onDone())
-            .bounds(leftX, this.height - 28, buttonW, 20)
-            .build());
-
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), b -> onCancel())
-            .bounds(leftX + buttonW + 10, this.height - 28, buttonW, 20)
-            .build());
+        this.addRenderableWidget(new NeonButton(leftX, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), this::onDone));
+        this.addRenderableWidget(new NeonButton(leftX + buttonW + 10, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), this::onCancel));
     }
 
     private void addBusRoutingEntry(int contentWidth, int rowH, String busId) {
@@ -104,12 +103,20 @@ public final class SpatialBusRoutingScreen extends Screen {
 
         String labelKey = busLabelKey(busId);
 
-        Button b = Button.builder(Objects.requireNonNull(routeLabel(labelKey, options.get(indexRef[0]))), btn -> {
+        final NeonButton[] btnRef = new NeonButton[1];
+        btnRef[0] = new NeonButton(
+            0,
+            0,
+            contentWidth - 12,
+            rowH,
+            Objects.requireNonNull(routeLabel(labelKey, options.get(indexRef[0]))),
+            () -> {
                 indexRef[0] = (indexRef[0] + 1) % options.size();
-                btn.setMessage(Objects.requireNonNull(routeLabel(labelKey, options.get(indexRef[0]))));
-            })
-            .bounds(0, 0, contentWidth - 12, rowH)
-            .build();
+                btnRef[0].setMessage(Objects.requireNonNull(routeLabel(labelKey, options.get(indexRef[0]))));
+            }
+        );
+
+        Button b = btnRef[0];
 
         RoutingButton rb = new RoutingButton(busId, options, indexRef, b);
         routingButtons.put(busId, rb);
@@ -170,6 +177,12 @@ public final class SpatialBusRoutingScreen extends Screen {
     @Override
     public void onClose() {
         onCancel();
+    }
+
+    @Override
+    @SuppressWarnings("null")
+    public void renderBackground(GuiGraphics guiGraphics) {
+        guiGraphics.fill(0, 0, this.width, this.height, NeonStyle.get().background);
     }
 
     private boolean hasAny8ChannelDevice() {
@@ -340,7 +353,7 @@ public final class SpatialBusRoutingScreen extends Screen {
                 Objects.requireNonNull(Component.translatable(key)),
                 x + 2,
                 y + 6,
-                0xFFFFFF
+                NeonStyle.get().text
             );
         }
     }

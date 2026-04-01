@@ -2,7 +2,10 @@ package com.smoky.bassshakertelemetry.client.ui;
 
 import com.smoky.bassshakertelemetry.audio.AudioDeviceUtil;
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonButton;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
 import com.smoky.bassshakertelemetry.config.BstConfig;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.StringWidget;
@@ -38,6 +41,7 @@ public final class SoundScapeOverrideEditScreen extends Screen {
     @SuppressWarnings("null")
     protected void init() {
         super.init();
+        NeonStyle.initClient();
 
         int centerX = this.width / 2;
         int contentWidth = Math.min(310, this.width - 40);
@@ -82,22 +86,24 @@ public final class SoundScapeOverrideEditScreen extends Screen {
         targetIndex = targetOptions.indexOf(current);
         if (targetIndex < 0) targetIndex = 0;
 
-        targetButton = Button.builder(Objects.requireNonNull(targetLabel(targetOptions.get(targetIndex))), b -> {
+        targetButton = new NeonButton(
+                leftX,
+                104,
+                contentWidth,
+                20,
+                Objects.requireNonNull(targetLabel(targetOptions.get(targetIndex))),
+                () -> {
                     targetIndex = (targetIndex + 1) % targetOptions.size();
-                    b.setMessage(Objects.requireNonNull(targetLabel(targetOptions.get(targetIndex))));
-                })
-                .bounds(leftX, 104, contentWidth, 20)
-                .build();
+                    if (targetButton != null) {
+                        targetButton.setMessage(Objects.requireNonNull(targetLabel(targetOptions.get(targetIndex))));
+                    }
+                }
+        );
         this.addRenderableWidget(targetButton);
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), b -> onDone())
-                .bounds(leftX, this.height - 28, buttonW, 20)
-                .build());
-
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), b -> onCancel())
-                .bounds(leftX + buttonW + 10, this.height - 28, buttonW, 20)
-                .build());
+        this.addRenderableWidget(new NeonButton(leftX, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), this::onDone));
+        this.addRenderableWidget(new NeonButton(leftX + buttonW + 10, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), this::onCancel));
     }
 
     private Component targetLabel(String rawTarget) {
@@ -150,6 +156,12 @@ public final class SoundScapeOverrideEditScreen extends Screen {
     @Override
     public void onClose() {
         onCancel();
+    }
+
+    @Override
+    @SuppressWarnings("null")
+    public void renderBackground(GuiGraphics guiGraphics) {
+        guiGraphics.fill(0, 0, this.width, this.height, NeonStyle.get().background);
     }
 
     private boolean hasAny8ChannelDevice() {

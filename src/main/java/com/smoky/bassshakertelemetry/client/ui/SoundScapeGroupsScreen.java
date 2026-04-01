@@ -1,8 +1,11 @@
 package com.smoky.bassshakertelemetry.client.ui;
 
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonButton;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.StringWidget;
@@ -34,6 +37,7 @@ public final class SoundScapeGroupsScreen extends Screen {
     @SuppressWarnings("null")
     protected void init() {
         super.init();
+        NeonStyle.initClient();
 
         int centerX = this.width / 2;
         int contentWidth = Math.min(310, this.width - 40);
@@ -65,19 +69,18 @@ public final class SoundScapeGroupsScreen extends Screen {
         refreshList();
         this.addRenderableWidget(list);
 
-        Button add = Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.group_add")), b -> onAdd())
-                .bounds(leftX, this.height - 50, contentWidth, 20)
-                .build();
-        this.addRenderableWidget(add);
+        this.addRenderableWidget(new NeonButton(
+            leftX,
+            this.height - 50,
+            contentWidth,
+            20,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.group_add")),
+            this::onAdd
+        ));
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), b -> onDone())
-                .bounds(leftX, this.height - 28, buttonW, 20)
-                .build());
-
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), b -> onCancel())
-                .bounds(leftX + buttonW + 10, this.height - 28, buttonW, 20)
-                .build());
+        this.addRenderableWidget(new NeonButton(leftX, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), this::onDone));
+        this.addRenderableWidget(new NeonButton(leftX + buttonW + 10, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), this::onCancel));
     }
 
     private void refreshList() {
@@ -132,6 +135,12 @@ public final class SoundScapeGroupsScreen extends Screen {
         onCancel();
     }
 
+    @Override
+    @SuppressWarnings("null")
+    public void renderBackground(GuiGraphics guiGraphics) {
+        guiGraphics.fill(0, 0, this.width, this.height, NeonStyle.get().background);
+    }
+
     private static Map<String, List<String>> deepCopy(Map<String, List<String>> in) {
         Map<String, List<String>> out = new HashMap<>();
         if (in == null) {
@@ -183,24 +192,34 @@ public final class SoundScapeGroupsScreen extends Screen {
 
         GroupEntry(String groupName) {
             this.groupName = Objects.requireNonNull(groupName);
-            this.edit = Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.group_edit")), b -> {
+            this.edit = new NeonButton(
+                    0,
+                    0,
+                    70,
+                    20,
+                    Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.group_edit")),
+                    () -> {
                         Minecraft mc = SoundScapeGroupsScreen.this.minecraft;
                         if (mc != null) {
                             mc.setScreen(new SoundScapeGroupEditScreen(SoundScapeGroupsScreen.this, groups, this.groupName));
                         }
-                    })
-                    .bounds(0, 0, 70, 20)
-                    .build();
+                    }
+            );
 
-            this.delete = Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.group_delete")), b -> {
+            this.delete = new NeonButton(
+                    0,
+                    0,
+                    70,
+                    20,
+                    Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.group_delete")),
+                    () -> {
                         // Keep All as a stable default.
                         if (!"All".equalsIgnoreCase(this.groupName)) {
                             groups.remove(this.groupName);
                             refreshList();
                         }
-                    })
-                    .bounds(0, 0, 70, 20)
-                    .build();
+                    }
+            );
         }
 
         @Override

@@ -683,9 +683,7 @@ public final class AdvancedSettingsScreen extends Screen {
         SliderWithTestEntry(net.minecraft.client.gui.components.AbstractSliderButton slider, Runnable testAction) {
             this.slider = Objects.requireNonNull(slider);
             Runnable action = Objects.requireNonNull(testAction);
-            this.testButton = Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.test")), b -> action.run())
-                    .bounds(0, 0, 90, 20)
-                    .build();
+            this.testButton = new NeonButton(0, 0, 90, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.test")), action);
         }
 
         @Override

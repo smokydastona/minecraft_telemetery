@@ -1,5 +1,8 @@
 package com.smoky.bassshakertelemetry.client.ui;
 
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonButton;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.StringWidget;
@@ -51,6 +54,7 @@ public final class SoundScapeGroupEditScreen extends Screen {
     @SuppressWarnings("null")
     protected void init() {
         super.init();
+        NeonStyle.initClient();
 
         int centerX = this.width / 2;
         int contentWidth = Math.min(310, this.width - 40);
@@ -86,21 +90,14 @@ public final class SoundScapeGroupEditScreen extends Screen {
             int rowY = y + (i / 2) * (rowH + gap);
 
             int idx = i;
-            Button b = Button.builder(channelLabel(idx), btn -> toggleChannel(idx))
-                    .bounds(colX, rowY, colW, rowH)
-                    .build();
+                Button b = new NeonButton(colX, rowY, colW, rowH, channelLabel(idx), () -> toggleChannel(idx));
             channelButtons[i] = b;
             this.addRenderableWidget(b);
         }
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), b -> onDone())
-                .bounds(leftX, this.height - 28, buttonW, 20)
-                .build());
-
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), b -> onCancel())
-                .bounds(leftX + buttonW + 10, this.height - 28, buttonW, 20)
-                .build());
+        this.addRenderableWidget(new NeonButton(leftX, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), this::onDone));
+        this.addRenderableWidget(new NeonButton(leftX + buttonW + 10, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), this::onCancel));
     }
 
     private void toggleChannel(int idx) {
@@ -176,5 +173,11 @@ public final class SoundScapeGroupEditScreen extends Screen {
     @Override
     public void onClose() {
         onCancel();
+    }
+
+    @Override
+    @SuppressWarnings("null")
+    public void renderBackground(GuiGraphics guiGraphics) {
+        guiGraphics.fill(0, 0, this.width, this.height, NeonStyle.get().background);
     }
 }

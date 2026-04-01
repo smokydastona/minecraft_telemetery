@@ -23,6 +23,7 @@ public final class TelemetryConfigScreen extends Screen {
     private Button outputDeviceButton;
     private List<String> devices = List.of("<Default>");
     private String selectedDevice = "<Default>";
+    private boolean outputDeviceDirty = false;
 
     private boolean damageEnabled;
     private boolean biomeEnabled;
@@ -62,10 +63,17 @@ public final class TelemetryConfigScreen extends Screen {
         deviceList.addAll(AudioDeviceUtil.listOutputDeviceNames(AudioOutputEngine.get().formatStereo()));
         this.devices = deviceList;
 
-        String current = BstConfig.get().outputDeviceName;
-        String currentDisplay = AudioDeviceUtil.resolveDisplayName(current, AudioOutputEngine.get().formatStereo());
-        if (!this.devices.contains(currentDisplay)) currentDisplay = "<Default>";
-        this.selectedDevice = currentDisplay;
+        if (!outputDeviceDirty) {
+            String current = BstConfig.get().outputDeviceName;
+            String currentDisplay = AudioDeviceUtil.resolveDisplayName(current, AudioOutputEngine.get().formatStereo());
+            if (!this.devices.contains(currentDisplay)) currentDisplay = "<Default>";
+            this.selectedDevice = currentDisplay;
+        } else {
+            // Returning from OutputDeviceScreen triggers a re-init; keep the in-progress selection.
+            if (!this.devices.contains(this.selectedDevice)) {
+                this.selectedDevice = "<Default>";
+            }
+        }
 
         damageEnabled = BstConfig.get().damageBurstEnabled;
         biomeEnabled = BstConfig.get().biomeChimeEnabled;
@@ -91,7 +99,7 @@ public final class TelemetryConfigScreen extends Screen {
                 deviceButtonLabel(),
                 () -> {
                     if (this.minecraft != null) {
-                        this.minecraft.setScreen(new OutputDeviceScreen(this, this::setSelectedDevice));
+                        this.minecraft.setScreen(new OutputDeviceScreen(this, this::setSelectedDevice, this.selectedDevice));
                     }
                 }
         );
@@ -344,6 +352,7 @@ public final class TelemetryConfigScreen extends Screen {
             v = "<Default>";
         }
         this.selectedDevice = v;
+        this.outputDeviceDirty = true;
 
         if (outputDeviceButton != null) {
             outputDeviceButton.setMessage(Objects.requireNonNull(deviceButtonLabel()));

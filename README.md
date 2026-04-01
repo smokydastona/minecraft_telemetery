@@ -52,6 +52,7 @@ UI bundle (Neon skin):
 
 - The config screens can load their **style/assets** (and optional **screen schema**) from a UI bundle.
 - Neon screens include a **Reload UI bundle** button to re-read the bundle from disk without restarting.
+- All in-game config pages use the Neon theme (including device picker, Sound Scape editors, and Spatial screens).
 - Bundle folders:
 	- Disk override: `config/bassshakertelemetry/ui_bundle/`
 	- Disk remote (auto-updated): `config/bassshakertelemetry/ui_bundle_remote/`

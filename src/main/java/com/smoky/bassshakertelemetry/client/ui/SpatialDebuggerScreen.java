@@ -2,9 +2,10 @@ package com.smoky.bassshakertelemetry.client.ui;
 
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.client.VibrationIngress;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonButton;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -27,6 +28,7 @@ public final class SpatialDebuggerScreen extends Screen {
     @SuppressWarnings("null")
     protected void init() {
         super.init();
+        NeonStyle.initClient();
 
         AudioOutputEngine.setDebugCaptureEnabled(true);
 
@@ -34,11 +36,14 @@ public final class SpatialDebuggerScreen extends Screen {
         int contentWidth = Math.min(310, this.width - 40);
         int leftX = centerX - (contentWidth / 2);
 
-        this.addRenderableWidget(Button.builder(
-                Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")),
-                b -> onDone())
-            .bounds(leftX, this.height - 28, contentWidth, 20)
-            .build());
+        this.addRenderableWidget(new NeonButton(
+            leftX,
+            this.height - 28,
+            contentWidth,
+            20,
+            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")),
+            this::onDone
+        ));
     }
 
     private void onDone() {
@@ -51,6 +56,12 @@ public final class SpatialDebuggerScreen extends Screen {
     @Override
     public void onClose() {
         onDone();
+    }
+
+    @Override
+    @SuppressWarnings("null")
+    public void renderBackground(GuiGraphics guiGraphics) {
+        guiGraphics.fill(0, 0, this.width, this.height, NeonStyle.get().background);
     }
 
     @Override

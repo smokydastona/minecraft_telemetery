@@ -2,7 +2,10 @@ package com.smoky.bassshakertelemetry.client.ui;
 
 import com.smoky.bassshakertelemetry.audio.AudioDeviceUtil;
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonButton;
+import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
 import com.smoky.bassshakertelemetry.config.BstConfig;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.StringWidget;
@@ -44,6 +47,7 @@ public final class SoundScapeConfigScreen extends Screen {
     @SuppressWarnings("null")
     protected void init() {
         super.init();
+        NeonStyle.initClient();
 
         int centerX = this.width / 2;
         int contentWidth = Math.min(310, this.width - 40);
@@ -72,34 +76,38 @@ public final class SoundScapeConfigScreen extends Screen {
 
         settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.soundscape.section.mode"));
 
-        enabledButton = Button.builder(Objects.requireNonNull(enabledLabel()), b -> toggleEnabled())
-                .bounds(0, 0, contentWidth - 12, rowH)
-                .build();
+        enabledButton = new NeonButton(0, 0, contentWidth - 12, rowH, Objects.requireNonNull(enabledLabel()), this::toggleEnabled);
         settingsList.addSettingEntry(new ButtonOnlyEntry(enabledButton));
 
         settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.soundscape.section.status"));
         settingsList.addSettingEntry(new TextEntry(statusLine()));
 
-        Button groupsButton = Button.builder(
-                        Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.groups")),
-                        b -> {
-                            if (this.minecraft != null) {
-                                this.minecraft.setScreen(new SoundScapeGroupsScreen(this));
-                            }
-                        })
-                .bounds(0, 0, contentWidth - 12, rowH)
-                .build();
+        Button groupsButton = new NeonButton(
+                0,
+                0,
+                contentWidth - 12,
+                rowH,
+                Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.groups")),
+                () -> {
+                    if (this.minecraft != null) {
+                        this.minecraft.setScreen(new SoundScapeGroupsScreen(this));
+                    }
+                }
+        );
         settingsList.addSettingEntry(new ButtonOnlyEntry(groupsButton));
 
-        Button overridesButton = Button.builder(
-                        Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.overrides")),
-                        b -> {
-                            if (this.minecraft != null) {
-                                this.minecraft.setScreen(new SoundScapeOverridesScreen(this));
-                            }
-                        })
-                .bounds(0, 0, contentWidth - 12, rowH)
-                .build();
+        Button overridesButton = new NeonButton(
+                0,
+                0,
+                contentWidth - 12,
+                rowH,
+                Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.overrides")),
+                () -> {
+                    if (this.minecraft != null) {
+                        this.minecraft.setScreen(new SoundScapeOverridesScreen(this));
+                    }
+                }
+        );
         settingsList.addSettingEntry(new ButtonOnlyEntry(overridesButton));
 
         settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.soundscape.section.routing"));
@@ -119,13 +127,8 @@ public final class SoundScapeConfigScreen extends Screen {
         this.addRenderableWidget(settingsList);
 
         int buttonW = (contentWidth - 10) / 2;
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), b -> onDone())
-                .bounds(leftX, this.height - 28, buttonW, 20)
-                .build());
-
-        this.addRenderableWidget(Button.builder(Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), b -> onCancel())
-                .bounds(leftX + buttonW + 10, this.height - 28, buttonW, 20)
-                .build());
+        this.addRenderableWidget(new NeonButton(leftX, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")), this::onDone));
+        this.addRenderableWidget(new NeonButton(leftX + buttonW + 10, this.height - 28, buttonW, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")), this::onCancel));
     }
 
     private void addRoutingEntry(int contentWidth, int rowH, String categoryKey, String labelKey) {
@@ -136,12 +139,22 @@ public final class SoundScapeConfigScreen extends Screen {
 
         int[] indexRef = new int[]{idx};
 
-        Button b = Button.builder(Objects.requireNonNull(routeLabel(labelKey, options.get(indexRef[0]))), btn -> {
+        final Button[] btnRef = new Button[1];
+        Button b = new NeonButton(
+                0,
+                0,
+                contentWidth - 12,
+                rowH,
+                Objects.requireNonNull(routeLabel(labelKey, options.get(indexRef[0]))),
+                () -> {
                     indexRef[0] = (indexRef[0] + 1) % options.size();
-                    btn.setMessage(Objects.requireNonNull(routeLabel(labelKey, options.get(indexRef[0]))));
-                })
-                .bounds(0, 0, contentWidth - 12, rowH)
-                .build();
+                    Button self = btnRef[0];
+                    if (self != null) {
+                        self.setMessage(Objects.requireNonNull(routeLabel(labelKey, options.get(indexRef[0]))));
+                    }
+                }
+        );
+        btnRef[0] = b;
 
         RoutingButton rb = new RoutingButton(categoryKey, options, indexRef, b);
         routingButtons.put(categoryKey, rb);
@@ -193,6 +206,12 @@ public final class SoundScapeConfigScreen extends Screen {
     @Override
     public void onClose() {
         onCancel();
+    }
+
+    @Override
+    @SuppressWarnings("null")
+    public void renderBackground(GuiGraphics guiGraphics) {
+        guiGraphics.fill(0, 0, this.width, this.height, NeonStyle.get().background);
     }
 
     private Component routeLabel(String labelKey, String target) {

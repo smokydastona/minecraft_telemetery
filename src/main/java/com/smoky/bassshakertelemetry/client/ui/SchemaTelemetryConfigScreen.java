@@ -32,6 +32,7 @@ public final class SchemaTelemetryConfigScreen extends Screen {
     private Button outputDeviceButton;
     private List<String> devices = List.of("<Default>");
     private String selectedDevice = "<Default>";
+    private boolean outputDeviceDirty = false;
 
     private final Map<String, Object> state = new HashMap<>();
 
@@ -124,10 +125,17 @@ public final class SchemaTelemetryConfigScreen extends Screen {
         deviceList.addAll(AudioDeviceUtil.listOutputDeviceNames(AudioOutputEngine.get().formatStereo()));
         this.devices = deviceList;
 
-        String current = BstConfig.get().outputDeviceName;
-        String currentDisplay = AudioDeviceUtil.resolveDisplayName(current, AudioOutputEngine.get().formatStereo());
-        if (!this.devices.contains(currentDisplay)) currentDisplay = "<Default>";
-        this.selectedDevice = currentDisplay;
+        if (!outputDeviceDirty) {
+            String current = BstConfig.get().outputDeviceName;
+            String currentDisplay = AudioDeviceUtil.resolveDisplayName(current, AudioOutputEngine.get().formatStereo());
+            if (!this.devices.contains(currentDisplay)) currentDisplay = "<Default>";
+            this.selectedDevice = currentDisplay;
+        } else {
+            // Returning from OutputDeviceScreen triggers a re-init; keep the in-progress selection.
+            if (!this.devices.contains(this.selectedDevice)) {
+                this.selectedDevice = "<Default>";
+            }
+        }
     }
 
     private void loadBoundState(NeonUiSchema.NeonUiNode node) {
@@ -179,7 +187,7 @@ public final class SchemaTelemetryConfigScreen extends Screen {
         if (mc == null) return;
 
         switch (action) {
-            case "openOutputDevice" -> mc.setScreen(new OutputDeviceScreen(this, this::setSelectedDevice));
+            case "openOutputDevice" -> mc.setScreen(new OutputDeviceScreen(this, this::setSelectedDevice, this.selectedDevice));
             case "openAdvanced" -> {
                 if (NeonUiSchemaLoader.hasActiveScreen("advanced_settings")) {
                     mc.setScreen(new SchemaAdvancedSettingsScreen(this));
@@ -212,6 +220,26 @@ public final class SchemaTelemetryConfigScreen extends Screen {
         if (this.minecraft != null) {
             this.minecraft.setScreen(parent);
         }
+    }
+
+    void setSelectedDevice(String displayDeviceId) {
+        String v = Objects.requireNonNullElse(displayDeviceId, "<Default>");
+        if (!devices.contains(v)) {
+            v = "<Default>";
+        }
+        this.selectedDevice = v;
+        this.outputDeviceDirty = true;
+
+        if (outputDeviceButton != null) {
+            outputDeviceButton.setMessage(Objects.requireNonNull(deviceButtonLabel(), "deviceButtonLabel"));
+        }
+    }
+
+    @SuppressWarnings("null")
+    private Component deviceButtonLabel() {
+        return Component.translatable("bassshakertelemetry.config.output_device")
+                .append(": ")
+                .append(Component.literal(Objects.requireNonNull(selectedDevice)));
     }
 
     private void applyAllBinds(BstConfig.Data data, String skipFieldName) {
@@ -520,24 +548,5 @@ public final class SchemaTelemetryConfigScreen extends Screen {
             case DISK_REMOTE -> Component.literal("UI Bundle: Disk (remote)");
             case BUILT_IN -> Component.literal("UI Bundle: Built-in");
         };
-    }
-
-    @SuppressWarnings("null")
-    private Component deviceButtonLabel() {
-        return Component.translatable("bassshakertelemetry.config.output_device")
-                .append(": ")
-                .append(Component.literal(Objects.requireNonNull(selectedDevice)));
-    }
-
-    void setSelectedDevice(String displayDeviceId) {
-        String v = Objects.requireNonNullElse(displayDeviceId, "<Default>");
-        if (!devices.contains(v)) {
-            v = "<Default>";
-        }
-        this.selectedDevice = v;
-
-        if (outputDeviceButton != null) {
-            outputDeviceButton.setMessage(Objects.requireNonNull(deviceButtonLabel(), "deviceButtonLabel"));
-        }
     }
 }
