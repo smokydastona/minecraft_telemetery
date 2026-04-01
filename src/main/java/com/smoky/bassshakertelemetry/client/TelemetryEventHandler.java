@@ -19,6 +19,8 @@ public final class TelemetryEventHandler {
     private float lastYawDeg = Float.NaN;
     private long lastFlightWindNanos = 0L;
 
+    private long lastSwimWindNanos = 0L;
+
     @SubscribeEvent
     @SuppressWarnings("null")
     public void onClientTick(TickEvent.ClientTickEvent event) {
@@ -26,7 +28,8 @@ public final class TelemetryEventHandler {
             return;
         }
 
-        if (!BstConfig.get().enabled()) {
+        BstConfig.Data cfg = BstConfig.get();
+        if (!cfg.enabled()) {
             AudioOutputEngine.get().setTelemetryLive(false);
             return;
         }
@@ -51,6 +54,9 @@ public final class TelemetryEventHandler {
         lastSpeed = speed;
 
         boolean elytra = player.isFallFlying();
+        boolean onGround = player.onGround();
+        boolean inWater = player.isInWaterOrBubble();
+        boolean swimming = player.isSwimming();
 
         // Directional Elytra wind rumble: as you turn/bank, the wind shifts left/right for immersion.
         // Implemented as short, overlapping impulses so it still participates in priority/ducking.
@@ -62,13 +68,29 @@ public final class TelemetryEventHandler {
         lastYawDeg = yawNow;
 
         if (elytra) {
-            maybeTriggerFlightWind(player, speed, yawDelta);
+            // Tie directional wind to the Movement texture master switch.
+            if (cfg.roadTextureEnabled && cfg.movementAirGain > 0.0001) {
+                maybeTriggerFlightWind(player, speed, yawDelta, cfg.movementAirGain);
+            } else {
+                lastFlightWindNanos = 0L;
+            }
         } else {
             lastFlightWindNanos = 0L;
         }
 
+        // Directional swimming wind: as you turn while swimming, the water flow shifts left/right.
+        if (inWater) {
+            if (cfg.roadTextureEnabled && cfg.movementWaterGain > 0.0001) {
+                maybeTriggerSwimWind(player, speed, yawDelta, cfg.movementWaterGain);
+            } else {
+                lastSwimWindNanos = 0L;
+            }
+        } else {
+            lastSwimWindNanos = 0L;
+        }
+
         // Biome transitions (kept for later use; currently UI exposes toggle)
-        if (BstConfig.get().biomeChimeEnabled) {
+        if (cfg.biomeChimeEnabled) {
             Holder<Biome> biomeHolder = level.getBiome(player.blockPosition());
             ResourceKey<Biome> biomeKey = biomeHolder.unwrapKey().orElse(null);
             if (biomeKey != null && lastBiome != null && biomeKey != lastBiome) {
@@ -77,14 +99,14 @@ public final class TelemetryEventHandler {
             lastBiome = biomeKey;
         }
 
-        AudioOutputEngine.get().updateTelemetry(speed, accel, elytra);
+        AudioOutputEngine.get().updateTelemetry(speed, accel, elytra, onGround, inWater, swimming);
 
-        if (BstConfig.get().webSocketEnabled && BstConfig.get().webSocketSendTelemetry) {
+        if (cfg.webSocketEnabled && cfg.webSocketSendTelemetry) {
             TelemetryOut.emitTelemetry(speed, accel, elytra);
         }
     }
 
-    private void maybeTriggerFlightWind(Player player, double speed, float yawDeltaDeg) {
+    private void maybeTriggerFlightWind(Player player, double speed, float yawDeltaDeg, double movementAirGain) {
         // Simple rate limit so we don't spawn an unbounded number of voices.
         long now = System.nanoTime();
         // ~10-12 Hz is enough for a continuous feel with overlap.
@@ -103,7 +125,7 @@ public final class TelemetryEventHandler {
         double speedScale = clamp((speed - 0.70) / 1.90, 0.0, 1.0);
         speedScale *= speedScale;
 
-        double gain01 = clamp(resolved.intensity01() * speedScale, 0.0, 1.0);
+        double gain01 = clamp(resolved.intensity01() * speedScale * clamp(movementAirGain, 0.0, 1.0), 0.0, 1.0);
         if (gain01 <= 0.001) {
             return;
         }
@@ -163,6 +185,83 @@ public final class TelemetryEventHandler {
                 resolved.priority(),
                 encoded.delayMs(),
                 "flight.wind"
+        );
+    }
+
+    private void maybeTriggerSwimWind(Player player, double speed, float yawDeltaDeg, double movementWaterGain) {
+        long now = System.nanoTime();
+        // Slightly lower rate feels better in water; still continuous.
+        if (lastSwimWindNanos != 0L && (now - lastSwimWindNanos) < 110_000_000L) {
+            return;
+        }
+        lastSwimWindNanos = now;
+
+        var store = BstVibrationProfiles.get();
+        var resolved = store.resolve("swim.wind", 1.0, 1.0);
+        if (resolved == null) {
+            return;
+        }
+
+        // Water movement speeds are lower; engage earlier.
+        double speedScale = clamp((speed - 0.05) / 0.55, 0.0, 1.0);
+        speedScale *= speedScale;
+
+        double gain01 = clamp(resolved.intensity01() * speedScale * clamp(movementWaterGain, 0.0, 1.0), 0.0, 1.0);
+        if (gain01 <= 0.001) {
+            return;
+        }
+
+        double yawRad = Math.toRadians(player.getYRot());
+        double fx = -Math.sin(yawRad);
+        double fz = Math.cos(yawRad);
+        double rx = Math.cos(yawRad);
+        double rz = Math.sin(yawRad);
+
+        double dist = 3.3;
+        double sx;
+        double sz;
+
+        if (Math.abs(yawDeltaDeg) > 1.4f) {
+            boolean turnLeft = yawDeltaDeg > 0.0f;
+            if (turnLeft) {
+                sx = player.getX() - (rx * dist);
+                sz = player.getZ() - (rz * dist);
+            } else {
+                sx = player.getX() + (rx * dist);
+                sz = player.getZ() + (rz * dist);
+            }
+        } else {
+            sx = player.getX() + (fx * dist);
+            sz = player.getZ() + (fz * dist);
+        }
+
+        double sy = player.getY();
+
+        var encoded = DirectionalEncoding.apply(
+                store,
+                player,
+                resolved.directional(),
+                true,
+                sx,
+                sy,
+                sz,
+                resolved.frequencyHz(),
+                gain01
+        );
+
+        String pat = (resolved.pattern() == null || resolved.pattern().isBlank()) ? "soft_single" : resolved.pattern();
+
+        AudioOutputEngine.get().triggerImpulse(
+                encoded.frequencyHz(),
+                resolved.durationMs(),
+                encoded.gain01(),
+                resolved.noiseMix01(),
+                pat,
+                resolved.pulsePeriodMs(),
+                resolved.pulseWidthMs(),
+                resolved.priority(),
+                encoded.delayMs(),
+                "swim.wind"
         );
     }
 

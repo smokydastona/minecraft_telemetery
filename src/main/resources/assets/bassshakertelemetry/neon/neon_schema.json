@@ -34,6 +34,12 @@
           },
           {
             "type": "button",
+            "id": "movement",
+            "textKey": "bassshakertelemetry.config.movement_settings",
+            "action": "openMovement"
+          },
+          {
+            "type": "button",
             "id": "advanced",
             "textKey": "bassshakertelemetry.config.advanced",
             "action": "openAdvanced"

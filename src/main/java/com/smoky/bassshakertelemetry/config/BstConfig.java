@@ -392,6 +392,13 @@ public final class BstConfig {
         public double roadTextureGain = 0.18;
         public double roadTextureCutoffHz = 30.0;
 
+        // Movement sub-layers (all gated by roadTextureEnabled)
+        // These split movement into contexts so you can tune feel per-medium.
+        public double movementFlightGain = 0.22; // non-directional texture while gliding
+        public double movementAirGain = 0.45;    // directional wind while gliding (flight.wind)
+        public double movementSwimGain = 0.18;   // non-directional texture while swimming
+        public double movementWaterGain = 0.45;  // directional water flow while swimming (swim.wind)
+
         // Accel bump (short one-shot thump derived from acceleration spikes)
         public boolean accelBumpEnabled = false;
         public double accelBumpThreshold = 0.14;

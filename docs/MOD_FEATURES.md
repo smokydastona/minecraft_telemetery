@@ -36,10 +36,17 @@ External output:
 ## Effects (current)
 
 - **Movement texture**: low-frequency filtered noise scaled by speed (toggleable; default ON for new installs).
+	- When enabled, it is context-aware:
+		- **Land texture** while on the ground
+		- **Flight texture** while Elytra gliding
+		- **Swim texture** while in water
 - **Damage**: triggers on hurt timing (with client-tick fallback). When a damage source position is available (attacker/projectile/source position), `damage.generic` is **directional** so you can feel where it came from.
 - **Periodic danger ticks**: subtle repeating pulses for fire/drowning/poison/wither.
 - **Death rumble**: one-shot death effect (boom + “womp” tail).
 - **Flight wind (Elytra)**: low rumble impulses while gliding that shift left/right as you turn (profile key: `flight.wind`).
+	- This is gated by the **Movement texture** master toggle and scaled by the **Air (directional)** slider in Movement settings.
+- **Swim wind**: low rumble impulses while swimming/in water that shift left/right as you turn (profile key: `swim.wind`).
+	- This is gated by the **Movement texture** master toggle and scaled by the **Water (directional)** slider in Movement settings.
 - **Mounted haptics**: while riding, ground mounts emit hoof “clump” pulses (`mount.hoof`). Mounts that can fly swap to `flight.wind` while airborne.
 - **Warden heartbeat**: heartbeat pulses triggered by the **actual Warden heartbeat sound** (profile key: `boss.warden_heartbeat`). This is directional and gets louder as you get closer, but is intentionally capped to stay quieter than damage.
 - **Biome chime**: short low sine “bump” on biome changes.
@@ -53,7 +60,11 @@ External output:
 
 ## In-game config UI
 
-- Per-effect volume sliders are available under **Advanced settings → Effect volumes**.
+- **Movement settings** provides movement-related toggles/volumes in one place:
+	- Movement texture master toggle
+	- Flight / Air (directional) / Swim / Water (directional) sliders
+	- Footsteps toggle + slider
+- Other per-effect volume sliders are available under **Advanced settings → Effect volumes**.
 - Each effect slider has a **Test** button directly underneath to preview that effect without needing to trigger it in gameplay.
 - Config UI pages consistently use the Neon theme (including device picker, Sound Scape editors, Spatial screens, and the instrument editor).
 

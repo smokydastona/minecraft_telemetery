@@ -163,6 +163,21 @@ public final class TelemetryConfigScreen extends Screen {
                 y,
                 contentWidth,
                 rowH,
+                Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.movement_settings")),
+                () -> {
+                    if (this.minecraft != null) {
+                        this.minecraft.setScreen(new MovementSettingsScreen(this));
+                    }
+                }
+        ));
+
+        y += rowH + rowGap;
+
+        this.addRenderableWidget(new NeonButton(
+                leftX,
+                y,
+                contentWidth,
+                rowH,
                 Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.advanced")),
                 () -> {
                     if (this.minecraft != null) {

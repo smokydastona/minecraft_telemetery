@@ -26,6 +26,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - WebSocket unified event packets (`type":"event"`) now support real IDs + source/position/metadata via a lightweight context system.
 - Directional damage haptics when a source position is known.
 - Directional flight wind impulses while gliding (profile key: `flight.wind`).
+- Directional swim wind impulses while swimming/in water (profile key: `swim.wind`).
 - Mounted haptics: hoof pulses on ground mounts (profile key: `mount.hoof`) and flying mounts swap to `flight.wind` while airborne.
 - Directional Warden heartbeat pulses that follow the in-game heartbeat sound timing, scale with distance, and are capped to stay quieter than damage (profile key: `boss.warden_heartbeat`).
 - Ender Dragon sound cues (roar/growl/flap) now produce directional, distance-scaled haptics so the rumble shifts around you as the dragon moves (and are capped to never exceed 90% of damage haptics).
@@ -43,6 +44,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Spatial calibration wizard: burst test button, RMS auto-trim helper, per-channel comfort limit, and a guided Back/Next flow with one-click comfort capture.
 - Minimal spatial debugger screen showing last event, azimuth/distance, and engine status.
 - Accessibility HUD: optional on-screen cue list for key danger events (damage, explosions, thunder, boss cues, Warden heartbeat) plus a low-health warning, with 8-way directional arrows (←→↑↓↖↗↘↙) that update as you turn.
+- New **Movement settings** screen: Movement texture toggle + Flight/Air/Swim/Water sliders, plus Footsteps toggle + slider.
 
 ### Changed
 - Lower-latency defaults: JavaSound requested buffer now defaults to 20ms (was auto/0), and the audio engine renders in 10ms chunks for faster one-shot response.
@@ -60,6 +62,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Main config screen now includes a **Game sounds device** picker alongside the haptics output device picker.
 - Neon UI bundle now auto-reloads when screens open (manual Reload button removed).
 - Road texture has been renamed to **Movement texture** in the UI/docs, and is now ON by default for new installs.
+- Movement texture is now context-aware (land/flight/swim), and both directional wind layers (Elytra + swimming) are gated by the Movement texture master toggle.
 
 ### Fixed
 - Output device selection now stays on the selected device when 7.1 (8ch) output can’t be opened (falls back to stereo on the same device instead of silently switching to the system default).

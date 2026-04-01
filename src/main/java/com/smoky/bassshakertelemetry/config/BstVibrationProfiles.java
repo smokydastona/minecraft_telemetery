@@ -205,6 +205,9 @@ public final class BstVibrationProfiles {
             // Flight
             map.put("flight.wind", new Profile(38.0, 0.26, 220, 0.55, "soft_single", "none", 160, 60, true, 2, false, false));
 
+            // Swimming
+            map.put("swim.wind", new Profile(34.0, 0.22, 240, 0.65, "soft_single", "none", 160, 60, true, 2, false, false));
+
             // Mounted
             map.put("mount.hoof", new Profile(52.0, 0.30, 70, 0.28, "punch", "none", 160, 60, false, 2, false, false));
 

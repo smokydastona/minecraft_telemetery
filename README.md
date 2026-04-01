@@ -21,9 +21,10 @@ For DSP-backed `instrument` playback, directional feel is handled inside the ins
 
 ## Signal sources (high level)
 
-- **Telemetry-driven layers** (optional): movement texture (speed), accel bump, biome chime, elytra state.
+- **Telemetry-driven layers** (optional): movement texture (land/flight/swim, speed-scaled), accel bump, biome chime.
 - **Event impulses**: damage (directional when a source is known), danger ticks (fire/drowning/poison/wither), death rumble.
-- **Flight wind (Elytra)**: a low rumble layer while gliding that shifts left/right as you turn (key: `flight.wind`).
+- **Flight wind (Elytra)**: low rumble impulses while gliding that shift left/right as you turn (key: `flight.wind`).
+- **Swim wind**: low rumble impulses while swimming/in water that shift left/right as you turn (key: `swim.wind`).
 - **Mounted haptics**: ground mounts emit hoof “clump” pulses (key: `mount.hoof`); flying mounts swap to `flight.wind` while airborne.
 - **Warden heartbeat**: directional heartbeat pulses that follow the **actual in-game Warden heartbeat sound timing** (key: `boss.warden_heartbeat`), louder when closer and intentionally quieter than damage.
 - **Client-only sound haptics**: infers impulses from `PlaySoundEvent` (explosions, thunder, hurt, break/place, steps, attacks, doors/containers/buttons/levers, etc.). These now also participate in encoded-mono direction using the sound instance position.
@@ -42,6 +43,7 @@ In-game:
 
 - Minecraft main menu → **Mods** → **Bass Shaker Telemetry** → **Config**
 - Game sounds device selection (Minecraft audio output), haptics output device selection (JavaSound), master volume, per-effect toggles and volume sliders.
+- **Movement settings** groups movement-related tuning in one place: Movement texture master toggle, Flight/Air/Swim/Water sliders, plus Footsteps toggle + slider.
 - Advanced settings includes an output buffer size selector (JavaSound backend) to tune **latency vs stability**, a latency test pulse, calibration tones/sweep, and a haptic instrument graph editor (Phase 2).
 - Advanced settings also includes a **Spatial** section (Phase 3) for Sound Scape: spatial panning toggle, distance attenuation, a guided per-channel calibration wizard (gain + simple EQ, burst test, RMS auto-trim, comfort limit capture), and a real-time spatial debugger (meters/waveform/spectrogram/timeline/latency).
 - Each effect slider includes a **Test** button.

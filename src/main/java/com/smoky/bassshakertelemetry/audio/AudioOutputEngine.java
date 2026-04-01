@@ -75,6 +75,10 @@ public final class AudioOutputEngine {
     private volatile double speed;
 
     private volatile boolean telemetryLive;
+    private volatile boolean telemetryElytra;
+    private volatile boolean telemetryOnGround;
+    private volatile boolean telemetryInWater;
+    private volatile boolean telemetrySwimming;
     private volatile long lastTelemetryNanos;
 
     // Event triggers
@@ -109,8 +113,10 @@ public final class AudioOutputEngine {
     // Damage burst noise filter state
     private volatile double damageNoiseState;
 
-    // Road texture state
+    // Movement texture filter states (continuous)
     private volatile double roadNoiseState;
+    private volatile double flightNoiseState;
+    private volatile double swimNoiseState;
 
     // --- Phase 3: Real-time debugger taps (capture is opt-in for performance) ---
 
@@ -375,9 +381,13 @@ public final class AudioOutputEngine {
         return FORMAT_STEREO;
     }
 
-    public void updateTelemetry(double speed, double accel, boolean elytra) {
+    public void updateTelemetry(double speed, double accel, boolean elytra, boolean onGround, boolean inWater, boolean swimming) {
         this.speed = speed;
         this.telemetryLive = true;
+        this.telemetryElytra = elytra;
+        this.telemetryOnGround = onGround;
+        this.telemetryInWater = inWater;
+        this.telemetrySwimming = swimming;
         this.lastTelemetryNanos = System.nanoTime();
 
         // Optional accel-driven thump, with a small cooldown to avoid machine-gun pulses.
@@ -1160,12 +1170,28 @@ public final class AudioOutputEngine {
                 ImpulseVoice dominantImpulse = null;
                 EnumMap<HapticBus, ImpulseVoice> dominantImpulseByBus = new EnumMap<>(HapticBus.class);
 
-                // Road: low priority continuous.
-                boolean roadActiveForDominance = cfg.roadTextureEnabled && cfg.roadTextureGain > 0.0001 && Math.abs(localSpeed) > 0.09;
-                if (roadActiveForDominance) {
+                // Movement textures: low priority continuous (land/flight/swim), all gated by roadTextureEnabled.
+                double movementStrength = -1.0;
+                boolean movementActiveForDominance = false;
+                if (cfg.roadTextureEnabled) {
+                    if (telemetryOnGround && cfg.roadTextureGain > 0.0001 && Math.abs(localSpeed) > 0.09) {
+                        movementActiveForDominance = true;
+                        movementStrength = Math.max(movementStrength, cfg.roadTextureGain);
+                    }
+                    if (telemetryElytra && cfg.movementFlightGain > 0.0001 && Math.abs(localSpeed) > 0.70) {
+                        movementActiveForDominance = true;
+                        movementStrength = Math.max(movementStrength, cfg.movementFlightGain);
+                    }
+                    if ((telemetryInWater || telemetrySwimming) && cfg.movementSwimGain > 0.0001 && Math.abs(localSpeed) > 0.05) {
+                        movementActiveForDominance = true;
+                        movementStrength = Math.max(movementStrength, cfg.movementSwimGain);
+                    }
+                }
+
+                if (movementActiveForDominance) {
                     dominantKind = 1;
                     dominantPriority = 1;
-                    dominantStrength = cfg.roadTextureGain;
+                    dominantStrength = movementStrength;
                 }
 
                 // Damage burst: very high priority.
@@ -1338,20 +1364,53 @@ public final class AudioOutputEngine {
                     double mg = master * g;
 
                     if (cfg.roadTextureEnabled) {
-                        // A filtered noise rumble, speed-scaled.
+                        // Movement textures (continuous): land + flight + swim.
+                        // Directional "wind" impulses are triggered elsewhere, but are gated by this same master switch.
                         double absSpeed = Math.abs(localSpeed);
-                        // Keep this from feeling like an "engine/road" at normal walking speeds:
-                        // ramp in later and with a gentler curve.
-                        double speedRamp = clamp((absSpeed - 0.09) / 0.18, 0.0, 1.0);
-                        speedRamp *= speedRamp;
 
-                        double fc = clamp(cfg.roadTextureCutoffHz, 10.0, 80.0);
-                        double a = 1.0 - Math.exp(-(2.0 * Math.PI * fc) / SAMPLE_RATE);
-                        double white = (random.nextDouble() * 2.0) - 1.0;
-                        roadNoiseState += (white - roadNoiseState) * a;
+                        if (telemetryOnGround) {
+                            // Land movement: filtered noise rumble, speed-scaled.
+                            // Keep this from feeling like an "engine/road" at normal walking speeds:
+                            // ramp in later and with a gentler curve.
+                            double speedRamp = clamp((absSpeed - 0.09) / 0.18, 0.0, 1.0);
+                            speedRamp *= speedRamp;
 
-                        double v = roadNoiseState * cfg.roadTextureGain * speedRamp * roadMul;
-                        addToChannels(ch, bufferChannels, roadMask, v);
+                            double fc = clamp(cfg.roadTextureCutoffHz, 10.0, 80.0);
+                            double a = 1.0 - Math.exp(-(2.0 * Math.PI * fc) / SAMPLE_RATE);
+                            double white = (random.nextDouble() * 2.0) - 1.0;
+                            roadNoiseState += (white - roadNoiseState) * a;
+
+                            double v = roadNoiseState * clamp(cfg.roadTextureGain, 0.0, 0.50) * speedRamp * roadMul;
+                            addToChannels(ch, bufferChannels, roadMask, v);
+                        }
+
+                        if (telemetryElytra && cfg.movementFlightGain > 0.0001) {
+                            // Flight movement texture: slightly brighter cutoff, engages at higher speed.
+                            double speedRamp = clamp((absSpeed - 0.70) / 1.40, 0.0, 1.0);
+                            speedRamp *= speedRamp;
+
+                            double fc = clamp(cfg.roadTextureCutoffHz + 18.0, 14.0, 90.0);
+                            double a = 1.0 - Math.exp(-(2.0 * Math.PI * fc) / SAMPLE_RATE);
+                            double white = (random.nextDouble() * 2.0) - 1.0;
+                            flightNoiseState += (white - flightNoiseState) * a;
+
+                            double v = flightNoiseState * clamp(cfg.movementFlightGain, 0.0, 1.0) * speedRamp * roadMul;
+                            addToChannels(ch, bufferChannels, roadMask, v);
+                        }
+
+                        if ((telemetryInWater || telemetrySwimming) && cfg.movementSwimGain > 0.0001) {
+                            // Swim movement texture: smoother ramp and a slightly higher cutoff than land.
+                            double speedRamp = clamp((absSpeed - 0.05) / 0.35, 0.0, 1.0);
+                            speedRamp *= speedRamp;
+
+                            double fc = clamp(cfg.roadTextureCutoffHz + 10.0, 12.0, 85.0);
+                            double a = 1.0 - Math.exp(-(2.0 * Math.PI * fc) / SAMPLE_RATE);
+                            double white = (random.nextDouble() * 2.0) - 1.0;
+                            swimNoiseState += (white - swimNoiseState) * a;
+
+                            double v = swimNoiseState * clamp(cfg.movementSwimGain, 0.0, 1.0) * speedRamp * roadMul;
+                            addToChannels(ch, bufferChannels, roadMask, v);
+                        }
                     }
 
                     if (cfg.damageBurstEnabled && damageLeft > 0) {
