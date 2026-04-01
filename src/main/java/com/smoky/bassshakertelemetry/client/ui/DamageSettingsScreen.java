@@ -13,6 +13,8 @@ import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import javax.annotation.Nonnull;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -235,7 +237,8 @@ public final class DamageSettingsScreen extends Screen {
         return v;
     }
 
-    private static Component tr(String key) {
-        return Objects.requireNonNull(Component.translatable(key), key);
+    @Nonnull
+    private static Component tr(@Nonnull String key) {
+        return Objects.requireNonNull(Component.translatable(key));
     }
 }

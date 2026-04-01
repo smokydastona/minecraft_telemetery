@@ -13,6 +13,8 @@ import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import javax.annotation.Nonnull;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -35,7 +37,7 @@ public final class MiscSettingsScreen extends Screen {
     private NeonRangeSlider biomeChimeGainSlider;
 
     public MiscSettingsScreen(Screen parent) {
-        super(Component.translatable("bassshakertelemetry.config.misc_title"));
+        super(tr("bassshakertelemetry.config.misc_title"));
         this.parent = parent;
 
         BstConfig.Data cfg = BstConfig.get();
@@ -67,7 +69,7 @@ public final class MiscSettingsScreen extends Screen {
                 18,
                 contentWidth,
                 20,
-                Component.translatable("bassshakertelemetry.config.misc_title"),
+            tr("bassshakertelemetry.config.misc_title"),
                 font
         ));
 
@@ -78,10 +80,10 @@ public final class MiscSettingsScreen extends Screen {
                 y,
                 contentWidth,
                 rowH,
-            Component.translatable("bassshakertelemetry.config.sound_haptics"),
+            tr("bassshakertelemetry.config.sound_haptics"),
                 List.of(Boolean.TRUE, Boolean.FALSE),
             soundHapticsEnabled,
-                v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
+                v -> v ? tr("options.on") : tr("options.off"),
             v -> soundHapticsEnabled = v
         ));
 
@@ -92,7 +94,7 @@ public final class MiscSettingsScreen extends Screen {
                 y,
                 contentWidth,
                 rowH,
-            Component.translatable("bassshakertelemetry.config.sound_gain"),
+            tr("bassshakertelemetry.config.sound_gain"),
                 0.0,
                 2.0,
                 0.01,
@@ -109,10 +111,10 @@ public final class MiscSettingsScreen extends Screen {
                 y,
                 contentWidth,
                 rowH,
-            Component.translatable("bassshakertelemetry.config.gameplay_haptics"),
+            tr("bassshakertelemetry.config.gameplay_haptics"),
                 List.of(Boolean.TRUE, Boolean.FALSE),
             gameplayHapticsEnabled,
-                v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
+                v -> v ? tr("options.on") : tr("options.off"),
             v -> gameplayHapticsEnabled = v
         ));
 
@@ -123,7 +125,7 @@ public final class MiscSettingsScreen extends Screen {
                 y,
                 contentWidth,
                 rowH,
-            Component.translatable("bassshakertelemetry.config.gameplay_gain"),
+            tr("bassshakertelemetry.config.gameplay_gain"),
                 0.0,
                 2.0,
                 0.01,
@@ -140,10 +142,10 @@ public final class MiscSettingsScreen extends Screen {
                 y,
                 contentWidth,
                 rowH,
-                Component.translatable("bassshakertelemetry.config.biome_enabled"),
+            tr("bassshakertelemetry.config.biome_enabled"),
                 List.of(Boolean.TRUE, Boolean.FALSE),
                 biomeChimeEnabled,
-                v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
+            v -> v ? tr("options.on") : tr("options.off"),
                 v -> biomeChimeEnabled = v
         ));
 
@@ -154,7 +156,7 @@ public final class MiscSettingsScreen extends Screen {
                 y,
                 contentWidth,
                 rowH,
-                Component.translatable("bassshakertelemetry.config.biome_gain"),
+            tr("bassshakertelemetry.config.biome_gain"),
                 0.0,
                 1.0,
                 0.01,
@@ -171,10 +173,10 @@ public final class MiscSettingsScreen extends Screen {
                 y,
                 contentWidth,
                 rowH,
-            Component.translatable("bassshakertelemetry.config.accessibility_hud"),
+            tr("bassshakertelemetry.config.accessibility_hud"),
                 List.of(Boolean.TRUE, Boolean.FALSE),
             accessibilityHudEnabled,
-                v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
+                v -> v ? tr("options.on") : tr("options.off"),
             v -> accessibilityHudEnabled = v
         ));
 
@@ -184,7 +186,7 @@ public final class MiscSettingsScreen extends Screen {
                 this.height - 28,
                 buttonW,
                 20,
-                Component.translatable("bassshakertelemetry.config.done"),
+            tr("bassshakertelemetry.config.done"),
                 this::onDone
         ));
 
@@ -193,7 +195,7 @@ public final class MiscSettingsScreen extends Screen {
                 this.height - 28,
                 buttonW,
                 20,
-                Component.translatable("bassshakertelemetry.config.cancel"),
+            tr("bassshakertelemetry.config.cancel"),
                 this::onCancel
         ));
     }
@@ -261,5 +263,10 @@ public final class MiscSettingsScreen extends Screen {
         if (v < 0.0) return 0.0;
         if (v > 2.0) return 2.0;
         return v;
+    }
+
+    @Nonnull
+    private static Component tr(@Nonnull String key) {
+        return Objects.requireNonNull(Component.translatable(key));
     }
 }
