@@ -294,23 +294,6 @@ public final class AdvancedSettingsScreen extends Screen {
 
         this.addRenderableWidget(new NeonButton(
             leftX,
-            this.height - 52,
-            contentWidth,
-            20,
-            Component.literal("Reload UI bundle"),
-            () -> {
-                boolean ok = NeonStyle.reloadFromDiskBundleIfPresent();
-                if (this.minecraft != null && this.minecraft.player != null) {
-                    this.minecraft.player.displayClientMessage(
-                        Component.literal(ok ? "UI bundle reloaded" : "UI bundle not found"),
-                        true
-                    );
-                }
-            }
-        ));
-
-        this.addRenderableWidget(new NeonButton(
-            leftX,
             this.height - 28,
             buttonW,
             20,

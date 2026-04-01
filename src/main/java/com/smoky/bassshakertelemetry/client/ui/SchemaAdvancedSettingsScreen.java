@@ -109,23 +109,6 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
 
         this.addRenderableWidget(new NeonButton(
                 leftX,
-                this.height - 52,
-                contentWidth,
-                20,
-                Component.literal("Reload UI bundle"),
-                () -> {
-                    boolean ok = NeonStyle.reloadFromDiskBundleIfPresent();
-                    if (this.minecraft != null && this.minecraft.player != null) {
-                        this.minecraft.player.displayClientMessage(
-                            Objects.requireNonNull(Component.literal(ok ? "UI bundle reloaded" : "UI bundle not found"), "bundleMessage"),
-                                true
-                        );
-                    }
-                }
-        ));
-
-        this.addRenderableWidget(new NeonButton(
-                leftX,
                 this.height - 28,
                 buttonW,
                 20,

@@ -93,23 +93,6 @@ public final class SchemaSoundscapeGroupsScreen extends Screen {
                 this::onAdd
         ));
 
-        this.addRenderableWidget(new NeonButton(
-                leftX,
-                this.height - 74,
-                contentWidth,
-                20,
-                Component.literal("Reload UI bundle"),
-                () -> {
-                    boolean ok = NeonStyle.reloadFromDiskBundleIfPresent();
-                    if (this.minecraft != null && this.minecraft.player != null) {
-                        this.minecraft.player.displayClientMessage(
-                            Objects.requireNonNull(Component.literal(ok ? "UI bundle reloaded" : "UI bundle not found"), "bundleMessage"),
-                                true
-                        );
-                    }
-                }
-        ));
-
         int buttonW = (contentWidth - 10) / 2;
         this.addRenderableWidget(new NeonButton(
                 leftX,

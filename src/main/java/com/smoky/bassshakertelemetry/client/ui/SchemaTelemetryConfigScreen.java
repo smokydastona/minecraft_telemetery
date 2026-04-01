@@ -78,27 +78,10 @@ public final class SchemaTelemetryConfigScreen extends Screen {
 
         // Layout + widget creation from schema root.
         int contentTop = 50;
-        int contentBottom = this.height - 80;
+        int contentBottom = this.height - 56;
         int contentHeight = Math.max(60, contentBottom - contentTop);
         layout(schema.root, leftX, contentTop, contentWidth, contentHeight, rowH, rowGap);
         addWidgetsFromNode(schema.root, rowH);
-
-        this.addRenderableWidget(new NeonButton(
-                leftX,
-                this.height - 52,
-                contentWidth,
-                20,
-                Component.literal("Reload UI bundle"),
-                () -> {
-                    boolean ok = NeonStyle.reloadFromDiskBundleIfPresent();
-                    if (this.minecraft != null && this.minecraft.player != null) {
-                        this.minecraft.player.displayClientMessage(
-                                Component.literal(ok ? "UI bundle reloaded" : "UI bundle not found"),
-                                true
-                        );
-                    }
-                }
-        ));
 
         this.addRenderableWidget(new NeonButton(
                 leftX,

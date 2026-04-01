@@ -79,29 +79,12 @@ public final class SchemaSoundscapeOverridesScreen extends Screen {
 
         Minecraft mc = Objects.requireNonNull(this.minecraft, "minecraft");
         int listTop = 58;
-        int listBottom = this.height - 80;
+        int listBottom = this.height - 56;
         int listHeight = Math.max(90, listBottom - listTop);
 
         list = new OverridesList(mc, contentWidth, listHeight, listTop, listTop + listHeight, 28, leftX);
         refreshList();
         this.addRenderableWidget(list);
-
-        this.addRenderableWidget(new NeonButton(
-                leftX,
-                this.height - 74,
-                contentWidth,
-                20,
-                Component.literal("Reload UI bundle"),
-                () -> {
-                    boolean ok = NeonStyle.reloadFromDiskBundleIfPresent();
-                    if (this.minecraft != null && this.minecraft.player != null) {
-                        this.minecraft.player.displayClientMessage(
-                                Component.literal(ok ? "UI bundle reloaded" : "UI bundle not found"),
-                                true
-                        );
-                    }
-                }
-        ));
 
         this.addRenderableWidget(new NeonButton(
                 leftX,
