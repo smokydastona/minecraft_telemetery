@@ -27,30 +27,7 @@ jobs:
             exit 1
           }
 
-          $changedLocaleFiles = @()
-          if ('${{ github.event_name }}' -eq 'pull_request') {
-            $baseRef = 'origin/${{ github.base_ref }}'
-            $mergeBase = git merge-base HEAD $baseRef
-            if ($mergeBase) {
-              $changedLocaleFiles = @(git diff --name-only $mergeBase HEAD -- 'src/main/resources/assets/bassshakertelemetry/lang/*.json')
-            }
-          }
-          else {
-            $before = '${{ github.event.before }}'
-            if ($before -and $before -ne '0000000000000000000000000000000000000000') {
-              $changedLocaleFiles = @(git diff --name-only $before HEAD -- 'src/main/resources/assets/bassshakertelemetry/lang/*.json')
-            }
-          }
-
-          $changedLocaleNames = @($changedLocaleFiles | ForEach-Object { Split-Path $_ -Leaf } | Where-Object { $_ -ne 'en_us.json' } | Sort-Object -Unique)
-          if ($changedLocaleNames.Count -gt 0) {
-            Write-Host ('Translation gate applies to changed locale files: ' + ($changedLocaleNames -join ', '))
-          }
-          else {
-            Write-Host 'No non-English locale files changed in this event; translation gate will only enforce structural sync.'
-          }
-
-          ./tools/validate_lang_files.ps1 -FailOnSuspiciousFallbacks -MaxSuspiciousPercent 35 -MaxSameAsEnglishPercent 90 -RequireTranslatedFiles $changedLocaleNames
+          ./tools/validate_lang_files.ps1 -FailOnSuspiciousFallbacks -MaxSuspiciousPercent 35 -MaxSameAsEnglishPercent 15
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5

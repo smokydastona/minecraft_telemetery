@@ -1,8 +1,7 @@
 param(
     [string]$MinecraftVersion = "1.20.1",
     [int]$MaxSuspiciousPercent = 35,
-    [int]$MaxSameAsEnglishPercent = 90,
-    [string[]]$RequireTranslatedFiles = @(),
+    [int]$MaxSameAsEnglishPercent = 15,
     [switch]$FailOnSuspiciousFallbacks = $true
 )
 
@@ -88,12 +87,6 @@ if (-not (Test-Path $enPath)) {
 $enObj = Read-JsonObject -path $enPath
 $enOrder = @($enObj.PSObject.Properties.Name)
 $enMap = To-Hashtable $enObj
-$requiredSet = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
-foreach ($fileName in $RequireTranslatedFiles) {
-    if (-not [string]::IsNullOrWhiteSpace($fileName)) {
-        [void]$requiredSet.Add([System.IO.Path]::GetFileName($fileName))
-    }
-}
 
 $failures = New-Object System.Collections.Generic.List[string]
 $results = New-Object System.Collections.Generic.List[object]
@@ -151,12 +144,11 @@ Get-ChildItem $langDir -Filter *.json | Where-Object { $_.Name -ne 'en_us.json' 
         $failures.Add("$localeName does not preserve the en_us.json key order.")
     }
 
-    $mustBeTranslated = ($requiredSet.Count -eq 0) -or $requiredSet.Contains($localeName)
-    if ($mustBeTranslated -and $samePercent -ge $MaxSameAsEnglishPercent) {
+    if ($samePercent -ge $MaxSameAsEnglishPercent) {
         $failures.Add("$localeName appears to still be English fallback content ($samePercent% identical to en_us.json, threshold $MaxSameAsEnglishPercent%).")
     }
 
-    if ($mustBeTranslated -and $FailOnSuspiciousFallbacks -and $suspiciousPercent -ge $MaxSuspiciousPercent) {
+    if ($FailOnSuspiciousFallbacks -and $suspiciousPercent -ge $MaxSuspiciousPercent) {
         $failures.Add("$localeName appears to contain too much English fallback content ($suspiciousPercent% suspiciously unchanged strings, threshold $MaxSuspiciousPercent%).")
     }
 }
