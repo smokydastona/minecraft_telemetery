@@ -130,7 +130,7 @@ public final class GameplayHapticsHandler {
 
         // Small "thump". Target: around block-break intensity, slightly higher.
         // Also routes via VibrationIngress so sound-inferred attack swings can be suppressed.
-        double gain = 0.26 * clamp(cfg.gameplayHapticsGain, 0.0, 2.0);
+        double gain = 0.20 * clamp(cfg.gameplayHapticsGain, 0.0, 2.0);
         if (!rateLimit(bucket, cfg.gameplayHapticsCooldownMs)) {
             return;
         }

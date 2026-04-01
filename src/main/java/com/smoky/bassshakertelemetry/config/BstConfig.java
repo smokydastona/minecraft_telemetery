@@ -80,6 +80,15 @@ public final class BstConfig {
             d.configVersion = 1;
         }
 
+        if (d.configVersion < 2) {
+            // Make damage clearly louder than melee by default.
+            // Only adjust if the user appears to still be on the previous default.
+            if (Math.abs(d.damageBurstGain - 0.8) < 0.0001) {
+                d.damageBurstGain = 1.0;
+            }
+            d.configVersion = 2;
+        }
+
         // --- Sound Scape defaults ---
         if (d.soundScapeGroups == null) {
             d.soundScapeGroups = new HashMap<>();
@@ -284,7 +293,7 @@ public final class BstConfig {
     public static final class Data {
         // Increment when we need to migrate older config files.
         // (Older configs will deserialize this as 0.)
-        public int configVersion = 1;
+        public int configVersion = 2;
 
         // Master switches
         public boolean enabled = true;
@@ -383,7 +392,7 @@ public final class BstConfig {
         public boolean webSocketSendUnifiedEvents = true;
 
         public int damageBurstMs = 90;
-        public double damageBurstGain = 0.8;
+        public double damageBurstGain = 1.0;
 
         // Biome chime tuning
         public double biomeChimeGain = 0.35;

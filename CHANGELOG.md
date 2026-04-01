@@ -63,6 +63,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Neon UI bundle now auto-reloads when screens open (manual Reload button removed).
 - Road texture has been renamed to **Movement texture** in the UI/docs, and is now ON by default for new installs.
 - Movement texture is now context-aware (land/flight/swim), and both directional wind layers (Elytra + swimming) are gated by the Movement texture master toggle.
+- Default tuning: damage haptics are now louder than melee hits by default (higher default `damageBurstGain`, slightly quieter melee click, and a higher minimum damage scale so small hits still read clearly).
 
 ### Fixed
 - Output device selection now stays on the selected device when 7.1 (8ch) output can’t be opened (falls back to stereo on the same device instead of silently switching to the system default).

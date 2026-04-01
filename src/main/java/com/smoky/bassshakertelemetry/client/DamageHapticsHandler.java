@@ -75,7 +75,7 @@ public final class DamageHapticsHandler {
         lastFireNanos = now;
 
         // Scale intensity a bit with damage amount; keep it stable and bounded.
-        double scale01 = clamp(amount / 8.0, 0.15, 1.0);
+        double scale01 = clamp(amount / 8.0, 0.55, 1.0);
         var resolved = BstVibrationProfiles.get().resolve("damage.generic", scale01, 1.0);
         if (resolved != null) {
             double gain01 = clamp(resolved.intensity01() * clamp(cfg.damageBurstGain, 0.0, 1.0), 0.0, 1.0);
@@ -226,7 +226,7 @@ public final class DamageHapticsHandler {
 
             if ((hurtStarted || healthDropped) && canFireNow(80_000_000L)) {
                 // Approx intensity from observed health delta. Keep stable/minimum so small hits still register.
-                double scale01 = clamp(delta / 8.0, 0.15, 1.0);
+                double scale01 = clamp(delta / 8.0, 0.55, 1.0);
                 var resolved = BstVibrationProfiles.get().resolve("damage.generic", scale01, 1.0);
                 if (resolved != null) {
                     double gain01 = clamp(resolved.intensity01() * clamp(cfg.damageBurstGain, 0.0, 1.0), 0.0, 1.0);
