@@ -70,7 +70,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Movement settings now includes Mounted footsteps controls (toggle + volume) alongside Footsteps.
 - Advanced settings screen is now paged (Prev/Next) instead of a long scroll list.
 - Misc settings screen is now paged (Prev/Next), and utility tools were moved from Advanced to Misc.
-- Config menus now show tooltips for all controls.
+- Config menus now show tooltips for most controls (excluding self-explanatory navigation buttons like Prev/Next/Done/Cancel).
 
 ### Fixed
 - Output device selection now stays on the selected device when 7.1 (8ch) output can’t be opened (falls back to stereo on the same device instead of silently switching to the system default).

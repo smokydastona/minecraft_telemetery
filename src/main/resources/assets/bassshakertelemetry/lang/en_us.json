@@ -95,8 +95,7 @@
   "bassshakertelemetry.config.page_movement.tooltip": "Open movement/terrain haptics settings.",
   "bassshakertelemetry.config.page_misc.tooltip": "Open miscellaneous and tools settings.",
   "bassshakertelemetry.config.page_advanced.tooltip": "Open advanced tuning options.",
-  "bassshakertelemetry.config.page_prev.tooltip": "Go to the previous page.",
-  "bassshakertelemetry.config.page_next.tooltip": "Go to the next page.",
+ 
 
   "bassshakertelemetry.config.damage_incoming.tooltip": "Enable haptics when you take damage.",
   "bassshakertelemetry.config.damage_gain.tooltip": "Strength of the main damage burst.",
@@ -155,9 +154,7 @@
   "bassshakertelemetry.config.cal_stop.tooltip": "Stop any running calibration test.",
   "bassshakertelemetry.config.spatial_open.tooltip": "Open spatial haptics settings.",
   "bassshakertelemetry.config.instruments_open_editor.tooltip": "Open the instrument graph editor.",
-
-  "bassshakertelemetry.config.done.tooltip": "Apply changes and return to the previous menu.",
-  "bassshakertelemetry.config.cancel.tooltip": "Discard changes and return to the previous menu.",
+ 
 
   "bassshakertelemetry.config.spatial": "Spatial",
   "bassshakertelemetry.config.spatial_open": "Open spatial settings",
