@@ -509,35 +509,6 @@ public final class SchemaAdvancedSettingsScreen extends Screen {
     }
 
     @Override
-    public void render(@Nonnull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-
-        var font = this.font;
-        if (font == null) return;
-
-        int contentWidth = Math.min(330, this.width - 40);
-        int leftX = (this.width / 2) - (contentWidth / 2);
-        int y = this.height - 74;
-
-        guiGraphics.drawString(
-                font,
-                Objects.requireNonNull(uiBundleStatusLabel(), "uiBundleStatusLabel"),
-                leftX,
-                y,
-                NeonStyle.get().textDim,
-                false
-        );
-    }
-
-    private static Component uiBundleStatusLabel() {
-        return switch (NeonStyle.getActiveBundleSource()) {
-            case DISK_OVERRIDE -> Component.literal("UI Bundle: Disk (override)");
-            case DISK_REMOTE -> Component.literal("UI Bundle: Disk (remote)");
-            case BUILT_IN -> Component.literal("UI Bundle: Built-in");
-        };
-    }
-
-    @Override
     public void tick() {
         super.tick();
 

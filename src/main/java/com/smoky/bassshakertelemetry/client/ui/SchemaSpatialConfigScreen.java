@@ -422,34 +422,4 @@ public final class SchemaSpatialConfigScreen extends Screen {
     public void renderBackground(GuiGraphics guiGraphics) {
         guiGraphics.fill(0, 0, this.width, this.height, NeonStyle.get().background);
     }
-
-    @Override
-    @SuppressWarnings("null")
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-
-        var font = this.font;
-        if (font == null) return;
-
-        int contentWidth = Math.min(310, this.width - 40);
-        int leftX = (this.width / 2) - (contentWidth / 2);
-        int y = this.height - 74;
-
-        guiGraphics.drawString(
-                font,
-                uiBundleStatusLabel(),
-                leftX,
-                y,
-                NeonStyle.get().textDim,
-                false
-        );
-    }
-
-    private static Component uiBundleStatusLabel() {
-        return switch (NeonStyle.getActiveBundleSource()) {
-            case DISK_OVERRIDE -> Component.literal("UI Bundle: Disk (override)");
-            case DISK_REMOTE -> Component.literal("UI Bundle: Disk (remote)");
-            case BUILT_IN -> Component.literal("UI Bundle: Built-in");
-        };
-    }
 }
