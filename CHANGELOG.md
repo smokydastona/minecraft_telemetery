@@ -68,6 +68,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Default tuning: damage haptics are now louder than melee hits by default (higher default `damageBurstGain`, slightly quieter melee click, and a higher minimum damage scale so small hits still read clearly).
 - Main config screen layout redesigned to a 2x2 page grid (Damage / Movement / Misc / Advanced) after device selection + master volume.
 - Movement settings now includes Mounted footsteps controls (toggle + volume) alongside Footsteps.
+- Advanced settings screen is now paged (Prev/Next) instead of a long scroll list.
 
 ### Fixed
 - Output device selection now stays on the selected device when 7.1 (8ch) output can’t be opened (falls back to stereo on the same device instead of silently switching to the system default).

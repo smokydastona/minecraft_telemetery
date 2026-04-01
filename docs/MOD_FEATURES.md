@@ -16,8 +16,8 @@
 	- Optional: 16-bit PCM 7.1 (8-channel interleaved) when **Sound Scape** is enabled
 - Smoothing: 1-pole smoothing on continuous amplitude to avoid clicks
 - Safety: output headroom + soft limiter (tanh) to reduce clipping
-- Tone shaping: optional Output EQ (single band) is available in Advanced settings → Audio
-- Auto-level: optional Smart Volume (slow AGC) is available in Advanced settings → Audio
+- Tone shaping: optional Output EQ (single band) is available in Advanced settings → Tone shaping
+- Auto-level: optional Smart Volume (slow AGC) is available in Advanced settings → Tone shaping
 - Gating: automatically fades out and eventually closes the audio device when no live telemetry (e.g., menus / pause)
 - Priority & ducking (multi-bus): within each internal bus (see `HapticBus`), one dominant vibration wins and same-bus sources are ducked; continuous movement texture is ducked while higher-priority events are active
 - Audio backend selection: `audioBackend` config key (currently only `javasound` is implemented; other ids are reserved)
@@ -25,7 +25,7 @@
 	- Default requested buffer is ~20ms (drivers may clamp/ignore this).
 	- Internal render cadence is ~10ms chunks (480 frames @ 48kHz), which reduces scheduling/quantization delay for one-shot impulses.
 - Latency test: an in-game latency test pulse toggle is available in Advanced settings → Audio
-- Calibration tools: quick test tones + a frequency sweep (plus a Stop/Silence button) are available in Advanced settings → Audio
+- Calibration tools: quick test tones + a frequency sweep (plus a Stop/Silence button) are available in Advanced settings → Tools
 - Debug overlay: optional developer overlay showing the last vibration source/key, priority, frequency, gain, and recent suppression.
 - Demo sequence: a simple built-in demo runner is available in Advanced settings → Audio for repeatable tuning.
 
@@ -82,7 +82,7 @@ External output:
 	- Flight / Air (directional) / Swim / Water (directional) sliders
 	- Footsteps toggle + slider
 	- Mounted footsteps toggle + slider
-- Other per-effect volume sliders are available under **Advanced settings → Effect volumes**.
+- Other per-effect volume sliders are available under **Advanced settings → Effect volumes** (3 pages).
 - Each effect slider has a **Test** button directly underneath to preview that effect without needing to trigger it in gameplay.
 - Config UI pages consistently use the Neon theme (including device picker, Sound Scape editors, Spatial screens, and the instrument editor).
 
@@ -95,7 +95,7 @@ Sound Scape routing:
 
 Spatial (Phase 3):
 
-- Advanced settings → **Spatial** provides Sound Scape spatial controls:
+- Advanced settings → **Tools → Spatial** provides Sound Scape spatial controls:
 	- `soundScapeSpatialEnabled`: enables azimuth-based panning for directional impulses (stereo), and true multichannel panning when Sound Scape is active.
 	- `soundScapeSpatialDistanceAttenStrength`: distance attenuation strength (0..1).
 	- **Edit bus routing** opens a per-bus routing editor for `soundScapeBusRouting`.
@@ -241,7 +241,8 @@ Phase 2 (Expressive Haptics) also adds a reusable instrument library at `config/
 
 An in-game graph editor is available at:
 
-- Config → Advanced settings → Haptic instruments → Open instrument graph editor
+- Config → Advanced settings → Tools → Haptic instruments → Open instrument graph editor
+- Config → Advanced settings → Tools → Haptic instruments → Open instrument graph editor
 
 Editor controls (MVP):
 

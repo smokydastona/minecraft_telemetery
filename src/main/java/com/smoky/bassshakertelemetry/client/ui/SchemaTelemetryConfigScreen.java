@@ -198,13 +198,7 @@ public final class SchemaTelemetryConfigScreen extends Screen {
             case "openDamage" -> mc.setScreen(new DamageSettingsScreen(this));
             case "openMovement" -> mc.setScreen(new MovementSettingsScreen(this));
             case "openMisc" -> mc.setScreen(new MiscSettingsScreen(this));
-            case "openAdvanced" -> {
-                if (NeonUiSchemaLoader.hasActiveScreen("advanced_settings")) {
-                    mc.setScreen(new SchemaAdvancedSettingsScreen(this));
-                } else {
-                    mc.setScreen(new AdvancedSettingsScreen(this));
-                }
-            }
+            case "openAdvanced" -> mc.setScreen(new AdvancedSettingsScreen(this));
             case "openSoundscape" -> {
                 if (NeonUiSchemaLoader.hasActiveScreen("soundscape_config")) {
                     mc.setScreen(new SchemaSoundscapeConfigScreen(this));

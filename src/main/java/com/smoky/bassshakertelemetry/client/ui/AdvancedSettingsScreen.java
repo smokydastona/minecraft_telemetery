@@ -5,25 +5,26 @@ import com.smoky.bassshakertelemetry.client.ui.neon.NeonButton;
 import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
 import com.smoky.bassshakertelemetry.client.ui.neon.NeonToggleButton;
 import com.smoky.bassshakertelemetry.config.BstConfig;
-import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.StringWidget;
-import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import javax.annotation.Nonnull;
+
 import java.util.Objects;
 
 public final class AdvancedSettingsScreen extends Screen {
     private final Screen parent;
 
-    private SettingsList settingsList;
+    private int pageIndex = 0;
+    private int pageCount = 1;
+
+    private int lastCenterX;
+    private int lastContentWidth;
+    private int lastLeftX;
 
     private GainSlider roadGainSlider;
     private GainSlider damageGainSlider;
@@ -65,6 +66,14 @@ public final class AdvancedSettingsScreen extends Screen {
     private boolean smartVolumeEnabled;
     private IntSlider smartVolumeTargetSlider;
 
+    private Button calTone30Button;
+    private Button calTone60Button;
+    private Button calSweepButton;
+    private Button calStopButton;
+
+    private Button spatialOpenButton;
+    private Button instrumentsOpenButton;
+
     private static final int[] BUFFER_CHOICES_MS = new int[]{0, 10, 20, 30, 40, 60, 80, 100, 150, 200};
 
     public AdvancedSettingsScreen(Screen parent) {
@@ -73,7 +82,6 @@ public final class AdvancedSettingsScreen extends Screen {
     }
 
     @Override
-    @SuppressWarnings("null")
     protected void init() {
         super.init();
         NeonStyle.initClient();
@@ -82,233 +90,270 @@ public final class AdvancedSettingsScreen extends Screen {
         int contentWidth = Math.min(310, this.width - 40);
         int leftX = centerX - (contentWidth / 2);
         int rowH = 20;
+        int rowGap = 6;
 
-        var font = Objects.requireNonNull(this.font, "font");
+        lastCenterX = centerX;
+        lastContentWidth = contentWidth;
+        lastLeftX = leftX;
 
+        Font font = Objects.requireNonNull(this.font, "font");
+
+        ensureWidgets(contentWidth - 12, rowH);
+
+        pageCount = 7; // Volumes 1/3, Volumes 2/3, Volumes 3/3, Timing, Audio, Tone shaping, Tools
+        if (pageIndex < 0) pageIndex = 0;
+        if (pageIndex >= pageCount) pageIndex = pageCount - 1;
+
+        buildUi(font, leftX, centerX, contentWidth, rowGap);
+    }
+
+    private void ensureWidgets(int w, int rowH) {
+        // Sliders
+        roadGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.road_gain", BstConfig.get().roadTextureGain, 0.0, 0.50);
+        damageGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.damage_gain", BstConfig.get().damageBurstGain, 0.0, 1.00);
+        biomeGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.biome_gain", BstConfig.get().biomeChimeGain, 0.0, 1.00);
+        accelGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.accel_gain", BstConfig.get().accelBumpGain, 0.0, 1.00);
+        soundGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.sound_gain", BstConfig.get().soundHapticsGain, 0.0, 2.00);
+        gameplayGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.gameplay_gain", BstConfig.get().gameplayHapticsGain, 0.0, 2.00);
+        footstepGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.footstep_gain", BstConfig.get().footstepHapticsGain, 0.0, 1.00);
+        mountedGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.mounted_gain", BstConfig.get().mountedHapticsGain, 0.0, 1.00);
+        miningSwingGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.mining_swing_gain", BstConfig.get().miningSwingHapticsGain, 0.0, 1.00);
+
+        damageMsSlider = new IntSlider(w, rowH, "bassshakertelemetry.config.damage_ms", BstConfig.get().damageBurstMs, 20, 250, "ms");
+        accelMsSlider = new IntSlider(w, rowH, "bassshakertelemetry.config.accel_ms", BstConfig.get().accelBumpMs, 20, 200, "ms");
+        soundCooldownMsSlider = new IntSlider(w, rowH, "bassshakertelemetry.config.sound_cooldown_ms", BstConfig.get().soundHapticsCooldownMs, 0, 250, "ms");
+        gameplayCooldownMsSlider = new IntSlider(w, rowH, "bassshakertelemetry.config.gameplay_cooldown_ms", BstConfig.get().gameplayHapticsCooldownMs, 0, 400, "ms");
+        miningPeriodMsSlider = new IntSlider(w, rowH, "bassshakertelemetry.config.mining_period_ms", BstConfig.get().gameplayMiningPulsePeriodMs, 60, 350, "ms");
+
+        // Audio / debug state
+        if (bufferButton == null) {
+            bufferChoiceIndex = findBufferChoiceIndex(BstConfig.get().javaSoundBufferMs);
+        }
+        bufferButton = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(bufferButtonLabel()), this::cycleBufferChoice);
+
+        if (latencyTestButton == null) {
+            latencyTestActive = false;
+            latencyTestTicks = 0;
+        }
+        latencyTestButton = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(latencyButtonLabel(false)), this::toggleLatencyTest);
+
+        if (debugOverlayButton == null) {
+            debugOverlayEnabled = BstConfig.get().debugOverlayEnabled;
+        }
+        debugOverlayButton = new NeonToggleButton(0, 0, w, rowH, Objects.requireNonNull(debugOverlayLabel()), () -> debugOverlayEnabled, this::toggleDebugOverlay);
+
+        if (demoButton == null) {
+            demoActive = false;
+            demoStep = 0;
+            demoNextNanos = 0L;
+        }
+        demoButton = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(demoLabel()), this::toggleDemo);
+
+        if (outputEqButton == null) {
+            outputEqEnabled = BstConfig.get().outputEqEnabled;
+        }
+        outputEqButton = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(outputEqLabel()), this::toggleOutputEq);
+        outputEqFreqSlider = new IntSlider(w, rowH, "bassshakertelemetry.config.output_eq_freq", BstConfig.get().outputEqFreqHz, 10, 120, "Hz");
+        outputEqGainSlider = new IntSlider(w, rowH, "bassshakertelemetry.config.output_eq_gain", BstConfig.get().outputEqGainDb, -12, 12, "dB");
+
+        if (smartVolumeButton == null) {
+            smartVolumeEnabled = BstConfig.get().smartVolumeEnabled;
+        }
+        smartVolumeButton = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(smartVolumeLabel()), this::toggleSmartVolume);
+        smartVolumeTargetSlider = new IntSlider(w, rowH, "bassshakertelemetry.config.smart_volume_target", BstConfig.get().smartVolumeTargetPct, 10, 90, "%");
+
+        // Tools
+        calTone30Button = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_tone_30hz")), () -> AudioOutputEngine.get().testCalibrationTone30Hz());
+        calTone60Button = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_tone_60hz")), () -> AudioOutputEngine.get().testCalibrationTone60Hz());
+        calSweepButton = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_sweep_20_120hz")), () -> AudioOutputEngine.get().testCalibrationSweep());
+        calStopButton = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_stop")), () -> AudioOutputEngine.get().stopCalibration());
+
+        spatialOpenButton = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.spatial_open")), () -> {
+            if (this.minecraft != null) {
+                this.minecraft.setScreen(new SpatialConfigScreen(this));
+            }
+        });
+
+        instrumentsOpenButton = new NeonButton(0, 0, w, rowH, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.instruments_open_editor")), () -> {
+            if (this.minecraft != null) {
+                this.minecraft.setScreen(new HapticInstrumentEditorScreen(this));
+            }
+        });
+    }
+
+    private @Nonnull Component pageLabel() {
+        return Objects.requireNonNull(Component.literal("Page " + (pageIndex + 1) + "/" + pageCount));
+    }
+
+    private void switchPage(int delta) {
+        int next = pageIndex + delta;
+        if (next < 0) next = 0;
+        if (next >= pageCount) next = pageCount - 1;
+        if (next == pageIndex) return;
+        pageIndex = next;
+        this.clearWidgets();
+        NeonStyle.initClient();
+        Font font = Objects.requireNonNull(this.font, "font");
+        buildUi(font, lastLeftX, lastCenterX, lastContentWidth, 6);
+    }
+
+    private void buildUi(@Nonnull Font font, int leftX, int centerX, int contentWidth, int rowGap) {
         this.addRenderableWidget(new StringWidget(
                 centerX - 140,
                 20,
                 280,
                 20,
-                Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.advanced_title")),
+                Objects.requireNonNull(tr("bassshakertelemetry.config.advanced_title")),
                 font
         ));
 
-        Minecraft mc = Objects.requireNonNull(this.minecraft, "minecraft");
+        // Page label (under title)
+        this.addRenderableWidget(new StringWidget(
+                centerX - 140,
+                36,
+                280,
+                14,
+            Objects.requireNonNull(pageLabel()),
+                font
+        ));
 
-        int listTop = 50;
-        int listBottom = this.height - 34;
-        int listHeight = Math.max(80, listBottom - listTop);
+        int y = 56;
+        int w = contentWidth - 12;
 
-        settingsList = new SettingsList(mc, contentWidth, listHeight, listTop, listTop + listHeight, 44, leftX);
+        switch (pageIndex) {
+            case 0 -> {
+                y = addHeader(leftX, y, w, font, Objects.requireNonNull(Component.literal(tr("bassshakertelemetry.config.effect_volumes").getString() + " (1/3)")));
+                y = addSliderWithTest(leftX, y, roadGainSlider, AudioOutputEngine.get()::testRoadTexture);
+                y = addSliderWithTest(leftX, y, damageGainSlider, AudioOutputEngine.get()::testDamageBurst);
+                y = addSliderWithTest(leftX, y, biomeGainSlider, AudioOutputEngine.get()::testBiomeChime);
+            }
+            case 1 -> {
+                y = addHeader(leftX, y, w, font, Objects.requireNonNull(Component.literal(tr("bassshakertelemetry.config.effect_volumes").getString() + " (2/3)")));
+                y = addSliderWithTest(leftX, y, accelGainSlider, AudioOutputEngine.get()::testAccelBump);
+                y = addSliderWithTest(leftX, y, soundGainSlider, AudioOutputEngine.get()::testSoundHaptics);
+                y = addSliderWithTest(leftX, y, gameplayGainSlider, AudioOutputEngine.get()::testGameplayHaptics);
+            }
+            case 2 -> {
+                y = addHeader(leftX, y, w, font, Objects.requireNonNull(Component.literal(tr("bassshakertelemetry.config.effect_volumes").getString() + " (3/3)")));
+                y = addSliderWithTest(leftX, y, footstepGainSlider, AudioOutputEngine.get()::testFootsteps);
+                y = addSliderWithTest(leftX, y, mountedGainSlider, AudioOutputEngine.get()::testMountedHooves);
+                y = addSliderWithTest(leftX, y, miningSwingGainSlider, AudioOutputEngine.get()::testMiningSwing);
+            }
+            case 3 -> {
+                y = addHeader(leftX, y, w, font, tr("bassshakertelemetry.config.timing"));
+                y = addSliderOnly(leftX, y, damageMsSlider);
+                y = addSliderOnly(leftX, y, accelMsSlider);
+                y = addSliderOnly(leftX, y, soundCooldownMsSlider);
+                y = addSliderOnly(leftX, y, gameplayCooldownMsSlider);
+                y = addSliderOnly(leftX, y, miningPeriodMsSlider);
+            }
+            case 4 -> {
+                y = addHeader(leftX, y, w, font, tr("bassshakertelemetry.config.audio"));
+                y = addButtonOnly(leftX, y, bufferButton);
+                y = addButtonOnly(leftX, y, latencyTestButton);
+                y = addButtonOnly(leftX, y, debugOverlayButton);
+                y = addButtonOnly(leftX, y, demoButton);
+            }
+            case 5 -> {
+                y = addHeader(leftX, y, w, font, tr("bassshakertelemetry.config.tone_shaping"));
+                y = addButtonOnly(leftX, y, outputEqButton);
+                y = addSliderOnly(leftX, y, outputEqFreqSlider);
+                y = addSliderOnly(leftX, y, outputEqGainSlider);
+                y += rowGap;
+                y = addButtonOnly(leftX, y, smartVolumeButton);
+                y = addSliderOnly(leftX, y, smartVolumeTargetSlider);
+            }
+            default -> {
+                y = addHeader(leftX, y, w, font, tr("bassshakertelemetry.config.calibration"));
+                y = addButtonOnly(leftX, y, calTone30Button);
+                y = addButtonOnly(leftX, y, calTone60Button);
+                y = addButtonOnly(leftX, y, calSweepButton);
+                y = addButtonOnly(leftX, y, calStopButton);
 
-        // --- Effect volumes ---
-        settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.config.effect_volumes"));
+                y += rowGap;
+                y = addHeader(leftX, y, w, font, tr("bassshakertelemetry.config.spatial"));
+                y = addButtonOnly(leftX, y, spatialOpenButton);
 
-        roadGainSlider = new GainSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.road_gain", BstConfig.get().roadTextureGain, 0.0, 0.50);
-        damageGainSlider = new GainSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.damage_gain", BstConfig.get().damageBurstGain, 0.0, 1.00);
-        biomeGainSlider = new GainSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.biome_gain", BstConfig.get().biomeChimeGain, 0.0, 1.00);
-        accelGainSlider = new GainSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.accel_gain", BstConfig.get().accelBumpGain, 0.0, 1.00);
-        soundGainSlider = new GainSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.sound_gain", BstConfig.get().soundHapticsGain, 0.0, 2.00);
-        gameplayGainSlider = new GainSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.gameplay_gain", BstConfig.get().gameplayHapticsGain, 0.0, 2.00);
-        footstepGainSlider = new GainSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.footstep_gain", BstConfig.get().footstepHapticsGain, 0.0, 1.00);
-        mountedGainSlider = new GainSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.mounted_gain", BstConfig.get().mountedHapticsGain, 0.0, 1.00);
-        miningSwingGainSlider = new GainSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.mining_swing_gain", BstConfig.get().miningSwingHapticsGain, 0.0, 1.00);
-
-        settingsList.addSettingEntry(new SliderWithTestEntry(roadGainSlider, AudioOutputEngine.get()::testRoadTexture));
-        settingsList.addSettingEntry(new SliderWithTestEntry(damageGainSlider, AudioOutputEngine.get()::testDamageBurst));
-        settingsList.addSettingEntry(new SliderWithTestEntry(biomeGainSlider, AudioOutputEngine.get()::testBiomeChime));
-        settingsList.addSettingEntry(new SliderWithTestEntry(accelGainSlider, AudioOutputEngine.get()::testAccelBump));
-        settingsList.addSettingEntry(new SliderWithTestEntry(soundGainSlider, AudioOutputEngine.get()::testSoundHaptics));
-        settingsList.addSettingEntry(new SliderWithTestEntry(gameplayGainSlider, AudioOutputEngine.get()::testGameplayHaptics));
-        settingsList.addSettingEntry(new SliderWithTestEntry(footstepGainSlider, AudioOutputEngine.get()::testFootsteps));
-        settingsList.addSettingEntry(new SliderWithTestEntry(mountedGainSlider, AudioOutputEngine.get()::testMountedHooves));
-        settingsList.addSettingEntry(new SliderWithTestEntry(miningSwingGainSlider, AudioOutputEngine.get()::testMiningSwing));
-
-        // --- Timing ---
-        settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.config.timing"));
-
-        damageMsSlider = new IntSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.damage_ms", BstConfig.get().damageBurstMs, 20, 250, "ms");
-        accelMsSlider = new IntSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.accel_ms", BstConfig.get().accelBumpMs, 20, 200, "ms");
-        soundCooldownMsSlider = new IntSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.sound_cooldown_ms", BstConfig.get().soundHapticsCooldownMs, 0, 250, "ms");
-        gameplayCooldownMsSlider = new IntSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.gameplay_cooldown_ms", BstConfig.get().gameplayHapticsCooldownMs, 0, 400, "ms");
-        miningPeriodMsSlider = new IntSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.mining_period_ms", BstConfig.get().gameplayMiningPulsePeriodMs, 60, 350, "ms");
-
-        settingsList.addSettingEntry(new SliderOnlyEntry(damageMsSlider));
-        settingsList.addSettingEntry(new SliderOnlyEntry(accelMsSlider));
-        settingsList.addSettingEntry(new SliderOnlyEntry(soundCooldownMsSlider));
-        settingsList.addSettingEntry(new SliderOnlyEntry(gameplayCooldownMsSlider));
-        settingsList.addSettingEntry(new SliderOnlyEntry(miningPeriodMsSlider));
-
-        // --- Audio ---
-        settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.config.audio"));
-
-        bufferChoiceIndex = findBufferChoiceIndex(BstConfig.get().javaSoundBufferMs);
-        bufferButton = new NeonButton(
-            0,
-            0,
-            contentWidth - 12,
-            rowH,
-            Objects.requireNonNull(bufferButtonLabel()),
-            this::cycleBufferChoice
-        );
-        settingsList.addSettingEntry(new ButtonOnlyEntry(bufferButton));
-
-        latencyTestActive = false;
-        latencyTestTicks = 0;
-        latencyTestButton = new NeonButton(
-            0,
-            0,
-            contentWidth - 12,
-            rowH,
-            Objects.requireNonNull(latencyButtonLabel(false)),
-            this::toggleLatencyTest
-        );
-        settingsList.addSettingEntry(new ButtonOnlyEntry(latencyTestButton));
-
-        debugOverlayEnabled = BstConfig.get().debugOverlayEnabled;
-        debugOverlayButton = new NeonToggleButton(
-            0,
-            0,
-            contentWidth - 12,
-            rowH,
-            Objects.requireNonNull(debugOverlayLabel()),
-            () -> debugOverlayEnabled,
-            this::toggleDebugOverlay
-        );
-        settingsList.addSettingEntry(new ButtonOnlyEntry(debugOverlayButton));
-
-        demoActive = false;
-        demoStep = 0;
-        demoNextNanos = 0L;
-        demoButton = new NeonButton(
-            0,
-            0,
-            contentWidth - 12,
-            rowH,
-            Objects.requireNonNull(demoLabel()),
-            this::toggleDemo
-        );
-        settingsList.addSettingEntry(new ButtonOnlyEntry(demoButton));
-
-        settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.config.tone_shaping"));
-
-        outputEqEnabled = BstConfig.get().outputEqEnabled;
-        outputEqButton = new NeonButton(
-            0,
-            0,
-            contentWidth - 12,
-            rowH,
-            Objects.requireNonNull(outputEqLabel()),
-            this::toggleOutputEq
-        );
-        settingsList.addSettingEntry(new ButtonOnlyEntry(outputEqButton));
-
-        outputEqFreqSlider = new IntSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.output_eq_freq", BstConfig.get().outputEqFreqHz, 10, 120, "Hz");
-        outputEqGainSlider = new IntSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.output_eq_gain", BstConfig.get().outputEqGainDb, -12, 12, "dB");
-        settingsList.addSettingEntry(new SliderOnlyEntry(outputEqFreqSlider));
-        settingsList.addSettingEntry(new SliderOnlyEntry(outputEqGainSlider));
-
-        smartVolumeEnabled = BstConfig.get().smartVolumeEnabled;
-        smartVolumeButton = new NeonButton(
-            0,
-            0,
-            contentWidth - 12,
-            rowH,
-            Objects.requireNonNull(smartVolumeLabel()),
-            this::toggleSmartVolume
-        );
-        settingsList.addSettingEntry(new ButtonOnlyEntry(smartVolumeButton));
-        smartVolumeTargetSlider = new IntSlider(contentWidth - 12, rowH, "bassshakertelemetry.config.smart_volume_target", BstConfig.get().smartVolumeTargetPct, 10, 90, "%");
-        settingsList.addSettingEntry(new SliderOnlyEntry(smartVolumeTargetSlider));
-
-        settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.config.calibration"));
-
-        settingsList.addSettingEntry(new ButtonOnlyEntry(new NeonButton(
-            0,
-            0,
-            contentWidth - 12,
-            rowH,
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_tone_30hz")),
-            () -> AudioOutputEngine.get().testCalibrationTone30Hz()
-        )));
-
-        settingsList.addSettingEntry(new ButtonOnlyEntry(new NeonButton(
-            0,
-            0,
-            contentWidth - 12,
-            rowH,
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_tone_60hz")),
-            () -> AudioOutputEngine.get().testCalibrationTone60Hz()
-        )));
-
-        settingsList.addSettingEntry(new ButtonOnlyEntry(new NeonButton(
-            0,
-            0,
-            contentWidth - 12,
-            rowH,
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_sweep_20_120hz")),
-            () -> AudioOutputEngine.get().testCalibrationSweep()
-        )));
-
-        settingsList.addSettingEntry(new ButtonOnlyEntry(new NeonButton(
-            0,
-            0,
-            contentWidth - 12,
-            rowH,
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cal_stop")),
-            () -> AudioOutputEngine.get().stopCalibration()
-        )));
-
-        settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.config.spatial"));
-        settingsList.addSettingEntry(new ButtonOnlyEntry(new NeonButton(
-                0,
-                0,
-                contentWidth - 12,
-                rowH,
-                Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.spatial_open")),
-                () -> {
-                    if (this.minecraft != null) {
-                        this.minecraft.setScreen(new SpatialConfigScreen(this));
-                    }
-                }
-        )));
-
-        settingsList.addSettingEntry(new LabelEntry("bassshakertelemetry.config.instruments"));
-        settingsList.addSettingEntry(new ButtonOnlyEntry(new NeonButton(
-                0,
-                0,
-                contentWidth - 12,
-                rowH,
-                Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.instruments_open_editor")),
-                () -> {
-                    if (this.minecraft != null) {
-                        this.minecraft.setScreen(new HapticInstrumentEditorScreen(this));
-                    }
-                }
-        )));
-
-        this.addRenderableWidget(settingsList);
+                y += rowGap;
+                y = addHeader(leftX, y, w, font, tr("bassshakertelemetry.config.instruments"));
+                y = addButtonOnly(leftX, y, instrumentsOpenButton);
+            }
+        }
 
         int buttonW = (contentWidth - 10) / 2;
 
+        Button prevPageButton = new NeonButton(
+                leftX,
+                this.height - 52,
+                buttonW,
+                20,
+            Objects.requireNonNull(Component.literal("< Prev")),
+                () -> switchPage(-1)
+        );
+        prevPageButton.active = pageIndex > 0;
+        this.addRenderableWidget(prevPageButton);
+
+        Button nextPageButton = new NeonButton(
+                leftX + buttonW + 10,
+                this.height - 52,
+                buttonW,
+                20,
+            Objects.requireNonNull(Component.literal("Next >")),
+                () -> switchPage(1)
+        );
+        nextPageButton.active = pageIndex < (pageCount - 1);
+        this.addRenderableWidget(nextPageButton);
+
         this.addRenderableWidget(new NeonButton(
-            leftX,
-            this.height - 28,
-            buttonW,
-            20,
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.done")),
-            this::onDone
+                leftX,
+                this.height - 28,
+                buttonW,
+                20,
+                tr("bassshakertelemetry.config.done"),
+                this::onDone
         ));
 
         this.addRenderableWidget(new NeonButton(
-            leftX + buttonW + 10,
-            this.height - 28,
-            buttonW,
-            20,
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.cancel")),
-            this::onCancel
+                leftX + buttonW + 10,
+                this.height - 28,
+                buttonW,
+                20,
+                tr("bassshakertelemetry.config.cancel"),
+                this::onCancel
         ));
+    }
+
+    private int addHeader(int leftX, int y, int w, @Nonnull Font font, Component text) {
+        this.addRenderableWidget(new StringWidget(leftX + 2, y, w, 12, Objects.requireNonNull(text), font));
+        return y + 18;
+    }
+
+    private int addSliderWithTest(int leftX, int y, net.minecraft.client.gui.components.AbstractSliderButton slider, Runnable testAction) {
+        slider.setX(leftX + 2);
+        slider.setY(y);
+        this.addRenderableWidget(slider);
+
+        Button testButton = new NeonButton(leftX + 2, y + 22, 90, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.test")), Objects.requireNonNull(testAction));
+        this.addRenderableWidget(testButton);
+        return y + 44 + 6;
+    }
+
+    private static @Nonnull Component tr(@Nonnull String key) {
+        return Objects.requireNonNull(Component.translatable(key));
+    }
+
+    private int addSliderOnly(int leftX, int y, net.minecraft.client.gui.components.AbstractSliderButton slider) {
+        slider.setX(leftX + 2);
+        slider.setY(y);
+        this.addRenderableWidget(slider);
+        return y + 20 + 6;
+    }
+
+    private int addButtonOnly(int leftX, int y, Button button) {
+        button.setX(leftX + 2);
+        button.setY(y);
+        this.addRenderableWidget(button);
+        return y + 20 + 6;
     }
 
     private void onDone() {
@@ -570,156 +615,6 @@ public final class AdvancedSettingsScreen extends Screen {
         return idx;
     }
 
-    private static final class SettingsList extends ContainerObjectSelectionList<SettingsEntry> {
-        private final int left;
-
-        SettingsList(Minecraft minecraft, int width, int height, int y0, int y1, int itemHeight, int left) {
-            super(minecraft, width, height, y0, y1, itemHeight);
-            this.left = left;
-            this.setLeftPos(left);
-            this.setRenderHeader(false, 0);
-        }
-
-        @Override
-        public int getRowWidth() {
-            return this.width;
-        }
-
-        @Override
-        protected int getScrollbarPosition() {
-            return this.left + this.width - 6;
-        }
-
-        void addSettingEntry(SettingsEntry entry) {
-            this.addEntry(Objects.requireNonNull(entry));
-        }
-    }
-
-    private abstract static class SettingsEntry extends ContainerObjectSelectionList.Entry<SettingsEntry> {
-    }
-
-    private static final class LabelEntry extends SettingsEntry {
-        private final String key;
-
-        LabelEntry(String key) {
-            this.key = Objects.requireNonNull(key);
-        }
-
-        @Override
-        public List<? extends GuiEventListener> children() {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<? extends NarratableEntry> narratables() {
-            return Collections.emptyList();
-        }
-
-        @Override
-        @SuppressWarnings("null")
-        public void render(net.minecraft.client.gui.GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
-                           int mouseX, int mouseY, boolean hovered, float partialTick) {
-            guiGraphics.drawString(
-                    Objects.requireNonNull(Minecraft.getInstance().font),
-                    Objects.requireNonNull(Component.translatable(key)),
-                    x + 2,
-                    y + 6,
-                    0xFFFFFF
-            );
-        }
-    }
-
-    private static final class SliderWithTestEntry extends SettingsEntry {
-        private final net.minecraft.client.gui.components.AbstractSliderButton slider;
-        private final Button testButton;
-
-        SliderWithTestEntry(net.minecraft.client.gui.components.AbstractSliderButton slider, Runnable testAction) {
-            this.slider = Objects.requireNonNull(slider);
-            Runnable action = Objects.requireNonNull(testAction);
-            this.testButton = new NeonButton(0, 0, 90, 20, Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.test")), action);
-        }
-
-        @Override
-        public List<? extends GuiEventListener> children() {
-            return Arrays.asList(slider, testButton);
-        }
-
-        @Override
-        public List<? extends NarratableEntry> narratables() {
-            return Arrays.asList(slider, testButton);
-        }
-
-        @Override
-        @SuppressWarnings("null")
-        public void render(net.minecraft.client.gui.GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
-                           int mouseX, int mouseY, boolean hovered, float partialTick) {
-            int innerX = x + 2;
-            slider.setX(innerX);
-            slider.setY(y);
-
-            testButton.setX(innerX);
-            testButton.setY(y + 22);
-
-            slider.render(guiGraphics, mouseX, mouseY, partialTick);
-            testButton.render(guiGraphics, mouseX, mouseY, partialTick);
-        }
-    }
-
-    private static final class SliderOnlyEntry extends SettingsEntry {
-        private final net.minecraft.client.gui.components.AbstractSliderButton slider;
-
-        SliderOnlyEntry(net.minecraft.client.gui.components.AbstractSliderButton slider) {
-            this.slider = Objects.requireNonNull(slider);
-        }
-
-        @Override
-        public List<? extends GuiEventListener> children() {
-            return Collections.singletonList(slider);
-        }
-
-        @Override
-        public List<? extends NarratableEntry> narratables() {
-            return Collections.singletonList(slider);
-        }
-
-        @Override
-        @SuppressWarnings("null")
-        public void render(net.minecraft.client.gui.GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
-                           int mouseX, int mouseY, boolean hovered, float partialTick) {
-            int innerX = x + 2;
-            slider.setX(innerX);
-            slider.setY(y + 12);
-            slider.render(guiGraphics, mouseX, mouseY, partialTick);
-        }
-    }
-
-    private static final class ButtonOnlyEntry extends SettingsEntry {
-        private final Button button;
-
-        ButtonOnlyEntry(Button button) {
-            this.button = Objects.requireNonNull(button);
-        }
-
-        @Override
-        public List<? extends GuiEventListener> children() {
-            return Collections.singletonList(button);
-        }
-
-        @Override
-        public List<? extends NarratableEntry> narratables() {
-            return Collections.singletonList(button);
-        }
-
-        @Override
-        @SuppressWarnings("null")
-        public void render(net.minecraft.client.gui.GuiGraphics guiGraphics, int index, int y, int x, int rowWidth, int rowHeight,
-                           int mouseX, int mouseY, boolean hovered, float partialTick) {
-            int innerX = x + 2;
-            button.setX(innerX);
-            button.setY(y + 12);
-            button.render(guiGraphics, mouseX, mouseY, partialTick);
-        }
-    }
 
     private static final class GainSlider extends net.minecraft.client.gui.components.AbstractSliderButton {
         private final String labelKey;
