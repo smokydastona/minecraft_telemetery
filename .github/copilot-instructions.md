@@ -58,6 +58,7 @@ Validation must use editor diagnostics (Problems / `get_errors`) and then a GitH
     - `CHANGELOG.md`
     - `docs/MOD_FEATURES.md` (feature reference; keep this complete and current)
     - Any other docs touched by the change (e.g., codex text JSON)
+  - **Localization always stays in sync:** if you change any translation keys or UI text in `src/main/resources/assets/bassshakertelemetry/lang/en_us.json`, you MUST immediately run `./tools/sync_lang_files.ps1` and commit the resulting updates so every locale file exists and contains all keys.
   - If changes are notable and you’re about to ship a test jar, record them under a **versioned** `CHANGELOG.md` section that matches the jar version (see versioning in `build.gradle`).
   - If version uses git history (e.g., commit count), ensure GitHub Actions uses full history checkout (`fetch-depth: 0`) so CI jar versions match.
 2. **Fix errors systematically**
@@ -84,4 +85,10 @@ Validation must use editor diagnostics (Problems / `get_errors`) and then a GitH
 ## Repo hygiene
 - Don’t commit generated outputs (`build/`, `.gradle/`, local tooling caches, logs).
 - Prefer small focused commits with clear messages.
+
+## Localization workflow (do not skip)
+- `src/main/resources/assets/bassshakertelemetry/lang/en_us.json` is the source of truth for key set.
+- The folder `src/main/resources/assets/bassshakertelemetry/lang/` contains one JSON per Minecraft-supported locale (seeded from `en_us.json` for contributor accessibility).
+- After *any* change to `en_us.json`, run `./tools/sync_lang_files.ps1` so missing keys/files are automatically filled.
+- When adding real translations to non-English files, keep the same keys; only change values.
 
