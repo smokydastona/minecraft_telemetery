@@ -1,4 +1,4 @@
-# Neon UI schema (v1)
+# Neon UI schema (v2)
 
 This repo supports a **schema-driven Neon UI** via a JSON file named:
 
@@ -13,7 +13,7 @@ The schema is shipped in the mod JAR (built-in), and may be overridden by a UI b
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "screens": {
     "telemetry_config": {
       "titleKey": "...",
@@ -27,7 +27,9 @@ The schema is shipped in the mod JAR (built-in), and may be overridden by a UI b
 }
 ```
 
-- `version`: schema version (currently `1`).
+- `version`: schema version (currently `2`).
+
+Note: if an on-disk UI bundle contains a schema with a different `version`, it will be ignored and the mod will fall back to the built-in schema.
 - `screens`: map of screen id -> screen definition.
 - `titleKey`: optional translation key used for the screen title.
 - `root`: required root node for the screen.

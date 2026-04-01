@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "screens": {
     "telemetry_config": {
       "titleKey": "bassshakertelemetry.config.title",

@@ -21,7 +21,7 @@ public final class NeonUiSchemaLoader {
     private static final Gson GSON = new Gson();
     private static final ResourceLocation DEFAULT_SCHEMA = new ResourceLocation("bassshakertelemetry", "neon/neon_schema.json");
     private static final Logger LOGGER = LogManager.getLogger("bassshakertelemetry");
-    private static final int SUPPORTED_SCHEMA_VERSION = 1;
+    private static final int SUPPORTED_SCHEMA_VERSION = 2;
 
     private NeonUiSchemaLoader() {
     }
@@ -104,7 +104,8 @@ public final class NeonUiSchemaLoader {
             if (schema.version <= 0) return null;
 
             if (schema.version != SUPPORTED_SCHEMA_VERSION) {
-                LOGGER.warn("[BST] Neon UI schema version mismatch: got={} supported={}. Will attempt to load anyway.", schema.version, SUPPORTED_SCHEMA_VERSION);
+                LOGGER.warn("[BST] Neon UI schema version mismatch: got={} supported={}. Ignoring schema.", schema.version, SUPPORTED_SCHEMA_VERSION);
+                return null;
             }
 
             JsonObject screens = getObj(root, "screens");

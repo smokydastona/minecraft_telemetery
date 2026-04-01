@@ -73,6 +73,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Output device selection UI is no longer gated by 7.1 support (devices won’t revert to `<Default>` just because Sound Scape is enabled).
 - Output device selection screen now correctly reflects the newly selected device when you return to the main config screen.
 - Reduced end-to-end haptics latency by preventing JavaSound from silently falling back to extreme device-default buffers (which can be ~1s on some drivers).
+- Config menu no longer gets stuck on an old layout when an outdated on-disk Neon UI bundle is present; schema version mismatches now fall back to the built-in schema.
 
 ## [0.1.23] - 2026-02-16
 
