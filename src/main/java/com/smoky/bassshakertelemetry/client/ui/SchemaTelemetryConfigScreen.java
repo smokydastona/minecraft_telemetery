@@ -2,6 +2,7 @@ package com.smoky.bassshakertelemetry.client.ui;
 
 import com.smoky.bassshakertelemetry.audio.AudioDeviceUtil;
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
+import com.smoky.bassshakertelemetry.client.audio.MinecraftSoundDeviceUtil;
 import com.smoky.bassshakertelemetry.client.ui.neon.NeonButton;
 import com.smoky.bassshakertelemetry.client.ui.neon.NeonCycleButton;
 import com.smoky.bassshakertelemetry.client.ui.neon.NeonLabel;
@@ -28,6 +29,11 @@ public final class SchemaTelemetryConfigScreen extends Screen {
     private static final String SCREEN_ID = "telemetry_config";
 
     private final Screen parent;
+
+    private Button gameSoundDeviceButton;
+    private List<String> gameSoundDevices = List.of("<Default>");
+    private String selectedGameSoundDevice = "<Default>";
+    private boolean gameSoundDeviceDirty = false;
 
     private Button outputDeviceButton;
     private List<String> devices = List.of("<Default>");
@@ -103,6 +109,23 @@ public final class SchemaTelemetryConfigScreen extends Screen {
     }
 
     private void loadDevices() {
+        List<String> gameDeviceList = new ArrayList<>();
+        gameDeviceList.add("<Default>");
+        gameDeviceList.addAll(MinecraftSoundDeviceUtil.listAvailableOutputDevices());
+        this.gameSoundDevices = gameDeviceList;
+
+        if (!gameSoundDeviceDirty) {
+            String current = MinecraftSoundDeviceUtil.getSelectedSoundDeviceId();
+            String currentDisplay = (current == null || current.isBlank()) ? "<Default>" : current;
+            if (!this.gameSoundDevices.contains(currentDisplay)) currentDisplay = "<Default>";
+            this.selectedGameSoundDevice = currentDisplay;
+        } else {
+            // Returning from GameSoundDeviceScreen triggers a re-init; keep the in-progress selection.
+            if (!this.gameSoundDevices.contains(this.selectedGameSoundDevice)) {
+                this.selectedGameSoundDevice = "<Default>";
+            }
+        }
+
         List<String> deviceList = new ArrayList<>();
         deviceList.add("<Default>");
         deviceList.addAll(AudioDeviceUtil.listOutputDeviceNames(AudioOutputEngine.get().formatStereo()));
@@ -170,6 +193,7 @@ public final class SchemaTelemetryConfigScreen extends Screen {
         if (mc == null) return;
 
         switch (action) {
+            case "openGameSoundDevice" -> mc.setScreen(new GameSoundDeviceScreen(this, this::setSelectedGameSoundDevice, this.selectedGameSoundDevice));
             case "openOutputDevice" -> mc.setScreen(new OutputDeviceScreen(this, this::setSelectedDevice, this.selectedDevice));
             case "openAdvanced" -> {
                 if (NeonUiSchemaLoader.hasActiveScreen("advanced_settings")) {
@@ -193,6 +217,12 @@ public final class SchemaTelemetryConfigScreen extends Screen {
     private void onDone() {
         BstConfig.Data data = BstConfig.get();
         data.outputDeviceName = "<Default>".equals(selectedDevice) ? "" : selectedDevice;
+
+        // Apply Minecraft game sound device (if changed) on Done.
+        if (gameSoundDeviceDirty) {
+            String deviceId = "<Default>".equals(selectedGameSoundDevice) ? "" : selectedGameSoundDevice;
+            MinecraftSoundDeviceUtil.applySelectedSoundDeviceId(deviceId);
+        }
 
         // Write back all schema bindings (except outputDeviceName which is handled above).
         applyAllBinds(data, "outputDeviceName");
@@ -218,11 +248,31 @@ public final class SchemaTelemetryConfigScreen extends Screen {
         }
     }
 
+    void setSelectedGameSoundDevice(String displayDeviceId) {
+        String v = Objects.requireNonNullElse(displayDeviceId, "<Default>");
+        if (!gameSoundDevices.contains(v)) {
+            v = "<Default>";
+        }
+        this.selectedGameSoundDevice = v;
+        this.gameSoundDeviceDirty = true;
+
+        if (gameSoundDeviceButton != null) {
+            gameSoundDeviceButton.setMessage(Objects.requireNonNull(gameSoundDeviceButtonLabel(), "gameSoundDeviceButtonLabel"));
+        }
+    }
+
     @SuppressWarnings("null")
     private Component deviceButtonLabel() {
         return Component.translatable("bassshakertelemetry.config.output_device")
                 .append(": ")
                 .append(Component.literal(Objects.requireNonNull(selectedDevice)));
+    }
+
+    @SuppressWarnings("null")
+    private Component gameSoundDeviceButtonLabel() {
+        return Component.translatable("bassshakertelemetry.config.game_sound_device")
+                .append(": ")
+                .append(Component.literal(Objects.requireNonNull(selectedGameSoundDevice)));
     }
 
     private void applyAllBinds(BstConfig.Data data, String skipFieldName) {
@@ -381,8 +431,18 @@ public final class SchemaTelemetryConfigScreen extends Screen {
 
         if (node instanceof NeonUiSchema.ButtonNode n) {
             Component msg = resolveText(n.textKey, n.text);
-            // Special-case: output device button shows selected device.
-            if ("openOutputDevice".equals(n.action)) {
+            // Special-case: device buttons show selected device.
+            if ("openGameSoundDevice".equals(n.action)) {
+                gameSoundDeviceButton = new NeonButton(
+                        node.computedX,
+                        node.computedY,
+                        node.computedWidth,
+                        rowH,
+                        gameSoundDeviceButtonLabel(),
+                        () -> handleAction(n.action)
+                );
+                this.addRenderableWidget(gameSoundDeviceButton);
+            } else if ("openOutputDevice".equals(n.action)) {
                 outputDeviceButton = new NeonButton(
                         node.computedX,
                         node.computedY,

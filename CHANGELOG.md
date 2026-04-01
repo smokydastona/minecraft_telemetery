@@ -7,7 +7,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 ## [Unreleased]
 
 ### Added
-- Neon UI bundle support (built-in + disk override/remote) including schema-driven config screens and an in-game **Reload UI bundle** button.
+- Neon UI bundle support (built-in + disk override/remote) including schema-driven config screens.
 - Sound Scape (7.1) routing: per-category routing UI with editable channel groups (targets up to 8 output channels: FL/FR/C/LFE/SL/SR/BL/BR).
 - Sound Scape overrides editor: per-effect (debug key) routing rules that take priority over category routing.
 - Optional 7.1 (8-channel) JavaSound output with stereo fallback when multichannel output is unavailable.
@@ -57,6 +57,8 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Impulse ducking is now per-bus (see `HapticBus`); impulses are no longer globally ducked by other one-shot effects, while road texture still ducks under active events.
 - Spatial debugger now shows per-channel meters, waveform, low-frequency spectrogram, recent event timeline, and a buffer/queued latency estimate.
 - Config UI pages now consistently use the Neon theme (including device picker, Sound Scape editors, and Spatial screens).
+- Main config screen now includes a **Game sounds device** picker alongside the haptics output device picker.
+- Neon UI bundle now auto-reloads when screens open (manual Reload button removed).
 
 ### Fixed
 - Output device selection now stays on the selected device when 7.1 (8ch) output can’t be opened (falls back to stereo on the same device instead of silently switching to the system default).

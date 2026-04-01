@@ -93,9 +93,14 @@ The mod can load its Neon UI style/tokens/assets from one of three places:
 	- Default behavior is to auto-update this folder in the background on startup by downloading a ZIP asset from the router repo’s GitHub Releases.
 	- The router publishes a stable release asset named `bst_neon_ui_bundle.zip`.
 
-In-game, Neon screens include a **Reload UI bundle** button to re-read style/tokens/textures from disk without restarting.
+Neon screens auto-reload the UI bundle when opened (no manual reload button).
 
 UI bundle schemas can also override the layout of several config screens. If a schema screen is missing/invalid, the mod falls back to the built-in (hardcoded) screen.
+
+The main config screen includes separate pickers for:
+
+- **Game sounds device** (Minecraft audio output)
+- **Haptics output device** (JavaSound)
 
 Relevant config keys (saved in `config/bassshakertelemetry.json`):
 

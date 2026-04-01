@@ -2,6 +2,7 @@ package com.smoky.bassshakertelemetry.client.ui;
 
 import com.smoky.bassshakertelemetry.audio.AudioDeviceUtil;
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
+import com.smoky.bassshakertelemetry.client.audio.MinecraftSoundDeviceUtil;
 import com.smoky.bassshakertelemetry.client.ui.neon.NeonButton;
 import com.smoky.bassshakertelemetry.client.ui.neon.NeonCycleButton;
 import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
@@ -19,6 +20,11 @@ import java.util.Objects;
 
 public final class TelemetryConfigScreen extends Screen {
     private final Screen parent;
+
+    private Button gameSoundDeviceButton;
+    private List<String> gameSoundDevices = List.of("<Default>");
+    private String selectedGameSoundDevice = "<Default>";
+    private boolean gameSoundDeviceDirty = false;
 
     private Button outputDeviceButton;
     private List<String> devices = List.of("<Default>");
@@ -58,6 +64,23 @@ public final class TelemetryConfigScreen extends Screen {
         int rowH = 20;
         int rowGap = 6;
 
+        List<String> gameDeviceList = new ArrayList<>();
+        gameDeviceList.add("<Default>");
+        gameDeviceList.addAll(MinecraftSoundDeviceUtil.listAvailableOutputDevices());
+        this.gameSoundDevices = gameDeviceList;
+
+        if (!gameSoundDeviceDirty) {
+            String current = MinecraftSoundDeviceUtil.getSelectedSoundDeviceId();
+            String currentDisplay = (current == null || current.isBlank()) ? "<Default>" : current;
+            if (!this.gameSoundDevices.contains(currentDisplay)) currentDisplay = "<Default>";
+            this.selectedGameSoundDevice = currentDisplay;
+        } else {
+            // Returning from GameSoundDeviceScreen triggers a re-init; keep the in-progress selection.
+            if (!this.gameSoundDevices.contains(this.selectedGameSoundDevice)) {
+                this.selectedGameSoundDevice = "<Default>";
+            }
+        }
+
         List<String> deviceList = new ArrayList<>();
         deviceList.add("<Default>");
         deviceList.addAll(AudioDeviceUtil.listOutputDeviceNames(AudioOutputEngine.get().formatStereo()));
@@ -91,9 +114,24 @@ public final class TelemetryConfigScreen extends Screen {
             font
         ));
 
+        gameSoundDeviceButton = new NeonButton(
+            leftX,
+            50,
+            contentWidth,
+            rowH,
+            gameSoundDeviceButtonLabel(),
+            () -> {
+                if (this.minecraft != null) {
+                this.minecraft.setScreen(new GameSoundDeviceScreen(this, this::setSelectedGameSoundDevice, this.selectedGameSoundDevice));
+                }
+            }
+        );
+
+        this.addRenderableWidget(gameSoundDeviceButton);
+
         outputDeviceButton = new NeonButton(
                 leftX,
-                50,
+            50 + rowH + rowGap,
                 contentWidth,
                 rowH,
                 deviceButtonLabel(),
@@ -106,7 +144,7 @@ public final class TelemetryConfigScreen extends Screen {
 
         this.addRenderableWidget(outputDeviceButton);
 
-        int y = 50 + rowH + rowGap;
+        int y = 50 + ((rowH + rowGap) * 2);
 
         volumeSlider = new NeonVolumeSlider(
             leftX,
@@ -269,6 +307,12 @@ public final class TelemetryConfigScreen extends Screen {
         data.accessibilityHudEnabled = accessibilityHudEnabled;
         BstConfig.set(data);
 
+        // Apply Minecraft game sound device (if changed) on Done.
+        if (gameSoundDeviceDirty) {
+            String deviceId = "<Default>".equals(selectedGameSoundDevice) ? "" : selectedGameSoundDevice;
+            MinecraftSoundDeviceUtil.applySelectedSoundDeviceId(deviceId);
+        }
+
         AudioOutputEngine.get().startOrRestart();
         if (this.minecraft != null) {
             this.minecraft.setScreen(parent);
@@ -327,6 +371,26 @@ public final class TelemetryConfigScreen extends Screen {
         return Component.translatable("bassshakertelemetry.config.output_device")
                 .append(": ")
                 .append(Component.literal(Objects.requireNonNull(selectedDevice)));
+    }
+
+    @SuppressWarnings("null")
+    private Component gameSoundDeviceButtonLabel() {
+        return Component.translatable("bassshakertelemetry.config.game_sound_device")
+                .append(": ")
+                .append(Component.literal(Objects.requireNonNull(selectedGameSoundDevice)));
+    }
+
+    void setSelectedGameSoundDevice(String displayDeviceId) {
+        String v = Objects.requireNonNullElse(displayDeviceId, "<Default>");
+        if (!gameSoundDevices.contains(v)) {
+            v = "<Default>";
+        }
+        this.selectedGameSoundDevice = v;
+        this.gameSoundDeviceDirty = true;
+
+        if (gameSoundDeviceButton != null) {
+            gameSoundDeviceButton.setMessage(Objects.requireNonNull(gameSoundDeviceButtonLabel()));
+        }
     }
 
     void setSelectedDevice(String displayDeviceId) {

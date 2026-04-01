@@ -1,5 +1,7 @@
 {
   "bassshakertelemetry.config.title": "Bass Shaker Telemetry",
+  "bassshakertelemetry.config.game_sound_device": "Game sounds device",
+  "bassshakertelemetry.config.game_sound_device_title": "Select game sounds device",
   "bassshakertelemetry.config.output_device": "Output device",
   "bassshakertelemetry.config.output_device_title": "Select output device",
   "bassshakertelemetry.config.master_volume": "Master volume",

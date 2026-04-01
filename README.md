@@ -41,7 +41,7 @@ Note: server-relayed events require the mod on **both** the server and the clien
 In-game:
 
 - Minecraft main menu → **Mods** → **Bass Shaker Telemetry** → **Config**
-- Output device selection, master volume, per-effect toggles and volume sliders.
+- Game sounds device selection (Minecraft audio output), haptics output device selection (JavaSound), master volume, per-effect toggles and volume sliders.
 - Advanced settings includes an output buffer size selector (JavaSound backend) to tune **latency vs stability**, a latency test pulse, calibration tones/sweep, and a haptic instrument graph editor (Phase 2).
 - Advanced settings also includes a **Spatial** section (Phase 3) for Sound Scape: spatial panning toggle, distance attenuation, a guided per-channel calibration wizard (gain + simple EQ, burst test, RMS auto-trim, comfort limit capture), and a real-time spatial debugger (meters/waveform/spectrogram/timeline/latency).
 - Each effect slider includes a **Test** button.
@@ -51,7 +51,7 @@ In-game:
 UI bundle (Neon skin):
 
 - The config screens can load their **style/assets** (and optional **screen schema**) from a UI bundle.
-- Neon screens include a **Reload UI bundle** button to re-read the bundle from disk without restarting.
+- Neon screens auto-reload the UI bundle when opened.
 - All in-game config pages use the Neon theme (including device picker, Sound Scape editors, and Spatial screens).
 - Bundle folders:
 	- Disk override: `config/bassshakertelemetry/ui_bundle/`

@@ -11,6 +11,12 @@
         "children": [
           {
             "type": "button",
+            "id": "gameSoundDevice",
+            "textKey": "bassshakertelemetry.config.game_sound_device",
+            "action": "openGameSoundDevice"
+          },
+          {
+            "type": "button",
             "id": "outputDevice",
             "textKey": "bassshakertelemetry.config.output_device",
             "action": "openOutputDevice",
