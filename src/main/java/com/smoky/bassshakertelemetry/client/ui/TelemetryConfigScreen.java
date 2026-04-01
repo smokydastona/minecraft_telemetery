@@ -4,7 +4,6 @@ import com.smoky.bassshakertelemetry.audio.AudioDeviceUtil;
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.client.audio.MinecraftSoundDeviceUtil;
 import com.smoky.bassshakertelemetry.client.ui.neon.NeonButton;
-import com.smoky.bassshakertelemetry.client.ui.neon.NeonCycleButton;
 import com.smoky.bassshakertelemetry.client.ui.neon.NeonStyle;
 import com.smoky.bassshakertelemetry.client.ui.neon.NeonVolumeSlider;
 import com.smoky.bassshakertelemetry.config.BstConfig;
@@ -31,19 +30,6 @@ public final class TelemetryConfigScreen extends Screen {
     private String selectedDevice = "<Default>";
     private boolean outputDeviceDirty = false;
 
-    private boolean damageEnabled;
-    private boolean biomeEnabled;
-    private boolean roadEnabled;
-    private boolean soundEnabled;
-    private boolean gameplayEnabled;
-    private boolean accessibilityHudEnabled;
-
-    private NeonCycleButton<Boolean> damageToggle;
-    private NeonCycleButton<Boolean> biomeToggle;
-    private NeonCycleButton<Boolean> roadToggle;
-    private NeonCycleButton<Boolean> soundToggle;
-    private NeonCycleButton<Boolean> gameplayToggle;
-    private NeonCycleButton<Boolean> accessibilityHudToggle;
     private NeonVolumeSlider volumeSlider;
 
     public TelemetryConfigScreen(Screen parent) {
@@ -98,13 +84,6 @@ public final class TelemetryConfigScreen extends Screen {
             }
         }
 
-        damageEnabled = BstConfig.get().damageBurstEnabled;
-        biomeEnabled = BstConfig.get().biomeChimeEnabled;
-        roadEnabled = BstConfig.get().roadTextureEnabled;
-        soundEnabled = BstConfig.get().soundHapticsEnabled;
-        gameplayEnabled = BstConfig.get().gameplayHapticsEnabled;
-        accessibilityHudEnabled = BstConfig.get().accessibilityHudEnabled;
-
         this.addRenderableWidget(new StringWidget(
             centerX - 100,
             20,
@@ -158,12 +137,30 @@ public final class TelemetryConfigScreen extends Screen {
 
         y += rowH + rowGap;
 
+        int colGap = 10;
+        int colWidth = Math.max(60, (contentWidth - colGap) / 2);
+        int colLeftX = leftX;
+        int colRightX = leftX + colWidth + colGap;
+
         this.addRenderableWidget(new NeonButton(
-                leftX,
+                colLeftX,
                 y,
-                contentWidth,
+                colWidth,
                 rowH,
-                Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.movement_settings")),
+                Component.translatable("bassshakertelemetry.config.page_damage"),
+                () -> {
+                    if (this.minecraft != null) {
+                        this.minecraft.setScreen(new DamageSettingsScreen(this));
+                    }
+                }
+        ));
+
+        this.addRenderableWidget(new NeonButton(
+                colRightX,
+                y,
+                colWidth,
+                rowH,
+                Component.translatable("bassshakertelemetry.config.page_movement"),
                 () -> {
                     if (this.minecraft != null) {
                         this.minecraft.setScreen(new MovementSettingsScreen(this));
@@ -174,11 +171,24 @@ public final class TelemetryConfigScreen extends Screen {
         y += rowH + rowGap;
 
         this.addRenderableWidget(new NeonButton(
-                leftX,
+                colLeftX,
                 y,
-                contentWidth,
+                colWidth,
                 rowH,
-                Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.advanced")),
+                Component.translatable("bassshakertelemetry.config.page_misc"),
+                () -> {
+                    if (this.minecraft != null) {
+                        this.minecraft.setScreen(new MiscSettingsScreen(this));
+                    }
+                }
+        ));
+
+        this.addRenderableWidget(new NeonButton(
+                colRightX,
+                y,
+                colWidth,
+                rowH,
+                Component.translatable("bassshakertelemetry.config.page_advanced"),
                 () -> {
                     if (this.minecraft != null) {
                         if (com.smoky.bassshakertelemetry.client.ui.neon.schema.NeonUiSchemaLoader.hasActiveScreen("advanced_settings")) {
@@ -189,107 +199,6 @@ public final class TelemetryConfigScreen extends Screen {
                     }
                 }
         ));
-
-        y += rowH + rowGap;
-
-        this.addRenderableWidget(new NeonButton(
-                leftX,
-                y,
-                contentWidth,
-                rowH,
-                Objects.requireNonNull(Component.translatable("bassshakertelemetry.soundscape.open")),
-                () -> {
-                    if (this.minecraft != null) {
-                        this.minecraft.setScreen(new SoundScapeConfigScreen(this));
-                    }
-                }
-        ));
-
-        y += rowH + rowGap;
-
-        int colGap = 10;
-        int colWidth = Math.max(60, (contentWidth - colGap) / 2);
-        int colLeftX = leftX;
-        int colRightX = leftX + colWidth + colGap;
-
-        damageToggle = new NeonCycleButton<>(
-            colLeftX,
-            y,
-            colWidth,
-            rowH,
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.damage_enabled")),
-            List.of(Boolean.TRUE, Boolean.FALSE),
-            damageEnabled,
-            v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
-            v -> damageEnabled = v
-        );
-        this.addRenderableWidget(damageToggle);
-
-        biomeToggle = new NeonCycleButton<>(
-            colRightX,
-            y,
-            colWidth,
-            rowH,
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.biome_enabled")),
-            List.of(Boolean.TRUE, Boolean.FALSE),
-            biomeEnabled,
-            v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
-            v -> biomeEnabled = v
-        );
-        this.addRenderableWidget(biomeToggle);
-
-        roadToggle = new NeonCycleButton<>(
-            colLeftX,
-            y + rowH + rowGap,
-            colWidth,
-            rowH,
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.road_enabled")),
-            List.of(Boolean.TRUE, Boolean.FALSE),
-            roadEnabled,
-            v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
-            v -> roadEnabled = v
-        );
-        this.addRenderableWidget(roadToggle);
-
-        y += rowH + rowGap;
-        soundToggle = new NeonCycleButton<>(
-            colRightX,
-            y,
-            colWidth,
-            rowH,
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.sound_enabled")),
-            List.of(Boolean.TRUE, Boolean.FALSE),
-            soundEnabled,
-            v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
-            v -> soundEnabled = v
-        );
-        this.addRenderableWidget(soundToggle);
-
-        gameplayToggle = new NeonCycleButton<>(
-            leftX,
-            y + rowH + rowGap,
-            contentWidth,
-            rowH,
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.gameplay_enabled")),
-            List.of(Boolean.TRUE, Boolean.FALSE),
-            gameplayEnabled,
-            v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
-            v -> gameplayEnabled = v
-        );
-        this.addRenderableWidget(gameplayToggle);
-
-        accessibilityHudToggle = new NeonCycleButton<>(
-            leftX,
-            y + ((rowH + rowGap) * 2),
-            contentWidth,
-            rowH,
-            Objects.requireNonNull(Component.translatable("bassshakertelemetry.config.accessibility_hud")),
-            List.of(Boolean.TRUE, Boolean.FALSE),
-            accessibilityHudEnabled,
-            v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
-            v -> accessibilityHudEnabled = v
-        );
-        this.addRenderableWidget(accessibilityHudToggle);
 
         this.addRenderableWidget(new NeonButton(
             leftX,
@@ -314,12 +223,6 @@ public final class TelemetryConfigScreen extends Screen {
         BstConfig.Data data = BstConfig.get();
         data.outputDeviceName = "<Default>".equals(selectedDevice) ? "" : selectedDevice;
         data.masterVolume = volumeSlider.getValue();
-        data.damageBurstEnabled = damageEnabled;
-        data.biomeChimeEnabled = biomeEnabled;
-        data.roadTextureEnabled = roadEnabled;
-        data.soundHapticsEnabled = soundEnabled;
-        data.gameplayHapticsEnabled = gameplayEnabled;
-        data.accessibilityHudEnabled = accessibilityHudEnabled;
         BstConfig.set(data);
 
         // Apply Minecraft game sound device (if changed) on Done.

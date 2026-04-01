@@ -107,7 +107,7 @@ public final class GameplayHapticsHandler {
     @SubscribeEvent
     public void onAttackEntity(AttackEntityEvent event) {
         BstConfig.Data cfg = BstConfig.get();
-        if (!cfg.enabled || !cfg.gameplayHapticsEnabled || !cfg.gameplayAttackClickEnabled) {
+        if (!cfg.enabled || !cfg.combatMeleeEnabled) {
             return;
         }
 
@@ -130,7 +130,7 @@ public final class GameplayHapticsHandler {
 
         // Small "thump". Target: around block-break intensity, slightly higher.
         // Also routes via VibrationIngress so sound-inferred attack swings can be suppressed.
-        double gain = 0.20 * clamp(cfg.gameplayHapticsGain, 0.0, 2.0);
+        double gain = 0.20 * clamp(cfg.combatMeleeGain, 0.0, 2.0);
         if (!rateLimit(bucket, cfg.gameplayHapticsCooldownMs)) {
             return;
         }

@@ -46,19 +46,38 @@ public record PlayVibrationMessage(String key, float scale01, float distanceScal
             }
 
             BstConfig.Data cfg = BstConfig.get();
-            if (!cfg.enabled || !cfg.gameplayHapticsEnabled) {
+            if (!cfg.enabled) {
                 return;
             }
 
-            var resolved = BstVibrationProfiles.get().resolve(msg.key, msg.scale01, msg.distanceScale01);
+            String key = (msg.key == null) ? "" : msg.key.trim();
+            boolean isCombat = key.startsWith("combat.");
+            if (isCombat) {
+                if (!cfg.combatHitConfirmEnabled) {
+                    return;
+                }
+            } else {
+                // Keep legacy behavior for non-combat network vibrations.
+                if (!cfg.gameplayHapticsEnabled) {
+                    return;
+                }
+            }
+
+            var resolved = BstVibrationProfiles.get().resolve(key, msg.scale01, msg.distanceScale01);
             if (resolved == null) {
                 return;
             }
 
-            double gain = clamp(resolved.intensity01() * clamp(cfg.gameplayHapticsGain, 0.0, 2.0), 0.0, 1.0);
+            double baseGain;
+            if (isCombat) {
+                baseGain = clamp(cfg.combatHitConfirmGain, 0.0, 2.0);
+            } else {
+                baseGain = clamp(cfg.gameplayHapticsGain, 0.0, 2.0);
+            }
+            double gain = clamp(resolved.intensity01() * baseGain, 0.0, 1.0);
 
             // Apply directional encoding (client-only) without introducing client-only imports on the server.
-            if (!tryClientPlayback(msg.key, resolved, gain, msg.hasSource, msg.sourceX, msg.sourceY, msg.sourceZ)) {
+            if (!tryClientPlayback(key, resolved, gain, msg.hasSource, msg.sourceX, msg.sourceY, msg.sourceZ)) {
                 String instrumentId = (resolved.instrumentId() == null) ? "" : resolved.instrumentId().trim();
                 if (!instrumentId.isBlank()) {
                     AudioOutputEngine.get().triggerInstrumentImpulse(
@@ -71,7 +90,7 @@ public record PlayVibrationMessage(String key, float scale01, float distanceScal
                             resolved.pulseWidthMs(),
                             resolved.priority(),
                             0,
-                            (msg.key == null) ? "" : msg.key
+                            key
                     );
                 } else {
                     AudioOutputEngine.get().triggerImpulse(
@@ -84,7 +103,7 @@ public record PlayVibrationMessage(String key, float scale01, float distanceScal
                             resolved.pulseWidthMs(),
                             resolved.priority(),
                             0,
-                            (msg.key == null) ? "" : msg.key
+                            key
                     );
                 }
             }

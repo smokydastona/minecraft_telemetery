@@ -45,6 +45,8 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Minimal spatial debugger screen showing last event, azimuth/distance, and engine status.
 - Accessibility HUD: optional on-screen cue list for key danger events (damage, explosions, thunder, boss cues, Warden heartbeat) plus a low-health warning, with 8-way directional arrows (←→↑↓↖↗↘↙) that update as you turn.
 - New **Movement settings** screen: Movement texture toggle + Flight/Air/Swim/Water sliders, plus Footsteps toggle + slider.
+- New **Damage** screen: incoming damage + melee hit + multiplayer hit-confirm (`combat.hit`) tuning.
+- New **Misc** screen: Sound haptics + Gameplay haptics + Biome chime + Accessibility HUD.
 
 ### Changed
 - Lower-latency defaults: JavaSound requested buffer now defaults to 20ms (was auto/0), and the audio engine renders in 10ms chunks for faster one-shot response.
@@ -64,6 +66,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Road texture has been renamed to **Movement texture** in the UI/docs, and is now ON by default for new installs.
 - Movement texture is now context-aware (land/flight/swim), and both directional wind layers (Elytra + swimming) are gated by the Movement texture master toggle.
 - Default tuning: damage haptics are now louder than melee hits by default (higher default `damageBurstGain`, slightly quieter melee click, and a higher minimum damage scale so small hits still read clearly).
+- Main config screen layout redesigned to a 2x2 page grid (Damage / Movement / Misc / Advanced) after device selection + master volume.
 
 ### Fixed
 - Output device selection now stays on the selected device when 7.1 (8ch) output can’t be opened (falls back to stereo on the same device instead of silently switching to the system default).

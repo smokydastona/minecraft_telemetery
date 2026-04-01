@@ -89,6 +89,18 @@ public final class BstConfig {
             d.configVersion = 2;
         }
 
+        if (d.configVersion < 3) {
+            // Combat controls were split out so damage/melee/hit-confirm can be tuned separately.
+            // For older configs, mirror previous behavior:
+            // - Melee click followed gameplay toggles
+            // - Hit-confirm (combat.hit) was gated by gameplay haptics
+            d.combatMeleeEnabled = d.gameplayHapticsEnabled && d.gameplayAttackClickEnabled;
+            d.combatMeleeGain = 1.0;
+            d.combatHitConfirmEnabled = d.gameplayHapticsEnabled;
+            d.combatHitConfirmGain = 1.0;
+            d.configVersion = 3;
+        }
+
         // --- Sound Scape defaults ---
         if (d.soundScapeGroups == null) {
             d.soundScapeGroups = new HashMap<>();
@@ -293,7 +305,7 @@ public final class BstConfig {
     public static final class Data {
         // Increment when we need to migrate older config files.
         // (Older configs will deserialize this as 0.)
-        public int configVersion = 2;
+        public int configVersion = 3;
 
         // Master switches
         public boolean enabled = true;
@@ -363,6 +375,14 @@ public final class BstConfig {
         public boolean gameplayMiningPulseEnabled = false;
         public int gameplayMiningPulsePeriodMs = 120;
         public boolean gameplayXpEnabled = true;
+
+        // Combat-specific controls (separate from general gameplay clicks)
+        // - Melee hit: local AttackEntityEvent-based thump
+        // - Hit confirm: server-relayed combat.hit (multiplayer) / authoritative combat cues
+        public boolean combatMeleeEnabled = true;
+        public double combatMeleeGain = 1.0;
+        public boolean combatHitConfirmEnabled = true;
+        public double combatHitConfirmGain = 1.0;
 
         // Output safety / mixing
         // Headroom scales the final output before int16 conversion to reduce clipping when effects stack.

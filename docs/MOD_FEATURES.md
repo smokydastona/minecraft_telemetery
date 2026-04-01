@@ -60,6 +60,23 @@ External output:
 
 ## In-game config UI
 
+- The main config screen includes:
+	- Game sounds device picker (Minecraft audio output)
+	- Haptics output device picker (JavaSound)
+	- Master volume
+	- Page buttons: **Damage / Movement / Misc / Advanced**
+
+- **Damage** groups combat/damage-related toggles and volumes:
+	- Incoming damage (hurt/fall/fire/etc.)
+	- Melee hit thump
+	- Multiplayer hit-confirm (server-relayed `combat.hit`)
+
+- **Misc** groups non-movement toggles and volumes:
+	- Sound haptics
+	- Gameplay haptics
+	- Biome chime
+	- Accessibility HUD
+
 - **Movement settings** provides movement-related toggles/volumes in one place:
 	- Movement texture master toggle
 	- Flight / Air (directional) / Swim / Water (directional) sliders
@@ -91,7 +108,7 @@ Accessibility HUD:
 
 - Optional on-screen cue list for key danger events (damage, explosions, thunder, boss cues, Warden heartbeat) plus a low-health warning.
 - When an event has a world position, the cue includes an 8-way arrow (←→↑↓↖↗↘↙) showing the event direction relative to your current facing; it updates live as you turn.
-- Toggle: Config screen → **Accessibility HUD**.
+- Toggle: **Misc → Accessibility HUD**.
 
 ## UI bundle (Neon skin)
 

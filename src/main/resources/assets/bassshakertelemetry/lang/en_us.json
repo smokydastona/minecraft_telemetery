@@ -5,6 +5,22 @@
   "bassshakertelemetry.config.output_device": "Output device",
   "bassshakertelemetry.config.output_device_title": "Select output device",
   "bassshakertelemetry.config.master_volume": "Master volume",
+  "bassshakertelemetry.config.page_damage": "Damage",
+  "bassshakertelemetry.config.page_movement": "Movement",
+  "bassshakertelemetry.config.page_misc": "Misc",
+  "bassshakertelemetry.config.page_advanced": "Advanced",
+
+  "bassshakertelemetry.config.damage_title": "Damage",
+  "bassshakertelemetry.config.damage_incoming": "Incoming damage",
+  "bassshakertelemetry.config.combat_melee": "Melee hit",
+  "bassshakertelemetry.config.combat_melee_gain": "Melee hit volume",
+  "bassshakertelemetry.config.combat_hit_confirm": "Hit confirm (server)",
+  "bassshakertelemetry.config.combat_hit_confirm_gain": "Hit confirm volume",
+
+  "bassshakertelemetry.config.misc_title": "Misc",
+  "bassshakertelemetry.config.sound_haptics": "Sound haptics",
+  "bassshakertelemetry.config.gameplay_haptics": "Gameplay haptics",
+
   "bassshakertelemetry.config.movement_settings": "Movement settings",
   "bassshakertelemetry.config.movement_title": "Movement",
   "bassshakertelemetry.config.movement_enabled": "Movement texture",

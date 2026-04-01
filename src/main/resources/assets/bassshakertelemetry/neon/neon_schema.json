@@ -33,39 +33,21 @@
             "format": "percent"
           },
           {
-            "type": "button",
-            "id": "movement",
-            "textKey": "bassshakertelemetry.config.movement_settings",
-            "action": "openMovement"
-          },
-          {
-            "type": "button",
-            "id": "advanced",
-            "textKey": "bassshakertelemetry.config.advanced",
-            "action": "openAdvanced"
-          },
-          {
-            "type": "button",
-            "id": "soundscape",
-            "textKey": "bassshakertelemetry.soundscape.open",
-            "action": "openSoundscape"
-          },
-          {
             "type": "panel",
             "layout": "horizontal",
             "spacing": 10,
             "children": [
               {
-                "type": "toggle",
-                "id": "damage",
-                "textKey": "bassshakertelemetry.config.damage_enabled",
-                "bind": "damageBurstEnabled"
+                "type": "button",
+                "id": "damagePage",
+                "textKey": "bassshakertelemetry.config.page_damage",
+                "action": "openDamage"
               },
               {
-                "type": "toggle",
-                "id": "biome",
-                "textKey": "bassshakertelemetry.config.biome_enabled",
-                "bind": "biomeChimeEnabled"
+                "type": "button",
+                "id": "movementPage",
+                "textKey": "bassshakertelemetry.config.page_movement",
+                "action": "openMovement"
               }
             ]
           },
@@ -75,30 +57,18 @@
             "spacing": 10,
             "children": [
               {
-                "type": "toggle",
-                "id": "road",
-                "textKey": "bassshakertelemetry.config.road_enabled",
-                "bind": "roadTextureEnabled"
+                "type": "button",
+                "id": "miscPage",
+                "textKey": "bassshakertelemetry.config.page_misc",
+                "action": "openMisc"
               },
               {
-                "type": "toggle",
-                "id": "sound",
-                "textKey": "bassshakertelemetry.config.sound_enabled",
-                "bind": "soundHapticsEnabled"
+                "type": "button",
+                "id": "advancedPage",
+                "textKey": "bassshakertelemetry.config.page_advanced",
+                "action": "openAdvanced"
               }
             ]
-          },
-          {
-            "type": "toggle",
-            "id": "gameplay",
-            "textKey": "bassshakertelemetry.config.gameplay_enabled",
-            "bind": "gameplayHapticsEnabled"
-          },
-          {
-            "type": "toggle",
-            "id": "accessibilityHud",
-            "textKey": "bassshakertelemetry.config.accessibility_hud",
-            "bind": "accessibilityHudEnabled"
           }
         ]
       }
