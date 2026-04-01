@@ -7,6 +7,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 ## [Unreleased]
 
 ### Added
+- GitHub Actions now validates locale files before build output: it runs the locale sync step, fails on lang/en_us drift, and flags obvious English fallback content in non-English locale files touched by a push or pull request.
 - Neon UI bundle support (built-in + disk override/remote) including schema-driven config screens.
 - Sound Scape (7.1) routing: per-category routing UI with editable channel groups (targets up to 8 output channels: FL/FR/C/LFE/SL/SR/BL/BR).
 - Sound Scape overrides editor: per-effect (debug key) routing rules that take priority over category routing.
@@ -49,6 +50,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - New **Misc** screen (paged): Sound haptics + Gameplay haptics + Biome chime + Accessibility HUD + Tools.
 
 ### Changed
+- `tools/sync_lang_files.ps1` now rewrites locale files when key order or extra-key drift is detected, not only when keys are missing.
 - Lower-latency defaults: JavaSound requested buffer now defaults to 20ms (was auto/0), and the audio engine renders in 10ms chunks for faster one-shot response.
 - Added a small config migration (`configVersion`) so existing configs that still have `javaSoundBufferMs: 0` pick up the new 20ms default once.
 - Gameplay attack/use click haptics now trigger from input events (mouse/keyboard, respects keybinds) instead of tick edge detection.

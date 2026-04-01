@@ -73,6 +73,20 @@ function To-Hashtable($psObj) {
     return $h
 }
 
+function Test-SequenceEqual($left, $right) {
+    if ($left.Count -ne $right.Count) {
+        return $false
+    }
+
+    for ($i = 0; $i -lt $left.Count; $i++) {
+        if ($left[$i] -ne $right[$i]) {
+            return $false
+        }
+    }
+
+    return $true
+}
+
 function Write-OrderedJson([string]$path, $orderedMap) {
     $json = $orderedMap | ConvertTo-Json -Depth 20
     # Ensure trailing newline for clean diffs
@@ -151,7 +165,21 @@ foreach ($code in $localeCodes) {
         }
     }
 
-    if ($missingKey) {
+    $destOrder = @($destObj.PSObject.Properties.Name)
+    $desiredOrder = @($out.Keys)
+    $extraKey = $false
+    if ($PruneExtraKeys) {
+        foreach ($k in $destOrder) {
+            if (-not $enMap.ContainsKey($k)) {
+                $extraKey = $true
+                break
+            }
+        }
+    }
+
+    $orderChanged = -not (Test-SequenceEqual $destOrder $desiredOrder)
+
+    if ($missingKey -or $extraKey -or $orderChanged) {
         Write-OrderedJson -path $destPath -orderedMap $out
         $updated++
     }
