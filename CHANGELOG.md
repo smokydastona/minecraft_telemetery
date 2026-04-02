@@ -50,6 +50,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - New **Misc** screen (paged): Sound haptics + Gameplay haptics + Biome chime + Accessibility HUD + Tools.
 
 ### Changed
+- Locale validation now exempts English-variant and novelty locale files from the translation-coverage gate while still enforcing structural sync for every `lang/*.json` file.
 - `tools/sync_lang_files.ps1` now rewrites locale files when key order or extra-key drift is detected, not only when keys are missing.
 - Lower-latency defaults: JavaSound requested buffer now defaults to 20ms (was auto/0), and the audio engine renders in 10ms chunks for faster one-shot response.
 - Added a small config migration (`configVersion`) so existing configs that still have `javaSoundBufferMs: 0` pick up the new 20ms default once.

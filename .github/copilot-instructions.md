@@ -91,5 +91,5 @@ Validation must use editor diagnostics (Problems / `get_errors`) and then a GitH
 - The folder `src/main/resources/assets/bassshakertelemetry/lang/` contains one JSON per Minecraft-supported locale (seeded from `en_us.json` for contributor accessibility).
 - After *any* change to `en_us.json`, run `./tools/sync_lang_files.ps1` so missing keys/files are automatically filled.
 - When adding real translations to non-English files, keep the same keys; only change values.
-- GitHub Actions now enforces this: CI runs `./tools/sync_lang_files.ps1` and fails if any locale file would be rewritten, and it also fails if any non-English locale still looks like obvious English fallback content.
+- GitHub Actions now enforces this: CI runs `./tools/sync_lang_files.ps1` and fails if any locale file would be rewritten, and it also fails if any translation-target locale still looks like obvious English fallback content. English-variant and novelty locales are exempt from the translation-coverage gate, but they must still stay structurally in sync with `en_us.json`.
 

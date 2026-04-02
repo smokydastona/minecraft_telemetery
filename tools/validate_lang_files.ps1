@@ -76,6 +76,31 @@ function Test-SuspiciousSameValue([string]$value) {
     return $true
 }
 
+function Get-TranslationCoverageExemptLocales {
+    return @(
+        # English variants / style locales.
+        'en_au.json',
+        'en_ca.json',
+        'en_gb.json',
+        'en_nz.json',
+        'en_pt.json',
+        'en_ud.json',
+        'enp.json',
+        'enws.json',
+
+        # Novelty / joke / constructed showcase locales.
+        'jbo_en.json',
+        'lol_us.json',
+        'ovd.json',
+        'pls.json',
+        'qid.json',
+        'qya_aa.json',
+        'rpr.json',
+        'tok.json',
+        'tlh_aa.json'
+    )
+}
+
 $repoRoot = Get-RepoRoot
 $langDir = Join-Path $repoRoot 'src/main/resources/assets/bassshakertelemetry/lang'
 $enPath = Join-Path $langDir 'en_us.json'
@@ -87,6 +112,7 @@ if (-not (Test-Path $enPath)) {
 $enObj = Read-JsonObject -path $enPath
 $enOrder = @($enObj.PSObject.Properties.Name)
 $enMap = To-Hashtable $enObj
+$translationCoverageExemptLocales = Get-TranslationCoverageExemptLocales
 
 $failures = New-Object System.Collections.Generic.List[string]
 $results = New-Object System.Collections.Generic.List[object]
@@ -97,6 +123,7 @@ Get-ChildItem $langDir -Filter *.json | Where-Object { $_.Name -ne 'en_us.json' 
     $localeObj = Read-JsonObject -path $localePath
     $localeOrder = @($localeObj.PSObject.Properties.Name)
     $localeMap = To-Hashtable $localeObj
+    $enforceTranslationCoverage = -not ($translationCoverageExemptLocales -contains $localeName)
 
     $missingKeys = @($enOrder | Where-Object { -not $localeMap.ContainsKey($_) })
     $extraKeys = @($localeOrder | Where-Object { -not $enMap.ContainsKey($_) })
@@ -144,11 +171,11 @@ Get-ChildItem $langDir -Filter *.json | Where-Object { $_.Name -ne 'en_us.json' 
         $failures.Add("$localeName does not preserve the en_us.json key order.")
     }
 
-    if ($samePercent -ge $MaxSameAsEnglishPercent) {
+    if ($enforceTranslationCoverage -and $samePercent -ge $MaxSameAsEnglishPercent) {
         $failures.Add("$localeName appears to still be English fallback content ($samePercent% identical to en_us.json, threshold $MaxSameAsEnglishPercent%).")
     }
 
-    if ($FailOnSuspiciousFallbacks -and $suspiciousPercent -ge $MaxSuspiciousPercent) {
+    if ($enforceTranslationCoverage -and $FailOnSuspiciousFallbacks -and $suspiciousPercent -ge $MaxSuspiciousPercent) {
         $failures.Add("$localeName appears to contain too much English fallback content ($suspiciousPercent% suspiciously unchanged strings, threshold $MaxSuspiciousPercent%).")
     }
 }
@@ -163,6 +190,10 @@ $results |
     Format-Table -AutoSize |
     Out-String |
     Write-Host
+
+if ($translationCoverageExemptLocales.Count -gt 0) {
+    Write-Host ('Translation coverage exemptions: ' + (($translationCoverageExemptLocales | Sort-Object) -join ', '))
+}
 
 if ($failures.Count -gt 0) {
     $message = ($failures -join [Environment]::NewLine)

@@ -146,7 +146,8 @@ GitHub Actions validates localization before building:
 
 - `lang/*.json` files must stay in sync with `lang/en_us.json` for key set and ordering.
 - CI fails if locale sync would rewrite files.
-- CI also fails if any non-English locale still looks like obvious English fallback content.
+- CI also fails if any translation-target locale still looks like obvious English fallback content.
+- English-variant and novelty locales are exempt from the translation-coverage gate, but they must still remain structurally synced with `lang/en_us.json`.
 
 Local Gradle builds / `runClient` are intentionally not part of the workflow on this machine.
 
