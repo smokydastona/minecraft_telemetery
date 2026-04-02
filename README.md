@@ -44,9 +44,9 @@ In-game:
 - Minecraft main menu → **Mods** → **Bass Shaker Telemetry** → **Config**
 - Game sounds device selection (Minecraft audio output), haptics output device selection (JavaSound), master volume, then page buttons: **Damage / Movement / Misc / Advanced**.
 - **Damage** includes incoming damage controls plus outgoing hit-confirm (server-relayed `combat.hit`) and melee hit tuning.
-- **Misc** is paged (Prev/Next) and groups non-movement toggles/volumes (Sound haptics, Gameplay haptics, Biome chime, Accessibility HUD) plus a Tools page (latency test pulse, debug overlay toggle, demo runner).
-- **Movement settings** groups movement-related tuning in one place: Movement texture master toggle, Flight/Air/Swim/Water sliders, plus Footsteps and Mounted footsteps controls (set Footsteps volume to 0 to disable).
-- Advanced settings (paged with Prev/Next) includes an output buffer size selector (JavaSound backend) to tune **latency vs stability**, calibration tones/sweep, and a haptic instrument graph editor (Phase 2).
+- **Misc** is paged (Prev/Next) across two pages: one for Sound haptics / Gameplay haptics / Biome chime, and one that combines Accessibility HUD with the utility tools (latency test pulse, debug overlay toggle, demo runner).
+- **Movement settings** groups movement-related tuning in one place: Movement texture master toggle, Flight/Air/Swim/Water sliders, plus Footsteps and Mounted footsteps volume controls (set either volume to `0` to disable).
+- Advanced settings (paged with Prev/Next) now keeps only advanced-only controls: movement texture / accel / mining effect volumes that are not exposed elsewhere, JavaSound buffer tuning, calibration tones/sweep, and a haptic instrument graph editor (Phase 2).
 - Advanced settings also includes a **Spatial** section (Phase 3) for Sound Scape: spatial panning toggle, distance attenuation, a guided per-channel calibration wizard (gain + simple EQ, burst test, RMS auto-trim, comfort limit capture), and a real-time spatial debugger (meters/waveform/spectrogram/timeline/latency).
 - Each effect slider includes a **Test** button.
 - **Sound Scape (7.1)**: category routing + group management for mapping haptics across multiple output channels. If no multichannel device is available, the UI restricts routing choices to stereo.

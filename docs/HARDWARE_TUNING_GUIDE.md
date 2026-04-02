@@ -29,7 +29,7 @@ Where to apply it:
 
 This mod uses JavaSound. Different devices/drivers accept different buffer sizes.
 
-- Use Advanced settings → Audio → **Latency test** to compare “feel vs. visuals”.
+- Use Misc → Accessibility + Tools → **Latency test** to compare “feel vs. visuals”.
 - Use Advanced settings → Audio → **JavaSound buffer** to trade off stability vs. latency.
   - Smaller buffer: lower latency, higher risk of underruns/clicks
   - Larger buffer: more stable, more latency

@@ -74,15 +74,15 @@ External output:
 - **Misc** groups non-movement toggles and volumes:
 	- (Paged with Prev/Next)
 	- Haptics: Sound haptics, Gameplay haptics, Biome chime
-	- Accessibility: Accessibility HUD
-	- Tools: latency pulse test, debug overlay toggle, demo runner
+	- Accessibility + Tools: Accessibility HUD, latency pulse test, debug overlay toggle, demo runner
 
 - **Movement settings** provides movement-related toggles/volumes in one place:
 	- Movement texture master toggle
 	- Flight / Air (directional) / Swim / Water (directional) sliders
 	- Footsteps volume slider (set to 0 to disable)
-	- Mounted footsteps toggle + slider
-- Other per-effect volume sliders are available under **Advanced settings → Effect volumes** (3 pages).
+	- Mounted footsteps volume slider (set to 0 to disable)
+- **Advanced settings** only keeps controls that are not already exposed on Damage / Movement / Misc.
+- Other per-effect volume sliders that remain under **Advanced settings → Effect volumes** are movement texture, accel bump, and mining swing.
 - Each effect slider has a **Test** button directly underneath to preview that effect without needing to trigger it in gameplay.
 - Controls include tooltips to explain what they do (except for self-explanatory navigation buttons like Prev/Next/Done/Cancel).
 - Config UI pages consistently use the Neon theme (including device picker, Sound Scape editors, Spatial screens, and the instrument editor).

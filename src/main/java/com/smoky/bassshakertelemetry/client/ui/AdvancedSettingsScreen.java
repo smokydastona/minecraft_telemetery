@@ -26,13 +26,7 @@ public final class AdvancedSettingsScreen extends Screen {
     private int lastLeftX;
 
     private GainSlider roadGainSlider;
-    private GainSlider damageGainSlider;
-    private GainSlider biomeGainSlider;
     private GainSlider accelGainSlider;
-    private GainSlider soundGainSlider;
-    private GainSlider gameplayGainSlider;
-    private GainSlider footstepGainSlider;
-    private GainSlider mountedGainSlider;
     private GainSlider miningSwingGainSlider;
 
     private IntSlider damageMsSlider;
@@ -87,7 +81,7 @@ public final class AdvancedSettingsScreen extends Screen {
 
         ensureWidgets(contentWidth - 12, rowH);
 
-        pageCount = 7; // Volumes 1/3, Volumes 2/3, Volumes 3/3, Timing, Audio, Tone shaping, Tools
+        pageCount = 5; // Unique volumes, Timing, Audio, Tone shaping, Tools
         if (pageIndex < 0) pageIndex = 0;
         if (pageIndex >= pageCount) pageIndex = pageCount - 1;
 
@@ -97,23 +91,11 @@ public final class AdvancedSettingsScreen extends Screen {
     private void ensureWidgets(int w, int rowH) {
         // Sliders
         roadGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.road_gain", BstConfig.get().roadTextureGain, 0.0, 0.50);
-        damageGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.damage_gain", BstConfig.get().damageBurstGain, 0.0, 1.00);
-        biomeGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.biome_gain", BstConfig.get().biomeChimeGain, 0.0, 1.00);
         accelGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.accel_gain", BstConfig.get().accelBumpGain, 0.0, 1.00);
-        soundGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.sound_gain", BstConfig.get().soundHapticsGain, 0.0, 2.00);
-        gameplayGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.gameplay_gain", BstConfig.get().gameplayHapticsGain, 0.0, 2.00);
-        footstepGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.footstep_gain", BstConfig.get().footstepHapticsGain, 0.0, 1.00);
-        mountedGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.mounted_gain", BstConfig.get().mountedHapticsGain, 0.0, 1.00);
         miningSwingGainSlider = new GainSlider(w, rowH, "bassshakertelemetry.config.mining_swing_gain", BstConfig.get().miningSwingHapticsGain, 0.0, 1.00);
 
         UiTooltip.withLabelKey(roadGainSlider, "bassshakertelemetry.config.road_gain");
-        UiTooltip.withLabelKey(damageGainSlider, "bassshakertelemetry.config.damage_gain");
-        UiTooltip.withLabelKey(biomeGainSlider, "bassshakertelemetry.config.biome_gain");
         UiTooltip.withLabelKey(accelGainSlider, "bassshakertelemetry.config.accel_gain");
-        UiTooltip.withLabelKey(soundGainSlider, "bassshakertelemetry.config.sound_gain");
-        UiTooltip.withLabelKey(gameplayGainSlider, "bassshakertelemetry.config.gameplay_gain");
-        UiTooltip.withLabelKey(footstepGainSlider, "bassshakertelemetry.config.footstep_gain");
-        UiTooltip.withLabelKey(mountedGainSlider, "bassshakertelemetry.config.mounted_gain");
         UiTooltip.withLabelKey(miningSwingGainSlider, "bassshakertelemetry.config.mining_swing_gain");
 
         damageMsSlider = new IntSlider(w, rowH, "bassshakertelemetry.config.damage_ms", BstConfig.get().damageBurstMs, 20, 250, "ms");
@@ -224,24 +206,12 @@ public final class AdvancedSettingsScreen extends Screen {
 
         switch (pageIndex) {
             case 0 -> {
-                y = addHeader(leftX, y, w, font, Objects.requireNonNull(Component.literal(tr("bassshakertelemetry.config.effect_volumes").getString() + " (1/3)")));
+                y = addHeader(leftX, y, w, font, tr("bassshakertelemetry.config.effect_volumes"));
                 y = addSliderWithTest(leftX, y, roadGainSlider, AudioOutputEngine.get()::testRoadTexture);
-                y = addSliderWithTest(leftX, y, damageGainSlider, AudioOutputEngine.get()::testDamageBurst);
-                y = addSliderWithTest(leftX, y, biomeGainSlider, AudioOutputEngine.get()::testBiomeChime);
-            }
-            case 1 -> {
-                y = addHeader(leftX, y, w, font, Objects.requireNonNull(Component.literal(tr("bassshakertelemetry.config.effect_volumes").getString() + " (2/3)")));
                 y = addSliderWithTest(leftX, y, accelGainSlider, AudioOutputEngine.get()::testAccelBump);
-                y = addSliderWithTest(leftX, y, soundGainSlider, AudioOutputEngine.get()::testSoundHaptics);
-                y = addSliderWithTest(leftX, y, gameplayGainSlider, AudioOutputEngine.get()::testGameplayHaptics);
-            }
-            case 2 -> {
-                y = addHeader(leftX, y, w, font, Objects.requireNonNull(Component.literal(tr("bassshakertelemetry.config.effect_volumes").getString() + " (3/3)")));
-                y = addSliderWithTest(leftX, y, footstepGainSlider, AudioOutputEngine.get()::testFootsteps);
-                y = addSliderWithTest(leftX, y, mountedGainSlider, AudioOutputEngine.get()::testMountedHooves);
                 y = addSliderWithTest(leftX, y, miningSwingGainSlider, AudioOutputEngine.get()::testMiningSwing);
             }
-            case 3 -> {
+            case 1 -> {
                 y = addHeader(leftX, y, w, font, tr("bassshakertelemetry.config.timing"));
                 y = addSliderOnly(leftX, y, damageMsSlider);
                 y = addSliderOnly(leftX, y, accelMsSlider);
@@ -249,11 +219,11 @@ public final class AdvancedSettingsScreen extends Screen {
                 y = addSliderOnly(leftX, y, gameplayCooldownMsSlider);
                 y = addSliderOnly(leftX, y, miningPeriodMsSlider);
             }
-            case 4 -> {
+            case 2 -> {
                 y = addHeader(leftX, y, w, font, tr("bassshakertelemetry.config.audio"));
                 y = addButtonOnly(leftX, y, bufferButton);
             }
-            case 5 -> {
+            case 3 -> {
                 y = addHeader(leftX, y, w, font, tr("bassshakertelemetry.config.tone_shaping"));
                 y = addButtonOnly(leftX, y, outputEqButton);
                 y = addSliderOnly(leftX, y, outputEqFreqSlider);
@@ -368,13 +338,7 @@ public final class AdvancedSettingsScreen extends Screen {
         BstConfig.Data data = BstConfig.get();
 
         if (roadGainSlider != null) data.roadTextureGain = roadGainSlider.getRealValue();
-        if (damageGainSlider != null) data.damageBurstGain = damageGainSlider.getRealValue();
-        if (biomeGainSlider != null) data.biomeChimeGain = biomeGainSlider.getRealValue();
         if (accelGainSlider != null) data.accelBumpGain = accelGainSlider.getRealValue();
-        if (soundGainSlider != null) data.soundHapticsGain = soundGainSlider.getRealValue();
-        if (gameplayGainSlider != null) data.gameplayHapticsGain = gameplayGainSlider.getRealValue();
-        if (footstepGainSlider != null) data.footstepHapticsGain = footstepGainSlider.getRealValue();
-        if (mountedGainSlider != null) data.mountedHapticsGain = mountedGainSlider.getRealValue();
         if (miningSwingGainSlider != null) data.miningSwingHapticsGain = miningSwingGainSlider.getRealValue();
 
         if (damageMsSlider != null) data.damageBurstMs = damageMsSlider.getIntValue();

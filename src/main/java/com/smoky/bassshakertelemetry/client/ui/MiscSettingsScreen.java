@@ -93,7 +93,7 @@ public final class MiscSettingsScreen extends Screen {
         demoButton = null;
         debugOverlayButton = null;
 
-        pageCount = 3; // Haptics, Accessibility, Tools
+        pageCount = 2; // Haptics, Accessibility + Tools
         if (pageIndex < 0) pageIndex = 0;
         if (pageIndex >= pageCount) pageIndex = pageCount - 1;
 
@@ -211,54 +211,55 @@ public final class MiscSettingsScreen extends Screen {
                     v -> biomeChimeGain = clamp01(v)
                 ), "bassshakertelemetry.config.biome_gain");
             this.addRenderableWidget(biomeChimeGainSlider);
-        } else if (pageIndex == 1) {
-            // Accessibility
-                this.addRenderableWidget(UiTooltip.withLabelKey(new NeonCycleButton<>(
-                    leftX,
-                    y,
-                    contentWidth,
-                    rowH,
-                    tr("bassshakertelemetry.config.accessibility_hud"),
-                    List.of(Boolean.TRUE, Boolean.FALSE),
-                    accessibilityHudEnabled,
-                    v -> v ? tr("options.on") : tr("options.off"),
-                    v -> accessibilityHudEnabled = v
-                ), "bassshakertelemetry.config.accessibility_hud"));
         } else {
-            // Tools
-                latencyTestButton = UiTooltip.withLabelKey(new NeonButton(
-                    leftX,
-                    y,
-                    contentWidth,
-                    rowH,
-                    Objects.requireNonNull(latencyButtonLabel(false)),
-                    this::toggleLatencyTest
-                ), "bassshakertelemetry.config.latency_test_off");
+            // Accessibility + Tools
+            this.addRenderableWidget(UiTooltip.withLabelKey(new NeonCycleButton<>(
+                leftX,
+                y,
+                contentWidth,
+                rowH,
+                tr("bassshakertelemetry.config.accessibility_hud"),
+                List.of(Boolean.TRUE, Boolean.FALSE),
+                accessibilityHudEnabled,
+                v -> v ? tr("options.on") : tr("options.off"),
+                v -> accessibilityHudEnabled = v
+            ), "bassshakertelemetry.config.accessibility_hud"));
+
+            y += rowH + (rowGap * 2);
+
+            latencyTestButton = UiTooltip.withLabelKey(new NeonButton(
+                leftX,
+                y,
+                contentWidth,
+                rowH,
+                Objects.requireNonNull(latencyButtonLabel(false)),
+                this::toggleLatencyTest
+            ), "bassshakertelemetry.config.latency_test_off");
             this.addRenderableWidget(latencyTestButton);
 
             y += rowH + rowGap;
 
-                debugOverlayButton = UiTooltip.withLabelKey(new NeonToggleButton(
-                    leftX,
-                    y,
-                    contentWidth,
-                    rowH,
-                    Objects.requireNonNull(debugOverlayLabel()),
-                    () -> debugOverlayEnabled,
-                    this::toggleDebugOverlay
-                ), "bassshakertelemetry.config.debug_overlay_off");
+            debugOverlayButton = UiTooltip.withLabelKey(new NeonToggleButton(
+                leftX,
+                y,
+                contentWidth,
+                rowH,
+                Objects.requireNonNull(debugOverlayLabel()),
+                () -> debugOverlayEnabled,
+                this::toggleDebugOverlay
+            ), "bassshakertelemetry.config.debug_overlay_off");
             this.addRenderableWidget(debugOverlayButton);
 
             y += rowH + rowGap;
 
-                demoButton = UiTooltip.withLabelKey(new NeonButton(
-                    leftX,
-                    y,
-                    contentWidth,
-                    rowH,
-                    Objects.requireNonNull(demoLabel()),
-                    this::toggleDemo
-                ), "bassshakertelemetry.config.demo_run");
+            demoButton = UiTooltip.withLabelKey(new NeonButton(
+                leftX,
+                y,
+                contentWidth,
+                rowH,
+                Objects.requireNonNull(demoLabel()),
+                this::toggleDemo
+            ), "bassshakertelemetry.config.demo_run");
             this.addRenderableWidget(demoButton);
         }
 

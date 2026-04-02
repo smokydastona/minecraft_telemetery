@@ -27,7 +27,6 @@ public final class MovementSettingsScreen extends Screen {
 
     private double footstepsGain;
 
-    private boolean mountedEnabled;
     private double mountedGain;
 
     private NeonRangeSlider flightSlider;
@@ -51,8 +50,8 @@ public final class MovementSettingsScreen extends Screen {
         // Footsteps are enabled/disabled via the gain slider (0 disables) to reduce UI clutter.
         this.footstepsGain = cfg.footstepHapticsEnabled ? clamp01(cfg.footstepHapticsGain) : 0.0;
 
-        this.mountedEnabled = cfg.mountedHapticsEnabled;
-        this.mountedGain = clamp01(cfg.mountedHapticsGain);
+        // Mounted footsteps follow the same pattern as footsteps: volume 0 disables them.
+        this.mountedGain = cfg.mountedHapticsEnabled ? clamp01(cfg.mountedHapticsGain) : 0.0;
     }
 
     @Override
@@ -175,20 +174,6 @@ public final class MovementSettingsScreen extends Screen {
 
         y += rowH + (rowGap * 2);
 
-        this.addRenderableWidget(UiTooltip.withLabelKey(new NeonCycleButton<>(
-            leftX,
-            y,
-            contentWidth,
-            rowH,
-            Component.translatable("bassshakertelemetry.config.mounted_enabled"),
-            List.of(Boolean.TRUE, Boolean.FALSE),
-            mountedEnabled,
-            v -> v ? Component.translatable("options.on") : Component.translatable("options.off"),
-            v -> mountedEnabled = v
-        ), "bassshakertelemetry.config.mounted_enabled"));
-
-        y += rowH + rowGap;
-
         mountedGainSlider = UiTooltip.withLabelKey(new NeonRangeSlider(
             leftX,
             y,
@@ -235,8 +220,8 @@ public final class MovementSettingsScreen extends Screen {
         data.footstepHapticsGain = clamp01(footstepsGain);
         data.footstepHapticsEnabled = data.footstepHapticsGain > 0.0;
 
-        data.mountedHapticsEnabled = mountedEnabled;
         data.mountedHapticsGain = clamp01(mountedGain);
+        data.mountedHapticsEnabled = data.mountedHapticsGain > 0.0;
 
         BstConfig.set(data);
         AudioOutputEngine.get().startOrRestart();
@@ -274,8 +259,6 @@ public final class MovementSettingsScreen extends Screen {
         if (airSlider != null) airSlider.active = active;
         if (swimSlider != null) swimSlider.active = active;
         if (waterSlider != null) waterSlider.active = active;
-
-        if (mountedGainSlider != null) mountedGainSlider.active = mountedEnabled;
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }

@@ -97,62 +97,8 @@
             "layout": "horizontal",
             "spacing": 6,
             "children": [
-              { "type": "slider", "id": "damageGain", "textKey": "bassshakertelemetry.config.damage_gain", "bind": "damageBurstGain", "min": 0.0, "max": 1.0, "step": 0.01, "format": "percentRange" },
-              { "type": "button", "id": "damageTest", "textKey": "bassshakertelemetry.config.test", "action": "testDamageBurst", "width": 64 }
-            ]
-          },
-          {
-            "type": "panel",
-            "layout": "horizontal",
-            "spacing": 6,
-            "children": [
-              { "type": "slider", "id": "biomeGain", "textKey": "bassshakertelemetry.config.biome_gain", "bind": "biomeChimeGain", "min": 0.0, "max": 1.0, "step": 0.01, "format": "percentRange" },
-              { "type": "button", "id": "biomeTest", "textKey": "bassshakertelemetry.config.test", "action": "testBiomeChime", "width": 64 }
-            ]
-          },
-          {
-            "type": "panel",
-            "layout": "horizontal",
-            "spacing": 6,
-            "children": [
               { "type": "slider", "id": "accelGain", "textKey": "bassshakertelemetry.config.accel_gain", "bind": "accelBumpGain", "min": 0.0, "max": 1.0, "step": 0.01, "format": "percentRange" },
               { "type": "button", "id": "accelTest", "textKey": "bassshakertelemetry.config.test", "action": "testAccelBump", "width": 64 }
-            ]
-          },
-          {
-            "type": "panel",
-            "layout": "horizontal",
-            "spacing": 6,
-            "children": [
-              { "type": "slider", "id": "soundGain", "textKey": "bassshakertelemetry.config.sound_gain", "bind": "soundHapticsGain", "min": 0.0, "max": 2.0, "step": 0.01, "format": "percentRange" },
-              { "type": "button", "id": "soundTest", "textKey": "bassshakertelemetry.config.test", "action": "testSoundHaptics", "width": 64 }
-            ]
-          },
-          {
-            "type": "panel",
-            "layout": "horizontal",
-            "spacing": 6,
-            "children": [
-              { "type": "slider", "id": "gameplayGain", "textKey": "bassshakertelemetry.config.gameplay_gain", "bind": "gameplayHapticsGain", "min": 0.0, "max": 2.0, "step": 0.01, "format": "percentRange" },
-              { "type": "button", "id": "gameplayTest", "textKey": "bassshakertelemetry.config.test", "action": "testGameplayHaptics", "width": 64 }
-            ]
-          },
-          {
-            "type": "panel",
-            "layout": "horizontal",
-            "spacing": 6,
-            "children": [
-              { "type": "slider", "id": "footstepGain", "textKey": "bassshakertelemetry.config.footstep_gain", "bind": "footstepHapticsGain", "min": 0.0, "max": 1.0, "step": 0.01, "format": "percentRange" },
-              { "type": "button", "id": "footstepTest", "textKey": "bassshakertelemetry.config.test", "action": "testFootsteps", "width": 64 }
-            ]
-          },
-          {
-            "type": "panel",
-            "layout": "horizontal",
-            "spacing": 6,
-            "children": [
-              { "type": "slider", "id": "mountedGain", "textKey": "bassshakertelemetry.config.mounted_gain", "bind": "mountedHapticsGain", "min": 0.0, "max": 1.0, "step": 0.01, "format": "percentRange" },
-              { "type": "button", "id": "mountedTest", "textKey": "bassshakertelemetry.config.test", "action": "testMountedHooves", "width": 64 }
             ]
           },
           {
@@ -174,9 +120,6 @@
 
           { "type": "label", "textKey": "bassshakertelemetry.config.audio" },
           { "type": "button", "id": "buffer", "textKey": "bassshakertelemetry.config.output_buffer", "action": "cycleBufferChoice" },
-          { "type": "button", "id": "latency", "textKey": "bassshakertelemetry.config.latency_test_off", "action": "toggleLatencyTest" },
-          { "type": "toggle", "id": "debugOverlay", "textKey": "bassshakertelemetry.config.debug_overlay", "bind": "debugOverlayEnabled" },
-          { "type": "button", "id": "demo", "textKey": "bassshakertelemetry.config.demo_run", "action": "toggleDemo" },
 
           { "type": "label", "textKey": "bassshakertelemetry.config.tone_shaping" },
           { "type": "toggle", "id": "outputEq", "textKey": "bassshakertelemetry.config.output_eq", "bind": "outputEqEnabled" },

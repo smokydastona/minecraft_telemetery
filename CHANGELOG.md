@@ -52,6 +52,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 ### Changed
 - Locale validation now exempts English-variant and novelty locale files from the translation-coverage gate while still enforcing structural sync for every `lang/*.json` file.
 - `tools/sync_lang_files.ps1` now rewrites locale files when key order or extra-key drift is detected, not only when keys are missing.
+- Config UI cleanup: mounted footsteps now use a volume-only control in Movement, Misc now combines Accessibility + Tools onto a single second page, and Advanced no longer duplicates controls already present on Damage / Movement / Misc.
 - Lower-latency defaults: JavaSound requested buffer now defaults to 20ms (was auto/0), and the audio engine renders in 10ms chunks for faster one-shot response.
 - Added a small config migration (`configVersion`) so existing configs that still have `javaSoundBufferMs: 0` pick up the new 20ms default once.
 - Gameplay attack/use click haptics now trigger from input events (mouse/keyboard, respects keybinds) instead of tick edge detection.
