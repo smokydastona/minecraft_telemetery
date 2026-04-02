@@ -2,7 +2,7 @@ param(
     [string]$MinecraftVersion = "1.20.1",
     [int]$MaxSuspiciousPercent = 35,
     [int]$MaxSameAsEnglishPercent = 15,
-    [switch]$FailOnSuspiciousFallbacks = $true
+    [bool]$FailOnSuspiciousFallbacks = $true
 )
 
 $ErrorActionPreference = 'Stop'
@@ -16,7 +16,7 @@ function Read-JsonObject([string]$path) {
     return ConvertFrom-Json -InputObject $raw
 }
 
-function To-Hashtable($psObj) {
+function ConvertTo-Hashtable($psObj) {
     $h = @{}
     if ($null -eq $psObj) {
         return $h
@@ -111,7 +111,7 @@ if (-not (Test-Path $enPath)) {
 
 $enObj = Read-JsonObject -path $enPath
 $enOrder = @($enObj.PSObject.Properties.Name)
-$enMap = To-Hashtable $enObj
+$enMap = ConvertTo-Hashtable $enObj
 $translationCoverageExemptLocales = Get-TranslationCoverageExemptLocales
 
 $failures = New-Object System.Collections.Generic.List[string]
@@ -122,7 +122,7 @@ Get-ChildItem $langDir -Filter *.json | Where-Object { $_.Name -ne 'en_us.json' 
     $localeName = $_.Name
     $localeObj = Read-JsonObject -path $localePath
     $localeOrder = @($localeObj.PSObject.Properties.Name)
-    $localeMap = To-Hashtable $localeObj
+    $localeMap = ConvertTo-Hashtable $localeObj
     $enforceTranslationCoverage = -not ($translationCoverageExemptLocales -contains $localeName)
 
     $missingKeys = @($enOrder | Where-Object { -not $localeMap.ContainsKey($_) })
