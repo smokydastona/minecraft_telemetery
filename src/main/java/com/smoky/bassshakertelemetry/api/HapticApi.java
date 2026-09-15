@@ -3,15 +3,13 @@ package com.smoky.bassshakertelemetry.api;
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import com.smoky.bassshakertelemetry.telemetryout.HapticEventContext;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-
 import java.util.Map;
 
 /**
  * Public integration API for other mods.
  *
- * <p>Safe to call on dedicated servers: all audio work is gated behind {@link Dist#CLIENT}.
+ * <p>Calls are ignored when the shared configuration is disabled. Platform entrypoints decide
+ * whether the client-side API is loaded.
  */
 public final class HapticApi {
     private HapticApi() {
@@ -25,10 +23,9 @@ public final class HapticApi {
             return;
         }
 
-        DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> () -> {
-            if (!BstConfig.get().enabled()) {
-                return;
-            }
+        if (!BstConfig.get().enabled()) {
+            return;
+        }
 
             double intensity01 = clamp01(event.intensity01());
             if (intensity01 <= 0.0) {
@@ -92,7 +89,6 @@ public final class HapticApi {
                     );
                 }
             });
-        });
     }
 
     private static String toUnifiedId(String key) {

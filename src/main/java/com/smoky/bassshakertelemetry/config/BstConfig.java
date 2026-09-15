@@ -2,9 +2,6 @@ package com.smoky.bassshakertelemetry.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.smoky.bassshakertelemetry.BassShakerTelemetryMod;
-import net.minecraftforge.fml.loading.FMLPaths;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -17,7 +14,7 @@ import java.util.Map;
 
 public final class BstConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final String FILE_NAME = BassShakerTelemetryMod.MODID + ".json";
+    private static final String FILE_NAME = "bassshakertelemetry.json";
     private static volatile Data INSTANCE = new Data();
 
     private BstConfig() {
@@ -33,7 +30,7 @@ public final class BstConfig {
     }
 
     public static Path path() {
-        return FMLPaths.CONFIGDIR.get().resolve(FILE_NAME);
+        return Path.of(System.getProperty("bst.config.dir", "config")).resolve(FILE_NAME);
     }
 
     public static synchronized void load() {

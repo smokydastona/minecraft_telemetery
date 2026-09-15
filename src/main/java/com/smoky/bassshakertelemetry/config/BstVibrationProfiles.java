@@ -4,8 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import net.minecraftforge.fml.loading.FMLPaths;
-
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,7 +30,7 @@ public final class BstVibrationProfiles {
     }
 
     public static Path path() {
-        return FMLPaths.CONFIGDIR.get().resolve(FILE_NAME);
+        return Path.of(System.getProperty("bst.config.dir", "config")).resolve(FILE_NAME);
     }
 
     public static synchronized void load() {

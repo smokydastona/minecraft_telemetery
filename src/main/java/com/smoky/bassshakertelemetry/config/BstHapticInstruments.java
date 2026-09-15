@@ -6,8 +6,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.smoky.bassshakertelemetry.audio.dsp.DspGraph;
-import net.minecraftforge.fml.loading.FMLPaths;
-
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,7 +34,7 @@ public final class BstHapticInstruments {
     }
 
     public static Path path() {
-        return FMLPaths.CONFIGDIR.get().resolve(FILE_NAME);
+        return Path.of(System.getProperty("bst.config.dir", "config")).resolve(FILE_NAME);
     }
 
     public static synchronized void load() {
