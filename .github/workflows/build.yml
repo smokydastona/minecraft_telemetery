@@ -99,12 +99,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
-          cache: gradle
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
         with:
           cache-disabled: true
+
+      - name: Use clean NeoForge Gradle home
+        run: echo "GRADLE_USER_HOME=${{ runner.temp }}/neoforge-gradle-home" >> "$GITHUB_ENV"
 
       - name: Make NeoForge wrapper executable
         run: chmod +x neoforge/gradlew

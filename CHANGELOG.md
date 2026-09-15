@@ -8,7 +8,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ### Added
 - Disabled the NeoForge Gradle action cache and enabled dependency refresh in CI to prevent incomplete NeoForm patch bundles from being reused.
-- Aligned NeoForge 26.2 with the official MDK baseline: NeoForge `26.2.0.87`, Minecraft range `[26.2]`, and Gradle `9.2.1`.
+- Updated NeoForge to the current published `26.2.0.88` release and isolated its CI Gradle home so incomplete NeoForm patch bundles cannot be reused.
 - Migrated Fabric back to Minecraft `26.2` using the official unobfuscated toolchain from Fabric's 26.2 example: no mappings declaration, plain `implementation` dependencies, Fabric API `0.160.0+26.2`, Loom `1.17-SNAPSHOT`, Gradle `9.5.1`, and Java 25.
 - Updated Fabric 26.2 client API usage for the unobfuscated release: current key-mapping/lifecycle packages, category-based key registration, and a direct haptic test binding replace removed GUI APIs.
 - Aligned the Fabric build with the official 26.2 example's `net.fabricmc.fabric-loom` plugin and plain `implementation` dependencies.
