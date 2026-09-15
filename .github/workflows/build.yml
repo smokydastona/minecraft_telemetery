@@ -120,13 +120,11 @@ jobs:
         run: |
           echo 'NeoForge build files:'
           find neoforge/build -type f 2>/dev/null | sort | head -200 || true
-          echo 'Resolved archives containing patch-related entries:'
+          echo 'Resolved archives and patch-bundle entries:'
           find neoforge/build "$GRADLE_USER_HOME" -type f \( -name '*.jar' -o -name '*.zip' \) 2>/dev/null | while read -r archive; do
             entries=$(unzip -l "$archive" 2>/dev/null | grep -E 'patches\.lzma|patch(es)?/' || true)
-            if [ -n "$entries" ]; then
-              echo "--- $archive"
-              echo "$entries"
-            fi
+            echo "--- $archive"
+            if [ -n "$entries" ]; then echo "$entries"; else echo 'NO_PATCH_ENTRY_FOUND'; fi
           done
 
       - name: Upload NeoForge build artifacts

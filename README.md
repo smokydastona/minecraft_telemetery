@@ -16,7 +16,7 @@ Forge has no published Minecraft 26.2 artifact. A Minecraft 26.2 Forge build can
 
 ## NeoForge CI status
 
-The NeoForge 26.2 CI lane is currently `BLOCKED-UPSTREAM`. The build reaches `:neoFormSetup`, then NeoForge's `ProcessMinecraftJar`/`PatchBundleReader` fails because the resolved patch bundle is missing `patches.lzma`. This reproduces with a clean temporary Gradle home and refreshed dependencies, so no application source failure has been demonstrated. The workflow records resolved patch inputs after failure for upstream artifact diagnosis.
+The NeoForge 26.2 CI lane is currently `BLOCKED — NeoForm artifact/input investigation required`. The build reaches `:neoFormSetup`, then NeoForge's `ProcessMinecraftJar`/`PatchBundleReader` fails because the resolved patch bundle is missing `patches.lzma`. This reproduces with a clean temporary Gradle home and refreshed dependencies, so no application source failure has been demonstrated. The workflow records the actual resolved archives and whether they contain `patches.lzma`; it does not claim the published artifact itself is corrupt until that evidence is captured.
 
 The current design goal is **"encoded mono surround"** for stereo output: direction is encoded into *one* vibration waveform using small frequency bias + micro-delay, while a **priority + ducking** mixer ensures one dominant vibration stays readable.
 
