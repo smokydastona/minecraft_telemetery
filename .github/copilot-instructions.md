@@ -19,6 +19,13 @@
 - Mod metadata: `src/main/resources/META-INF/mods.toml` (expanded from Gradle properties)
 - User config file on disk: `config/bassshakertelemetry.json` (written by `BstConfig`)
 
+## Evidence-first engineering
+- Verify repository structure, call sites, schemas, build configuration, and CI behavior before making claims about them.
+- Do not invent APIs, configuration keys, hardware capabilities, dependencies, or runtime behavior that has not been verified in the repository or environment.
+- When an assumption is unavoidable, state it plainly and choose the most defensible behavior supported by the current codebase.
+- Keep external boundaries explicit. Complete in-repository behavior, and document anything that depends on Windows audio drivers, external routers, servers, or physical hardware.
+- Prefer the existing architecture and local patterns over generic rewrites or speculative abstractions.
+
 ## Core architecture (follow this flow)
 - Entry point: `BassShakerTelemetryMod`
   - Loads config early (`BstConfig.load()`).
@@ -39,6 +46,14 @@
 - Anything that imports `net.minecraft.client.*` must remain client-only.
 - Keep client-only wiring under `client/` and gated by `DistExecutor`.
 - Do not reference client classes from common/server execution paths.
+
+## Implementation standards
+- Implement requested behavior completely; do not leave placeholders, fake integrations, stubs, or “coming soon” paths.
+- Keep changes minimal, readable, and focused. Avoid unrelated refactors and unnecessary dependencies.
+- Preserve public APIs and backward compatibility where practical. If a public interface or external contract changes, update every affected producer, consumer, test, and document in the same change set.
+- Keep gameplay logic, client wiring, audio rendering, configuration, networking, and hardware/infrastructure concerns separated according to the existing package boundaries.
+- Validate configuration, serialization, localization, and schema changes across all consumers before considering the change complete.
+- Keep secrets, credentials, machine-specific paths, and environment-specific values out of source control.
 
 ## Dev workflows & safety features
 - Every change should follow this workflow.
@@ -92,4 +107,33 @@ Validation must use editor diagnostics (Problems / `get_errors`) and then a GitH
 - After *any* change to `en_us.json`, run `./tools/sync_lang_files.ps1` so missing keys/files are automatically filled.
 - When adding real translations to non-English files, keep the same keys; only change values.
 - GitHub Actions now enforces this: CI runs `./tools/sync_lang_files.ps1` and fails if any locale file would be rewritten, and it also fails if any translation-target locale still looks like obvious English fallback content. English-variant and novelty locales are exempt from the translation-coverage gate, but they must still stay structurally in sync with `en_us.json`.
+
+## Impact-radius checklist
+Before committing, proactively review the connected files that must remain consistent:
+
+- **Build and configuration:** `build.gradle`, `gradle.properties`, `settings.gradle`, `mods.toml`, config defaults, and CI workflow assumptions.
+- **API and networking:** all call sites, packet registration and handlers, server/client boundaries, and optional integration behavior.
+- **Audio and telemetry:** event producers, profile keys, mixer/bus routing, output formats, device handling, and debug/overlay reporting.
+- **Resources and localization:** JSON schemas, assets, UI bundle files, `en_us.json`, and every synchronized locale file.
+- **UI and UX:** screen navigation, config persistence, test controls, tooltips, and fallback behavior when optional assets or devices are unavailable.
+- **Documentation and tests:** `README.md`, `CHANGELOG.md`, `docs/MOD_FEATURES.md`, hardware guidance, and the smallest meaningful validation for the changed behavior.
+
+## Repository hygiene and safety
+- Do not commit `build/`, `.gradle/`, local tooling caches, logs, temporary files, or generated output unless the repository explicitly expects it.
+- Stage only intended source, resource, configuration, and documentation changes.
+- Do not create tags or releases automatically.
+- Do not force-push or rewrite history.
+- Keep commits small and focused when commits are requested.
+
+## Validation shortcuts
+- Workspace diagnostics: use the VS Code Problems/diagnostics view, including after each meaningful fix.
+- Localization sync: `./tools/sync_lang_files.ps1` (run from the repository root after changing `en_us.json`).
+- Localization validation: `./tools/validate_lang_files.ps1`.
+- CI build and artifact validation: push to GitHub Actions when a build is needed; CI is the authoritative build path for this machine.
+- Do not use `./gradlew build`, `./gradlew runClient`, or other local Gradle/Forge runtime commands on this machine.
+
+## Documentation and completion bar
+- Keep `README.md`, `CHANGELOG.md`, `docs/MOD_FEATURES.md`, and relevant hardware/setup/troubleshooting docs aligned with the final behavior.
+- Before stopping, confirm the requested behavior is implemented, affected diagnostics are clean, connected contracts and resources are synchronized, relevant documentation is current, and validation has actual evidence behind it.
+- In the final summary, state what was wrong or missing, what changed, why it is correct, what checks were run, and any remaining dependency on external hardware, infrastructure, or unverified assumptions.
 
