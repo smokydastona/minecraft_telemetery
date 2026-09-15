@@ -14,6 +14,10 @@ The existing Forge project remains the feature-complete Minecraft 1.20.1 edition
 
 Forge has no published Minecraft 26.2 artifact. A Minecraft 26.2 Forge build cannot be produced from the official Forge Maven; NeoForge `26.2.0.87` is provided as the separate 26.2 Forge-compatible loader target.
 
+## NeoForge CI status
+
+The NeoForge 26.2 CI lane is currently `BLOCKED-UPSTREAM`. The build reaches `:neoFormSetup`, then NeoForge's `ProcessMinecraftJar`/`PatchBundleReader` fails because the resolved patch bundle is missing `patches.lzma`. This reproduces with a clean temporary Gradle home and refreshed dependencies, so no application source failure has been demonstrated. The workflow records resolved patch inputs after failure for upstream artifact diagnosis.
+
 The current design goal is **"encoded mono surround"** for stereo output: direction is encoded into *one* vibration waveform using small frequency bias + micro-delay, while a **priority + ducking** mixer ensures one dominant vibration stays readable.
 
 The mod also supports an optional **Sound Scape (7.1)** mode that routes haptic categories across up to **8 output channels** (FL/FR/C/LFE/SL/SR/BL/BR) so you can drive multiple transducers.

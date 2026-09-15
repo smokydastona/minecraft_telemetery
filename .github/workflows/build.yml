@@ -111,14 +111,23 @@ jobs:
       - name: Make NeoForge wrapper executable
         run: chmod +x neoforge/gradlew
 
-      - name: Reset NeoForm generated caches
-        run: |
-          rm -rf neoforge/build
-          rm -rf "$GRADLE_USER_HOME"
-
       - name: Build NeoForge sibling
         working-directory: neoforge
         run: ./gradlew --no-daemon --refresh-dependencies clean build --stacktrace
+
+      - name: Inspect NeoForm patch inputs after build
+        if: always()
+        run: |
+          echo 'NeoForge build files:'
+          find neoforge/build -type f 2>/dev/null | sort | head -200 || true
+          echo 'Resolved archives containing patch-related entries:'
+          find neoforge/build "$GRADLE_USER_HOME" -type f \( -name '*.jar' -o -name '*.zip' \) 2>/dev/null | while read -r archive; do
+            entries=$(unzip -l "$archive" 2>/dev/null | grep -E 'patches\.lzma|patch(es)?/' || true)
+            if [ -n "$entries" ]; then
+              echo "--- $archive"
+              echo "$entries"
+            fi
+          done
 
       - name: Upload NeoForge build artifacts
         uses: actions/upload-artifact@v7

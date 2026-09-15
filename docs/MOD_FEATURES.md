@@ -9,6 +9,7 @@
 - Both 26.2 siblings provide shared JavaSound/DSP/config/profile/instrument behavior, client tick telemetry, state-delta damage, movement/mining hooks, and bounded loopback WebSocket output. Forge event parity, sound interception, overlays, and server relay remain limited to the retained Forge 1.20.1 project.
 - The Fabric adapter currently provides verified mod/client lifecycle wiring and the shared `config/bassshakertelemetry.json` path. Forge event-bus handlers, Forge networking, config screens, sound interception, overlays, and server relay are not represented by speculative Fabric classes.
 - Sulfur Caves, Sulfur Cube, Geyser, and Vulkan hooks are unsupported/unverified for the actual 26.2 mappings and are intentionally absent.
+- NeoForge 26.2 runtime validation is currently blocked upstream at `:neoFormSetup`: `PatchBundleReader` cannot find `patches.lzma` in the resolved patch bundle. This is an external build artifact issue, not a demonstrated mod-source failure.
 
 Locale validation keeps every file structurally synchronized with `en_us.json`. The unsupported seeded locale codes `cv_cu`, `fr_ch`, `go_fr`, `got_de`, `uz_uz`, and `vro` are exempt from translation-coverage scoring until verified translations are available; they are still checked for missing keys, extra keys, and key order.
 
