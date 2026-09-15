@@ -1,4 +1,4 @@
-name: Build (Forge 1.20.1 / Fabric 26.2)
+name: Build (Forge 1.20.1 / Fabric 26.3)
 
 on:
   push:
