@@ -111,9 +111,14 @@ jobs:
       - name: Make NeoForge wrapper executable
         run: chmod +x neoforge/gradlew
 
+      - name: Reset NeoForm generated caches
+        run: |
+          rm -rf neoforge/build
+          rm -rf "$GRADLE_USER_HOME"
+
       - name: Build NeoForge sibling
         working-directory: neoforge
-        run: ./gradlew --no-daemon --refresh-dependencies clean build
+        run: ./gradlew --no-daemon --refresh-dependencies clean build --stacktrace
 
       - name: Upload NeoForge build artifacts
         uses: actions/upload-artifact@v7
