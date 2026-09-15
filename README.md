@@ -1,6 +1,17 @@
-# Bass Shaker Telemetry (Forge 1.20.1 / Java 17)
+# Bass Shaker Telemetry (Forge 1.20.1 / Fabric 26.2)
 
-Bass Shaker Telemetry is a Forge mod that turns Minecraft gameplay events into a **dedicated tactile audio stream** (JavaSound) for bass shakers / tactile transducers.
+Bass Shaker Telemetry is a Minecraft mod that turns supported gameplay events into a **dedicated tactile audio stream** (JavaSound) for bass shakers / tactile transducers.
+
+The existing Forge project remains the feature-complete Minecraft 1.20.1 edition. A sibling Fabric project is provided under `fabric/` and targets verified Minecraft 26.2 coordinates.
+
+## Platform targets
+
+| Platform | Project | Verified coordinates | Current scope |
+| --- | --- | --- | --- |
+| Forge | repository root | Minecraft `1.20.1`, Forge `47.2.0`, Java `17` | Existing feature-complete Forge lifecycle, audio, config, UI, event, networking, and relay implementation |
+| Fabric | `fabric/` | Minecraft `26.2`, Fabric Loader `0.19.5`, Fabric API `0.160.0+26.2`, Java `25` | Shared JavaSound/DSP/config/profile/instrument runtime with Fabric lifecycle, tick telemetry, state-delta damage, movement/mining hooks, and a keybound core config screen; sound interception and server relay are not yet ported |
+
+Forge has no published Minecraft 26.2 artifact. A Minecraft 26.2 Forge build cannot be produced from the official Forge Maven; NeoForge `26.2.0.88` is a separate loader and is not silently substituted here.
 
 The current design goal is **"encoded mono surround"** for stereo output: direction is encoded into *one* vibration waveform using small frequency bias + micro-delay, while a **priority + ducking** mixer ensures one dominant vibration stays readable.
 
@@ -111,3 +122,11 @@ This repo is intended to be validated via editor diagnostics and built by GitHub
 GitHub Actions also verifies that every `lang/*.json` file stays structurally in sync with `lang/en_us.json`, and it fails the workflow if locale files drift or if any translation-target locale still appears to be mostly English fallback text. English-variant and novelty locales are exempt from the translation-coverage gate, but they are still required to stay structurally synced.
 
 Important: do **not** run local Gradle builds or `runClient` on this machine.
+
+## Fabric adapter boundary
+
+The Fabric sibling initializes through Fabric Loader, loads the same config/profile/instrument files as Forge, starts the shared JavaSound/DSP engine, and registers a client end-tick callback plus a keybound config/test screen through verified Fabric API hooks. The Fabric tick adapter provides movement telemetry, damage/death detection from client state, landing/footstep/mining pulses, and WebSocket telemetry emission through the shared neutral output sink.
+
+The following features are explicitly omitted from the Fabric artifact in this release because this repository does not contain a verified 26.2 Fabric hook/contract for them: sound-play interception, server-authoritative relay packets, the Forge config-screen integration point, Forge overlays, and the Forge event-bus handlers. The Fabric screen is intentionally limited to the verified core enable/test controls; it edits the same full config object and does not invent a parallel settings schema. Sulfur Caves, Sulfur Cube, Geyser, and Vulkan hooks remain omitted because no verified 26.2 mapped APIs were found.
+
+The supplied Sulfur Caves, Sulfur Cube, Geyser, and Vulkan snippets are also not part of this release: no corresponding verified 26.2 mapped mechanics were found, so no hooks were added.

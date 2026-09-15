@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "${id}",
+  "version": "${version}",
+  "name": "${name}",
+  "description": "Bass Shaker Telemetry Fabric client with shared JavaSound haptics for Minecraft ${minecraft_version}.",
+  "authors": ["smoky"],
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.smoky.bassshakertelemetry.fabric.BassShakerTelemetryFabric"
+    ],
+    "client": [
+      "com.smoky.bassshakertelemetry.fabric.BassShakerTelemetryFabricClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": "${fabric_loader_version}",
+    "fabric-api": "${fabric_api_version}",
+    "minecraft": "${minecraft_version}"
+  }
+}

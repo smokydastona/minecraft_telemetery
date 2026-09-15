@@ -7,6 +7,8 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 ## [Unreleased]
 
 ### Added
+- Fabric sibling project under `fabric/`, targeting Minecraft `26.2` with Fabric Loader `0.19.5`, Fabric API `0.160.0+26.2`, official Mojang mappings, and Java 25. The adapter covers verified lifecycle/config wiring and documents unsupported Forge-only hooks and unverified Sulfur/Geyser/Vulkan mechanics.
+- Corrected the platform matrix: the retained Forge project remains Minecraft `1.20.1` / Forge `47.2.0` / Java 17 because no official Forge Minecraft 26.2 artifact exists. NeoForge 26.2 is not substituted under the Forge name.
 - GitHub Actions now validates locale files before build output: it runs the locale sync step, fails on lang/en_us drift, and flags obvious English fallback content in every non-English locale file.
 - Neon UI bundle support (built-in + disk override/remote) including schema-driven config screens.
 - Sound Scape (7.1) routing: per-category routing UI with editable channel groups (targets up to 8 output channels: FL/FR/C/LFE/SL/SR/BL/BR).

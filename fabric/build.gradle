@@ -1,0 +1,69 @@
+plugins {
+    id 'fabric-loom' version '1.17-SNAPSHOT'
+}
+
+group = project.mod_group_id
+version = project.mod_version
+
+repositories {
+    maven { url = 'https://maven.fabricmc.net/' }
+}
+
+base {
+    archivesName = project.mod_id + '-fabric'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${project.fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+processResources {
+    inputs.properties([
+            id: project.mod_id,
+            name: project.mod_name,
+            version: project.version,
+            minecraft_version: project.minecraft_version,
+            fabric_loader_version: project.fabric_loader_version,
+            fabric_api_version: project.fabric_api_version
+    ])
+
+    filesMatching('fabric.mod.json') {
+        expand([
+                id: project.mod_id,
+                name: project.mod_name,
+                version: project.version,
+                minecraft_version: project.minecraft_version,
+                fabric_loader_version: project.fabric_loader_version,
+                fabric_api_version: project.fabric_api_version
+        ])
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java', '../src/main/java']
+            exclude '**/BassShakerTelemetryMod.java'
+            exclude '**/server/**'
+            exclude '**/net/**'
+            exclude '**/client/**'
+        }
+        resources {
+            srcDirs = ['src/main/resources', '../src/main/resources']
+            exclude 'META-INF/mods.toml'
+        }
+    }
+}
