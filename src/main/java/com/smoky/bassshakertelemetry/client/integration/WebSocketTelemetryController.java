@@ -3,6 +3,7 @@ package com.smoky.bassshakertelemetry.client.integration;
 import com.smoky.bassshakertelemetry.config.BstConfig;
 import com.smoky.bassshakertelemetry.telemetryout.TelemetryOut;
 import com.smoky.bassshakertelemetry.telemetryout.TelemetryOutSink;
+import com.smoky.bassshakertelemetry.telemetryout.SimpleWebSocketServer;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 

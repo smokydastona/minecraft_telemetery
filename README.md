@@ -9,9 +9,10 @@ The existing Forge project remains the feature-complete Minecraft 1.20.1 edition
 | Platform | Project | Verified coordinates | Current scope |
 | --- | --- | --- | --- |
 | Forge | repository root | Minecraft `1.20.1`, Forge `47.2.0`, Java `17` | Existing feature-complete Forge lifecycle, audio, config, UI, event, networking, and relay implementation |
-| Fabric | `fabric/` | Minecraft `26.2`, Fabric Loader `0.19.5`, Fabric API `0.160.0+26.2`, Java `25` | Shared JavaSound/DSP/config/profile/instrument runtime with Fabric lifecycle, tick telemetry, state-delta damage, movement/mining hooks, and a keybound core config screen; sound interception and server relay are not yet ported |
+| Fabric | `fabric/` | Minecraft `26.2`, Fabric Loader `0.19.5`, Fabric API `0.160.0+26.2`, Java `25` | Shared JavaSound/DSP/config/profile/instrument runtime with Fabric lifecycle, tick telemetry, state-delta damage, movement/mining hooks, bounded loopback WebSocket output, and a keybound core config screen; sound interception and server relay are not yet ported |
+| NeoForge | `neoforge/` | Minecraft `26.2`, NeoForge `26.2.0.88`, Java `25` | Shared JavaSound/DSP/config/profile/instrument runtime with NeoForge client tick telemetry, state-delta damage, movement/mining hooks, and bounded loopback WebSocket output; Forge event parity and server relay are not yet ported |
 
-Forge has no published Minecraft 26.2 artifact. A Minecraft 26.2 Forge build cannot be produced from the official Forge Maven; NeoForge `26.2.0.88` is a separate loader and is not silently substituted here.
+Forge has no published Minecraft 26.2 artifact. A Minecraft 26.2 Forge build cannot be produced from the official Forge Maven; NeoForge `26.2.0.88` is provided as the separate 26.2 Forge-compatible loader target.
 
 The current design goal is **"encoded mono surround"** for stereo output: direction is encoded into *one* vibration waveform using small frequency bias + micro-delay, while a **priority + ducking** mixer ensures one dominant vibration stays readable.
 

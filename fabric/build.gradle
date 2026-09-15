@@ -63,7 +63,7 @@ sourceSets {
         }
         resources {
             srcDirs = ['src/main/resources', '../src/main/resources']
-            exclude 'META-INF/mods.toml'
+            exclude 'META-INF/mods.toml', 'pack.mcmeta'
         }
     }
 }

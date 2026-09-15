@@ -1,0 +1,62 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'net.neoforged.gradle.userdev' version '7.1.38'
+}
+
+group = project.mod_group_id
+version = project.mod_version
+base { archivesName = project.mod_id + '-neoforge' }
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+
+repositories {
+    maven { url = 'https://maven.neoforged.net/releases' }
+    mavenCentral()
+}
+
+dependencies {
+    implementation "net.neoforged:neoforge:${project.neo_version}"
+}
+
+runs {
+    configureEach {
+        workingDirectory project.layout.projectDirectory.dir('run').dir(name)
+        modSource project.sourceSets.main
+    }
+    client { systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id }
+    server {
+        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        argument '--nogui'
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java', '../src/main/java']
+            exclude '**/client/**', '**/server/**', '**/net/**'
+            exclude '**/BassShakerTelemetryMod.java', '**/api/HapticApi.java'
+        }
+        resources {
+            srcDirs = ['src/main/resources', '../src/main/resources']
+            exclude 'META-INF/mods.toml', 'pack.mcmeta'
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+
+tasks.withType(ProcessResources).configureEach {
+    def props = [
+            minecraft_version: project.minecraft_version,
+            minecraft_version_range: project.minecraft_version_range,
+            neo_version: project.neo_version,
+            loader_version_range: project.loader_version_range,
+            mod_id: project.mod_id,
+            mod_name: project.mod_name,
+            mod_version: project.version
+    ]
+    inputs.properties props
+    filesMatching('META-INF/neoforge.mods.toml') { expand props }
+}
