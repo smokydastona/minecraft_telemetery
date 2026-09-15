@@ -125,7 +125,7 @@ The newly detected Minecraft locale codes `cv_cu`, `fr_ch`, `go_fr`, `got_de`, `
 
 Important: do **not** run local Gradle builds or `runClient` on this machine.
 
-The CI toolchains are intentionally separated: the retained Forge 1.20.1 project uses its Gradle 8.5 wrapper, while the Java 25 Fabric and NeoForge 26.2 siblings use their own Gradle 9.2 wrappers.
+The CI toolchains are intentionally separated: the retained Forge 1.20.1 project uses its Gradle 8.5 wrapper, Fabric 26.2 uses Gradle 9.5 for its pinned Loom 1.17.21 plugin, and NeoForge 26.2 uses its own Gradle 9.2 wrapper.
 
 ## Fabric adapter boundary
 

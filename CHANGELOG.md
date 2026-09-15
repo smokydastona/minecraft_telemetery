@@ -7,6 +7,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 ## [Unreleased]
 
 ### Added
+- Pinned Fabric Loom to 1.17.21 and upgraded only the Fabric wrapper to Gradle 9.5 to satisfy its published Gradle plugin API requirement.
 - Fixed sibling CI jobs to run from their project directories so Fabric and NeoForge wrappers do not accidentally load the root Forge build.
 - Separated Gradle wrappers by platform: Forge uses Gradle 8.5 for ForgeGradle compatibility, while Fabric and NeoForge use Gradle 9.2 for Java 25.
 - Updated the shared Gradle wrapper to `9.2.0`, which can run on Java 25 for the Fabric and NeoForge 26.2 CI jobs while remaining compatible with the Java 17 Forge job.
