@@ -125,6 +125,8 @@ The newly detected Minecraft locale codes `cv_cu`, `fr_ch`, `go_fr`, `got_de`, `
 
 Important: do **not** run local Gradle builds or `runClient` on this machine.
 
+The CI toolchains are intentionally separated: the retained Forge 1.20.1 project uses its Gradle 8.5 wrapper, while the Java 25 Fabric and NeoForge 26.2 siblings use their own Gradle 9.2 wrappers.
+
 ## Fabric adapter boundary
 
 The Fabric sibling initializes through Fabric Loader, loads the same config/profile/instrument files as Forge, starts the shared JavaSound/DSP engine, and registers a client end-tick callback plus a keybound config/test screen through verified Fabric API hooks. The Fabric tick adapter provides movement telemetry, damage/death detection from client state, landing/footstep/mining pulses, and WebSocket telemetry emission through the shared neutral output sink.

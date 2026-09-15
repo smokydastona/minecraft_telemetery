@@ -7,6 +7,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 ## [Unreleased]
 
 ### Added
+- Separated Gradle wrappers by platform: Forge uses Gradle 8.5 for ForgeGradle compatibility, while Fabric and NeoForge use Gradle 9.2 for Java 25.
 - Updated the shared Gradle wrapper to `9.2.0`, which can run on Java 25 for the Fabric and NeoForge 26.2 CI jobs while remaining compatible with the Java 17 Forge job.
 - Restored the root Forge build to its published Minecraft `1.20.1` / Forge `47.2.0` / Java 17 coordinates; Minecraft 26.2 remains under the separate NeoForge sibling.
 - Fixed the GitHub Actions locale validation invocation to pass the Boolean fallback-check parameter explicitly under PowerShell Core.

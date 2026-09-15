@@ -39,7 +39,7 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
 
-      - name: Make gradlew executable
+      - name: Make root Forge wrapper executable
         run: chmod +x gradlew
 
       - name: Build
@@ -71,11 +71,11 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
 
-      - name: Make gradlew executable
-        run: chmod +x gradlew
+      - name: Make Fabric wrapper executable
+        run: chmod +x fabric/gradlew
 
       - name: Build Fabric sibling
-        run: ./gradlew --no-daemon -p fabric clean build
+        run: ./fabric/gradlew --no-daemon clean build
 
       - name: Upload Fabric build artifacts
         uses: actions/upload-artifact@v7
@@ -103,11 +103,11 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
 
-      - name: Make gradlew executable
-        run: chmod +x gradlew
+      - name: Make NeoForge wrapper executable
+        run: chmod +x neoforge/gradlew
 
       - name: Build NeoForge sibling
-        run: ./gradlew --no-daemon -p neoforge clean build
+        run: ./neoforge/gradlew --no-daemon clean build
 
       - name: Upload NeoForge build artifacts
         uses: actions/upload-artifact@v7
