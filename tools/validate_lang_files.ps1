@@ -97,7 +97,16 @@ function Get-TranslationCoverageExemptLocales {
         'qya_aa.json',
         'rpr.json',
         'tok.json',
-        'tlh_aa.json'
+        'tlh_aa.json',
+
+        # Minecraft locale codes currently seeded from en_us.json because this
+        # project has no verified translation source for them yet.
+        'cv_cu.json',
+        'fr_ch.json',
+        'go_fr.json',
+        'got_de.json',
+        'uz_uz.json',
+        'vro.json'
     )
 }
 

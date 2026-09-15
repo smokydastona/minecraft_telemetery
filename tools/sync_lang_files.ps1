@@ -1,6 +1,6 @@
 param(
     [string]$MinecraftVersion = "1.20.1",
-    [switch]$PruneExtraKeys = $true,
+    [bool]$PruneExtraKeys = $true,
     [switch]$OverwriteEnglishFallbacks = $false
 )
 
@@ -63,7 +63,7 @@ function Read-JsonObject([string]$path) {
     return ConvertFrom-Json -InputObject $raw
 }
 
-function To-Hashtable($psObj) {
+function ConvertTo-BstMap($psObj) {
     $h = @{}
     if ($null -eq $psObj) { return $h }
 
@@ -104,7 +104,7 @@ if (-not (Test-Path $enPath)) {
 
 $enObj = Read-JsonObject -path $enPath
 $enOrder = @($enObj.PSObject.Properties.Name)
-$enMap = To-Hashtable $enObj
+$enMap = ConvertTo-BstMap $enObj
 
 $localeCodes = Get-MinecraftLocaleCodesFromAssetIndex -version $MinecraftVersion
 if (-not $localeCodes -or $localeCodes.Count -eq 0) {
@@ -129,7 +129,7 @@ foreach ($code in $localeCodes) {
     }
 
     $destObj = Read-JsonObject -path $destPath
-    $destMap = To-Hashtable $destObj
+    $destMap = ConvertTo-BstMap $destObj
 
     $out = [ordered]@{}
 

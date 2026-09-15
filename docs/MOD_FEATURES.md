@@ -10,6 +10,8 @@
 - The Fabric adapter currently provides verified mod/client lifecycle wiring and the shared `config/bassshakertelemetry.json` path. Forge event-bus handlers, Forge networking, config screens, sound interception, overlays, and server relay are not represented by speculative Fabric classes.
 - Sulfur Caves, Sulfur Cube, Geyser, and Vulkan hooks are unsupported/unverified for the actual 26.2 mappings and are intentionally absent.
 
+Locale validation keeps every file structurally synchronized with `en_us.json`. The unsupported seeded locale codes `cv_cu`, `fr_ch`, `go_fr`, `got_de`, `uz_uz`, and `vro` are exempt from translation-coverage scoring until verified translations are available; they are still checked for missing keys, extra keys, and key order.
+
 ## Telemetry sources
 
 - Player speed: `player.getDeltaMovement().length()`

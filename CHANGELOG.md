@@ -7,6 +7,8 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 ## [Unreleased]
 
 ### Added
+- Fixed the GitHub Actions locale validation invocation to pass the Boolean fallback-check parameter explicitly under PowerShell Core.
+- Explicitly exempted six newly seeded, untranslated Minecraft locale codes from translation-coverage scoring while retaining structural locale validation.
 - Fabric sibling project under `fabric/`, targeting Minecraft `26.2` with Fabric Loader `0.19.5`, Fabric API `0.160.0+26.2`, official Mojang mappings, and Java 25. The adapter covers verified lifecycle/config wiring and documents unsupported Forge-only hooks and unverified Sulfur/Geyser/Vulkan mechanics.
 - Corrected the platform matrix: the retained Forge project remains Minecraft `1.20.1` / Forge `47.2.0` / Java 17 because no official Forge Minecraft 26.2 artifact exists. NeoForge 26.2 is not substituted under the Forge name.
 - Added a NeoForge `26.2.0.88` sibling with Java 25, official NeoForge metadata, shared haptic runtime sources, client tick telemetry, and loopback WebSocket output.

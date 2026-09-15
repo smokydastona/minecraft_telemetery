@@ -27,7 +27,7 @@ jobs:
             exit 1
           }
 
-          ./tools/validate_lang_files.ps1 -FailOnSuspiciousFallbacks -MaxSuspiciousPercent 35 -MaxSameAsEnglishPercent 15
+          ./tools/validate_lang_files.ps1 -FailOnSuspiciousFallbacks $true -MaxSuspiciousPercent 35 -MaxSameAsEnglishPercent 15
 
       - name: Set up JDK 17 for Forge 1.20.1
         uses: actions/setup-java@v5

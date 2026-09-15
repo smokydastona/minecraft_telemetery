@@ -121,6 +121,7 @@ When filing bugs, please include a debug overlay capture (enable via Misc → To
 This repo is intended to be validated via editor diagnostics and built by GitHub Actions on `git push`.
 
 GitHub Actions also verifies that every `lang/*.json` file stays structurally in sync with `lang/en_us.json`, and it fails the workflow if locale files drift or if any translation-target locale still appears to be mostly English fallback text. English-variant and novelty locales are exempt from the translation-coverage gate, but they are still required to stay structurally synced.
+The newly detected Minecraft locale codes `cv_cu`, `fr_ch`, `go_fr`, `got_de`, `uz_uz`, and `vro` are currently seeded English templates with no verified translation source. They are explicitly exempt from translation-coverage scoring while remaining structurally validated.
 
 Important: do **not** run local Gradle builds or `runClient` on this machine.
 
