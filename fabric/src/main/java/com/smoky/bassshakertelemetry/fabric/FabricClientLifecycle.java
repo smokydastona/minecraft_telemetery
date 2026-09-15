@@ -38,7 +38,7 @@ final class FabricClientLifecycle {
         lastSpeed = speed;
         AudioOutputEngine.get().setTelemetryLive(true);
         AudioOutputEngine.get().updateTelemetry(speed, accel, player.isFallFlying(), player.onGround(),
-                player.isInWaterOrBubble(), player.isSwimming());
+                player.isInWater(), player.isSwimming());
 
         if (config.damageBurstEnabled) {
             detectDamage(player, config);

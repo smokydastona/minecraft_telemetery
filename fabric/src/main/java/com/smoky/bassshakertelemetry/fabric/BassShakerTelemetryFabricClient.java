@@ -2,11 +2,10 @@ package com.smoky.bassshakertelemetry.fabric;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.lifecycle.v1.ClientLifecycleEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 import com.smoky.bassshakertelemetry.audio.AudioOutputEngine;
 import com.smoky.bassshakertelemetry.config.BstConfig;
@@ -21,16 +20,16 @@ public final class BassShakerTelemetryFabricClient implements ClientModInitializ
         if (BstConfig.get().enabled) {
             AudioOutputEngine.get().startOrRestart();
         }
-        configKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        configKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.bassshakertelemetry.config",
                 InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_F8,
-                "key.categories.bassshakertelemetry"
+            KeyMapping.Category.MISC
         ));
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             WEB_SOCKET.tick();
             while (configKey.consumeClick()) {
-                client.setScreen(new FabricConfigScreen(client.screen));
+                AudioOutputEngine.get().testDamageBurst();
             }
             FabricClientLifecycle.onEndTick(client);
         });

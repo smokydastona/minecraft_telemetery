@@ -8,6 +8,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ### Added
 - Migrated Fabric back to Minecraft `26.2` using the official unobfuscated toolchain from Fabric's 26.2 example: no mappings declaration, plain `implementation` dependencies, Fabric API `0.160.0+26.2`, Loom `1.17-SNAPSHOT`, Gradle `9.5.1`, and Java 25.
+- Updated Fabric 26.2 client API usage for the unobfuscated release: current key-mapping/lifecycle packages, category-based key registration, and a direct haptic test binding replace removed GUI APIs.
 - Aligned the Fabric build with the official 26.2 example's `net.fabricmc.fabric-loom` plugin and plain `implementation` dependencies.
 - Fixed sibling CI jobs to run from their project directories so Fabric and NeoForge wrappers do not accidentally load the root Forge build.
 - Separated Gradle wrappers by platform: Forge uses Gradle 8.5 for ForgeGradle compatibility, while Fabric and NeoForge use Gradle 9.2 for Java 25.
