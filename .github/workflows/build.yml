@@ -75,7 +75,8 @@ jobs:
         run: chmod +x fabric/gradlew
 
       - name: Build Fabric sibling
-        run: ./fabric/gradlew --no-daemon clean build
+        working-directory: fabric
+        run: ./gradlew --no-daemon clean build
 
       - name: Upload Fabric build artifacts
         uses: actions/upload-artifact@v7
@@ -107,7 +108,8 @@ jobs:
         run: chmod +x neoforge/gradlew
 
       - name: Build NeoForge sibling
-        run: ./neoforge/gradlew --no-daemon clean build
+        working-directory: neoforge
+        run: ./gradlew --no-daemon clean build
 
       - name: Upload NeoForge build artifacts
         uses: actions/upload-artifact@v7
