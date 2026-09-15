@@ -1,15 +1,15 @@
-# Bass Shaker Telemetry (Forge 1.20.1 / Fabric 1.21.11)
+# Bass Shaker Telemetry (Forge 1.20.1 / Fabric 26.2)
 
 Bass Shaker Telemetry is a Minecraft mod that turns supported gameplay events into a **dedicated tactile audio stream** (JavaSound) for bass shakers / tactile transducers.
 
-The existing Forge project remains the feature-complete Minecraft 1.20.1 edition. A sibling Fabric project is provided under `fabric/` and targets verified Minecraft 1.21.11 coordinates.
+The existing Forge project remains the feature-complete Minecraft 1.20.1 edition. A sibling Fabric project is provided under `fabric/` and targets Minecraft 26.2's unobfuscated official-name toolchain.
 
 ## Platform targets
 
 | Platform | Project | Verified coordinates | Current scope |
 | --- | --- | --- | --- |
 | Forge | repository root | Minecraft `1.20.1`, Forge `47.2.0`, Java `17` | Existing feature-complete Forge lifecycle, audio, config, UI, event, networking, and relay implementation |
-| Fabric | `fabric/` | Minecraft `1.21.11`, Fabric Loader `0.19.5`, Fabric API `0.141.6+1.21.11`, Java `25` | Shared JavaSound/DSP/config/profile/instrument runtime with Fabric lifecycle, tick telemetry, state-delta damage, movement/mining hooks, bounded loopback WebSocket output, and a keybound core config screen; sound interception and server relay are not yet ported |
+| Fabric | `fabric/` | Minecraft `26.2`, Fabric Loader `0.19.5`, Fabric API `0.160.0+26.2`, Loom `1.17.21`, Gradle `9.5.1`, Java `25`, no mappings declaration | Shared JavaSound/DSP/config/profile/instrument runtime with Fabric lifecycle, tick telemetry, state-delta damage, movement/mining hooks, bounded loopback WebSocket output, and a keybound core config screen; sound interception and server relay are not yet ported |
 | NeoForge | `neoforge/` | Minecraft `26.2`, NeoForge `26.2.0.88`, Java `25` | Shared JavaSound/DSP/config/profile/instrument runtime with NeoForge client tick telemetry, state-delta damage, movement/mining hooks, and bounded loopback WebSocket output; Forge event parity and server relay are not yet ported |
 
 Forge has no published Minecraft 26.2 artifact. A Minecraft 26.2 Forge build cannot be produced from the official Forge Maven; NeoForge `26.2.0.88` is provided as the separate 26.2 Forge-compatible loader target.
@@ -85,12 +85,12 @@ The newly detected Minecraft locale codes `cv_cu`, `fr_ch`, `go_fr`, `got_de`, `
 
 Important: do **not** run local Gradle builds or `runClient` on this machine.
 
-The CI toolchains are intentionally separated: the retained Forge 1.20.1 project uses its Gradle 8.5 wrapper, Fabric 1.21.11 uses Gradle 9.5 for its pinned Loom 1.17.21 plugin, and NeoForge 26.2 uses its own Gradle 9.2 wrapper.
+The CI toolchains are intentionally separated: the retained Forge 1.20.1 project uses its Gradle 8.5 wrapper, Fabric 26.2 uses Gradle 9.5.1 with Loom 1.17.21 and no mappings declaration, and NeoForge 26.2 uses its own Gradle 9.2 wrapper.
 
 ## Fabric adapter boundary
 
 The Fabric sibling initializes through Fabric Loader, loads the same config/profile/instrument files as Forge, starts the shared JavaSound/DSP engine, and registers a client end-tick callback plus a keybound config/test screen through verified Fabric API hooks. The Fabric tick adapter provides movement telemetry, damage/death detection from client state, landing/footstep/mining pulses, and WebSocket telemetry emission through the shared neutral output sink.
 
-The following features are explicitly omitted from the Fabric artifact in this release because this repository does not contain a verified 1.21.11 Fabric hook/contract for them: sound-play interception, server-authoritative relay packets, the Forge config-screen integration point, Forge overlays, and the Forge event-bus handlers. The Fabric screen is intentionally limited to the verified core enable/test controls; it edits the same full config object and does not invent a parallel settings schema. Sulfur Caves, Sulfur Cube, Geyser, and Vulkan hooks remain omitted because no verified mapped APIs were found.
+The following features are explicitly omitted from the Fabric artifact in this release because this repository does not contain a verified 26.2 Fabric hook/contract for them: sound-play interception, server-authoritative relay packets, the Forge config-screen integration point, Forge overlays, and the Forge event-bus handlers. The Fabric screen is intentionally limited to the verified core enable/test controls; it edits the same full config object and does not invent a parallel settings schema. Sulfur Caves, Sulfur Cube, Geyser, and Vulkan hooks remain omitted because no verified mapped APIs were found.
 
 The supplied Sulfur Caves, Sulfur Cube, Geyser, and Vulkan snippets are also not part of this release: no corresponding verified mapped mechanics were found, so no hooks were added.
