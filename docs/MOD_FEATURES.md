@@ -3,7 +3,7 @@
 ## Platform status
 
 - Forge remains the feature-complete implementation and is retained at the repository root for Minecraft `1.20.1`, Forge `47.2.0`, and Java 17.
-- Fabric is a sibling project under `fabric/`, using Minecraft `26.2`, Fabric Loader `0.19.5`, Fabric API `0.160.0+26.2`, Loom `1.17.21`, Gradle `9.5.1`, Java 25, and no mappings declaration because 26.2 is unobfuscated.
+- Fabric is a sibling project under `fabric/`, using Minecraft `26.2`, Fabric Loader `0.19.5`, Fabric API `0.160.0+26.2`, Loom `1.17-SNAPSHOT`, Gradle `9.5.1`, Java 25, and no mappings declaration because 26.2 is unobfuscated.
 - NeoForge is a sibling project under `neoforge/`, using Minecraft `26.2`, NeoForge `26.2.0.88`, official Mojang mappings, and Java 25.
 - Forge does not publish a Minecraft 26.2 artifact. NeoForge is the separate 26.2 Forge-compatible loader target and is not represented as Forge in this project.
 - Both 26.2 siblings provide shared JavaSound/DSP/config/profile/instrument behavior, client tick telemetry, state-delta damage, movement/mining hooks, and bounded loopback WebSocket output. Forge event parity, sound interception, overlays, and server relay remain limited to the retained Forge 1.20.1 project.
